@@ -1,11 +1,13 @@
+import { orpc } from '@/lib/orpc'
 import { useQuery } from '@tanstack/react-query'
 import { StyleSheet, Text, View } from 'react-native'
-import { orpc } from '@/lib/orpc'
 
 export default function HomeScreen() {
-  const { data: users, isLoading, error } = useQuery(
-    orpc.user.list.queryOptions({ input: { limit: 10, offset: 0 } }),
-  )
+  const {
+    data: users,
+    isLoading,
+    error,
+  } = useQuery(orpc.user.list.queryOptions({ input: { limit: 10, offset: 0 } }))
 
   return (
     <View style={styles.container}>
