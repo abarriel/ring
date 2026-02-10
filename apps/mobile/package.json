@@ -9,6 +9,7 @@
     "ios": "expo run:ios",
     "build": "expo export",
     "lint": "biome check .",
+    "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "typecheck": "tsgo --noEmit"
   },
