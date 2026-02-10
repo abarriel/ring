@@ -21,12 +21,10 @@ const listUsers = os
     return users
   })
 
-const getUser = os
-  .input(z.object({ id: z.string().uuid() }))
-  .handler(async ({ input }) => {
-    const user = await db.user.findUniqueOrThrow({ where: { id: input.id } })
-    return user
-  })
+const getUser = os.input(z.object({ id: z.string().uuid() })).handler(async ({ input }) => {
+  const user = await db.user.findUniqueOrThrow({ where: { id: input.id } })
+  return user
+})
 
 const createUser = os
   .input(CreateUserSchema)
@@ -46,12 +44,10 @@ const updateUser = os
     return user
   })
 
-const deleteUser = os
-  .input(z.object({ id: z.string().uuid() }))
-  .handler(async ({ input }) => {
-    await db.user.delete({ where: { id: input.id } })
-    return { success: true }
-  })
+const deleteUser = os.input(z.object({ id: z.string().uuid() })).handler(async ({ input }) => {
+  await db.user.delete({ where: { id: input.id } })
+  return { success: true }
+})
 
 // ── Router ──────────────────────────────────────────────────────────────────
 

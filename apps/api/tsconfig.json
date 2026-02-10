@@ -4,7 +4,7 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "types": ["bun-types"],
+    "types": ["@types/bun"],
     "outDir": "./dist",
     "rootDir": "./src"
   },

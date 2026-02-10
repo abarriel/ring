@@ -7,12 +7,14 @@
     "dev": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "build": "expo export",
+    "build": "expo export --platform ios --platform android",
     "lint": "biome check .",
+    "lint:fix": "biome check --write .",
     "format": "biome format --write .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
+    "@babel/runtime": "^7.28.6",
     "@orpc/client": "^1.13.4",
     "@orpc/tanstack-query": "^1.13.4",
     "@ring/shared": "workspace:*",
@@ -29,6 +31,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@orpc/server": "^1.13.4",
     "@ring/api": "workspace:*",
     "@types/react": "~18.3.12"
   }
