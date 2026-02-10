@@ -1,0 +1,32 @@
+{
+  "name": "@ring/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./router": {
+      "types": "./src/router.ts"
+    }
+  },
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@orpc/server": "^1.13.4",
+    "@orpc/zod": "^1.13.4",
+    "@prisma/client": "^6.3.0",
+    "@ring/shared": "workspace:*",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14",
+    "prisma": "^6.3.0"
+  }
+}
