@@ -51,6 +51,9 @@ importers:
 
   apps/mobile:
     dependencies:
+      '@babel/runtime':
+        specifier: ^7.28.6
+        version: 7.28.6
       '@orpc/client':
         specifier: ^1.13.4
         version: 1.13.4
