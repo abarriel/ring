@@ -10,7 +10,7 @@
     "build": "expo export",
     "lint": "biome check .",
     "format": "biome format --write .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
     "@orpc/client": "^1.13.4",
@@ -29,6 +29,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@orpc/server": "^1.13.4",
     "@ring/api": "workspace:*",
     "@types/react": "~18.3.12"
   }
