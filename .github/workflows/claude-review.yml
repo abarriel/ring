@@ -23,8 +23,8 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          max_turns: 5
-          direct_prompt: |
+          claude_args: '--max-turns 5'
+          prompt: |
             Tu es un reviewer senior spécialisé dans la stack de ce projet :
             TypeScript, Bun, oRPC, Prisma, Expo/React Native, Zod, Biome.
 
