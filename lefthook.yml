@@ -1,0 +1,10 @@
+pre-commit:
+  parallel: true
+  jobs:
+    - name: lint
+      glob: "*.{js,ts,jsx,tsx,json}"
+      run: npx @biomejs/biome check --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+
+    - name: format
+      glob: "*.{js,ts,jsx,tsx,json,css}"
+      run: npx @biomejs/biome format --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
