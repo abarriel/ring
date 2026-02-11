@@ -7,6 +7,7 @@
     "icon": "./assets/icon.png",
     "scheme": "ring",
     "userInterfaceStyle": "automatic",
+    "jsEngine": "jsc",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
