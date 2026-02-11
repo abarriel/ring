@@ -9,17 +9,13 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
-    "./components/*": {
-      "types": "./src/components/*.tsx",
-      "default": "./src/components/*.tsx"
+    "./theme": {
+      "types": "./src/theme.ts",
+      "default": "./src/theme.ts"
     },
     "./lib/*": {
       "types": "./src/lib/*.ts",
       "default": "./src/lib/*.ts"
-    },
-    "./tailwind-preset": {
-      "types": "./src/tailwind-preset.ts",
-      "default": "./src/tailwind-preset.ts"
     }
   },
   "scripts": {
@@ -27,20 +23,11 @@
     "format": "biome format --write ."
   },
   "dependencies": {
-    "@rn-primitives/avatar": "~1.2.0",
-    "@rn-primitives/label": "~1.2.0",
-    "@rn-primitives/slot": "~1.2.0",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
     "lucide-react-native": "^0.563.0",
-    "nativewind": "^4.2.1",
-    "react-native-reanimated": "~4.2.1",
-    "react-native-svg": "15.15.3",
-    "tailwind-merge": "^3.4.0"
+    "react-native-svg": "15.15.3"
   },
   "devDependencies": {
-    "@types/react": "~19.2.14",
-    "tailwindcss": "~4.1.18"
+    "@types/react": "~19.2.14"
   },
   "peerDependencies": {
     "react": "*",

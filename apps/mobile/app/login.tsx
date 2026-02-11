@@ -1,9 +1,17 @@
-import { Button, Card, CardContent, Input, Label, Text } from '@ring/ui'
+import { theme } from '@ring/ui'
 import { useMutation } from '@tanstack/react-query'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
 import { useState } from 'react'
-import { KeyboardAvoidingView, Platform, View } from 'react-native'
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native'
 import { saveUser } from '@/lib/auth'
 import { client } from '@/lib/orpc'
 
@@ -24,59 +32,150 @@ export default function LoginScreen() {
     loginMutation.mutate({ name: trimmed })
   }
 
+  const disabled = loginMutation.isPending || !name.trim()
+
   return (
-    <LinearGradient colors={['#fff1f2', '#fce7f3']} className="flex-1">
+    <LinearGradient colors={['#fff1f2', '#fce7f3']} style={styles.gradient}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
+        style={styles.flex}
       >
-        <View className="flex-1 items-center justify-center px-6">
+        <View style={styles.center}>
           {/* Logo */}
           <LinearGradient
-            colors={['#fb7185', '#ec4899']}
-            className="h-20 w-20 items-center justify-center rounded-full shadow-lg"
+            colors={[theme.colors.ring.rose400, theme.colors.ring.pink500]}
+            style={styles.logo}
           >
-            <Text className="text-4xl font-bold text-white">R</Text>
+            <Text style={styles.logoText}>R</Text>
           </LinearGradient>
 
           {/* Title */}
-          <Text className="mt-3 text-3xl font-bold text-foreground">Ring</Text>
+          <Text style={styles.title}>Ring</Text>
 
           {/* Subtitle */}
-          <Text className="mb-8 mt-1 text-sm text-muted-foreground">Trouve ton match parfait</Text>
+          <Text style={styles.subtitle}>Trouve ton match parfait</Text>
 
           {/* Login Card */}
-          <Card className="w-full rounded-2xl border-0 shadow-lg">
-            <CardContent className="p-6 px-5">
-              <Label className="mb-2 text-sm font-medium">Pseudo</Label>
-              <Input
-                placeholder="ton_pseudo"
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="none"
-                autoCorrect={false}
-                className="mb-5 h-12 rounded-xl text-base"
-              />
-              <LinearGradient colors={['#fb7185', '#ec4899']} className="rounded-xl shadow-md">
-                <Button
-                  className="h-12 w-full rounded-xl bg-transparent"
-                  onPress={handleSubmit}
-                  disabled={loginMutation.isPending || !name.trim()}
-                >
-                  <Text className="text-base font-semibold text-white">
-                    {loginMutation.isPending ? 'Connexion...' : "C'est parti"}
-                  </Text>
-                </Button>
-              </LinearGradient>
-            </CardContent>
-          </Card>
+          <View style={styles.card}>
+            <Text style={styles.label}>Pseudo</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="ton_pseudo"
+              placeholderTextColor={theme.colors.foreground.muted}
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <LinearGradient
+              colors={[theme.colors.ring.rose400, theme.colors.ring.pink500]}
+              style={styles.buttonGradient}
+            >
+              <Pressable
+                style={[styles.button, disabled && styles.buttonDisabled]}
+                onPress={handleSubmit}
+                disabled={disabled}
+              >
+                <Text style={styles.buttonText}>
+                  {loginMutation.isPending ? 'Connexion...' : "C'est parti"}
+                </Text>
+              </Pressable>
+            </LinearGradient>
+          </View>
 
           {/* Footer hint */}
-          <Text className="mt-6 text-xs text-muted-foreground">
-            Pas de mot de passe, juste un pseudo.
-          </Text>
+          <Text style={styles.footer}>Pas de mot de passe, juste un pseudo.</Text>
         </View>
       </KeyboardAvoidingView>
     </LinearGradient>
   )
 }
+
+const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
+  gradient: {
+    flex: 1,
+  },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: theme.spacing.page,
+  },
+  logo: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoText: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  title: {
+    marginTop: 12,
+    fontSize: 30,
+    fontWeight: 'bold',
+    color: theme.colors.foreground.DEFAULT,
+  },
+  subtitle: {
+    marginTop: 4,
+    marginBottom: 32,
+    fontSize: 14,
+    color: theme.colors.foreground.muted,
+  },
+  card: {
+    width: '100%',
+    backgroundColor: theme.colors.background.card,
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.cardX,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: theme.colors.foreground.DEFAULT,
+    marginBottom: 8,
+  },
+  input: {
+    height: 48,
+    borderWidth: 1,
+    borderColor: theme.colors.ui.border,
+    borderRadius: theme.borderRadius.md,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: theme.colors.foreground.DEFAULT,
+    backgroundColor: theme.colors.background.card,
+    marginBottom: 20,
+  },
+  buttonGradient: {
+    borderRadius: theme.borderRadius.md,
+  },
+  button: {
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: theme.borderRadius.md,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  footer: {
+    marginTop: 24,
+    fontSize: 12,
+    color: theme.colors.foreground.muted,
+  },
+})
