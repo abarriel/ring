@@ -36,23 +36,6 @@ jobs:
     name: API Health Check
     needs: quality
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: ring
-          POSTGRES_PASSWORD: ring
-          POSTGRES_DB: ring
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U ring"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=5
-    env:
-      DATABASE_URL: postgresql://ring:ring@localhost:5432/ring
-      PORT: 3000
     steps:
       - uses: actions/checkout@v4
 
@@ -66,11 +49,4 @@ jobs:
       - uses: oven-sh/setup-bun@v2
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm db:generate
-      - run: pnpm db:push
-
-      - name: Start API & health check
-        run: |
-          bun apps/api/src/index.ts &
-          sleep 3
-          curl --fail --silent http://localhost:3000/health | grep -q '"status":"ok"'
+      - run: pnpm db:test
