@@ -12,11 +12,12 @@ import { db } from './db.js'
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
 const login = os.input(LoginSchema).handler(async ({ input }) => {
+  const email = `${input.name.toLowerCase().replace(/\s+/g, '_')}@ring.local`
   const user = await db.user.upsert({
-    where: { name: input.name },
+    where: { email },
     create: {
       name: input.name,
-      email: `${input.name.toLowerCase().replace(/\s+/g, '_')}@ring.local`,
+      email,
     },
     update: {},
   })
