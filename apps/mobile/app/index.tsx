@@ -1,6 +1,6 @@
-import { orpc } from '@/lib/orpc'
 import { useQuery } from '@tanstack/react-query'
 import { StyleSheet, Text, View } from 'react-native'
+import { orpc } from '@/lib/orpc'
 
 export default function HomeScreen() {
   const {

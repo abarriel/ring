@@ -1,0 +1,204 @@
+{
+  "meta": {
+    "name": "Ring Design System",
+    "version": "1.0",
+    "device": "iPhone 15 Pro (390x844)"
+  },
+  "colors": {
+    "primary": {
+      "gradient": "from-rose-400 to-pink-500",
+      "gradientHover": "from-rose-500 to-pink-600",
+      "css": "linear-gradient(to right, #fb7185, #ec4899)",
+      "rose400": "#fb7185",
+      "pink500": "#ec4899"
+    },
+    "background": {
+      "page": "from-rose-50 to-pink-100",
+      "pageCss": "linear-gradient(to bottom, #fff1f2, #fce7f3)",
+      "card": "#ffffff",
+      "imageZone": "#fafafa",
+      "surface": "#f9fafb"
+    },
+    "text": {
+      "primary": "#111827",
+      "secondary": "#6b7280",
+      "muted": "#9ca3af",
+      "white": "#ffffff",
+      "whiteSubtle": "rgba(255,255,255,0.8)"
+    },
+    "accent": {
+      "price": {
+        "bg": "#fefce8",
+        "text": "#a16207",
+        "name": "yellow-50 / yellow-700"
+      },
+      "stars": {
+        "filled": "#f59e0b",
+        "name": "amber-500"
+      }
+    },
+    "actions": {
+      "nope": {
+        "border": "#fca5a5",
+        "icon": "#f87171",
+        "hoverBg": "#fef2f2",
+        "name": "red-300 / red-400 / red-50"
+      },
+      "superLike": {
+        "border": "#93c5fd",
+        "icon": "#60a5fa",
+        "hoverBg": "#eff6ff",
+        "name": "blue-300 / blue-400 / blue-50"
+      },
+      "like": {
+        "border": "#86efac",
+        "icon": "#22c55e",
+        "hoverBg": "#f0fdf4",
+        "name": "green-300 / green-500 / green-50"
+      }
+    },
+    "ui": {
+      "border": "#e5e7eb",
+      "avatarBg": "#e5e7eb",
+      "avatarText": "#4b5563",
+      "dotSeparator": "#d1d5db"
+    }
+  },
+  "typography": {
+    "fontFamily": {
+      "sans": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      "serif": "Georgia, 'Times New Roman', serif"
+    },
+    "sizes": {
+      "xs": "12px",
+      "sm": "14px",
+      "base": "16px",
+      "lg": "18px",
+      "xl": "20px",
+      "2xl": "22px",
+      "3xl": "30px",
+      "4xl": "36px"
+    },
+    "weights": {
+      "light": 300,
+      "normal": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    },
+    "usage": {
+      "pageTitle": { "size": "3xl", "weight": "bold", "font": "sans" },
+      "productName": { "size": "2xl", "weight": "bold", "font": "serif" },
+      "headerLogo": { "size": "xl", "weight": "bold", "font": "sans", "color": "primary.gradient" },
+      "label": { "size": "sm", "weight": "medium", "font": "sans" },
+      "body": { "size": "sm", "weight": "normal", "font": "sans" },
+      "caption": { "size": "xs", "weight": "normal", "font": "sans", "color": "text.muted" },
+      "button": { "size": "base", "weight": "semibold", "font": "sans" },
+      "badge": { "size": "sm", "weight": "semibold", "font": "sans" },
+      "specs": { "size": "sm", "weight": "normal", "font": "sans", "color": "text.secondary" },
+      "reviews": { "size": "13px", "weight": "normal", "font": "sans", "color": "text.muted" }
+    }
+  },
+  "spacing": {
+    "pagePadding": "24px",
+    "cardPadding": "20px 24px",
+    "headerPadding": "8px 24px",
+    "sectionGap": "20px",
+    "fieldGap": "8px",
+    "tagGap": "8px",
+    "buttonGroupGap": "20px"
+  },
+  "radii": {
+    "sm": "8px",
+    "md": "12px",
+    "lg": "16px",
+    "xl": "20px",
+    "full": "999px"
+  },
+  "shadows": {
+    "sm": "0 2px 8px rgba(0,0,0,0.06)",
+    "md": "0 4px 12px rgba(0,0,0,0.1)",
+    "lg": "0 8px 30px rgba(0,0,0,0.08)",
+    "xl": "0 20px 40px rgba(0,0,0,0.15)"
+  },
+  "components": {
+    "logo": {
+      "size": "80x80px",
+      "shape": "circle",
+      "background": "primary.gradient",
+      "shadow": "shadows.lg",
+      "content": "R, 36px bold white"
+    },
+    "avatar": {
+      "size": "32x32px",
+      "shape": "circle",
+      "background": "ui.avatarBg",
+      "text": "12px semibold, ui.avatarText"
+    },
+    "priceBadge": {
+      "padding": "6px 14px",
+      "borderRadius": "full",
+      "background": "accent.price.bg",
+      "color": "accent.price.text",
+      "fontSize": "sm",
+      "fontWeight": "semibold",
+      "shadow": "shadows.sm"
+    },
+    "productCard": {
+      "borderRadius": "xl",
+      "background": "background.card",
+      "shadow": "shadows.lg",
+      "border": "none"
+    },
+    "input": {
+      "height": "48px",
+      "borderRadius": "md",
+      "fontSize": "base",
+      "border": "ui.border"
+    },
+    "buttonPrimary": {
+      "height": "48px",
+      "borderRadius": "md",
+      "background": "primary.gradient",
+      "fontSize": "base",
+      "fontWeight": "semibold",
+      "shadow": "shadows.md"
+    },
+    "actionButton": {
+      "large": { "size": "56x56px" },
+      "small": { "size": "48x48px" },
+      "shape": "circle",
+      "borderWidth": "2px",
+      "background": "white",
+      "shadow": "shadows.md"
+    },
+    "specDot": {
+      "size": "4x4px",
+      "shape": "circle",
+      "color": "ui.dotSeparator"
+    },
+    "starRating": {
+      "icon": "filled star ★",
+      "size": "16px",
+      "color": "accent.stars.filled",
+      "gap": "2px"
+    }
+  },
+  "shadcnComponents": [
+    "Card",
+    "CardContent",
+    "CardHeader",
+    "CardTitle",
+    "CardDescription",
+    "Button",
+    "Input",
+    "Label",
+    "Avatar",
+    "Badge"
+  ],
+  "lucideIcons": [
+    "X",
+    "Star",
+    "Heart"
+  ]
+}

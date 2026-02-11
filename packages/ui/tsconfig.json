@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "nativewind"
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "nativewind-env.d.ts"]
+}

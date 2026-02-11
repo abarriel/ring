@@ -1,0 +1,289 @@
+{
+  "device": {
+    "name": "iPhone 15 Pro",
+    "width": 390,
+    "height": 844,
+    "statusBarHeight": 54
+  },
+  "theme": {
+    "primaryGradient": "linear-gradient(to right, #fb7185, #ec4899)",
+    "primaryGradientTw": "from-rose-400 to-pink-500",
+    "fontFamily": "system-ui",
+    "borderRadius": "12px (rounded-xl)"
+  },
+  "screens": {
+    "login": {
+      "file": "login.html",
+      "route": "/login",
+      "description": "Ecran de connexion simple, juste un username",
+      "background": "linear-gradient(to bottom, #fff1f2, #fce7f3)",
+      "backgroundTw": "bg-gradient-to-b from-rose-50 to-pink-100",
+      "padding": "24px horizontal",
+      "elements": [
+        {
+          "id": "logo",
+          "type": "div (circle)",
+          "size": "80x80px",
+          "borderRadius": "50% (rounded-full)",
+          "background": "gradient rose-400 -> pink-500",
+          "shadow": "shadow-lg",
+          "content": "\"R\" 36px bold white",
+          "marginBottom": "12px"
+        },
+        {
+          "id": "app-title",
+          "type": "h1",
+          "text": "Ring",
+          "fontSize": "30px",
+          "fontWeight": "bold (700)",
+          "color": "#111827 (gray-900)",
+          "marginBottom": "4px"
+        },
+        {
+          "id": "subtitle",
+          "type": "p",
+          "text": "Trouve ton match parfait",
+          "fontSize": "14px",
+          "color": "muted-foreground",
+          "marginBottom": "32px"
+        },
+        {
+          "id": "login-card",
+          "shadcn": ["Card", "CardContent"],
+          "width": "100%",
+          "borderRadius": "16px (rounded-2xl)",
+          "shadow": "shadow-lg",
+          "border": "none",
+          "padding": "24px 20px",
+          "children": [
+            {
+              "id": "username-label",
+              "shadcn": "Label",
+              "text": "Pseudo",
+              "fontSize": "14px",
+              "fontWeight": "medium (500)",
+              "marginBottom": "8px"
+            },
+            {
+              "id": "username-input",
+              "shadcn": "Input",
+              "placeholder": "ton_pseudo",
+              "height": "48px",
+              "fontSize": "16px",
+              "borderRadius": "12px (rounded-xl)",
+              "marginBottom": "20px"
+            },
+            {
+              "id": "submit-btn",
+              "shadcn": "Button",
+              "text": "C'est parti",
+              "width": "100%",
+              "height": "48px",
+              "fontSize": "16px",
+              "fontWeight": "semibold (600)",
+              "borderRadius": "12px (rounded-xl)",
+              "background": "gradient rose-400 -> pink-500",
+              "shadow": "shadow-md"
+            }
+          ]
+        },
+        {
+          "id": "footer-hint",
+          "type": "p",
+          "text": "Pas de mot de passe, juste un pseudo.",
+          "fontSize": "12px",
+          "color": "muted-foreground (#9ca3af)",
+          "marginTop": "24px"
+        }
+      ]
+    },
+    "swipe": {
+      "file": "swipe.html",
+      "route": "/swipe",
+      "description": "Ecran swipe produit (style Tinder) avec carte produit fond blanc, image centrée, badge prix, infos et boutons",
+      "background": "linear-gradient(to bottom, #fff1f2, #fce7f3)",
+      "backgroundTw": "bg-gradient-to-b from-rose-50 to-pink-100",
+      "layout": "flex-col full-height",
+      "elements": [
+        {
+          "id": "header",
+          "type": "header bar",
+          "padding": "8px 24px",
+          "children": [
+            {
+              "id": "header-logo",
+              "type": "span",
+              "text": "Ring",
+              "fontSize": "20px",
+              "fontWeight": "bold",
+              "color": "gradient text rose-400 -> pink-500"
+            },
+            {
+              "id": "header-avatar",
+              "type": "div (circle)",
+              "size": "32x32px",
+              "background": "#e5e7eb (gray-200)",
+              "content": "initiales user, 12px semibold gray-600"
+            }
+          ]
+        },
+        {
+          "id": "product-card",
+          "shadcn": "Card",
+          "description": "Carte produit fond blanc avec image centrée et infos en bas",
+          "flex": "1 (prend tout l'espace restant)",
+          "margin": "8px 20px",
+          "borderRadius": "20px (rounded-2xl)",
+          "background": "#fff (white)",
+          "shadow": "shadow-lg (0 8px 30px rgba(0,0,0,0.08))",
+          "border": "none",
+          "overflow": "hidden",
+          "children": [
+            {
+              "id": "image-area",
+              "type": "div",
+              "description": "Zone image avec fond léger, flex-1 pour prendre l'espace",
+              "flex": "1",
+              "background": "#fafafa (gray-50)",
+              "padding": "24px",
+              "display": "flex center",
+              "borderRadius": "20px 20px 0 0",
+              "children": [
+                {
+                  "id": "product-image",
+                  "type": "img",
+                  "maxWidth": "65%",
+                  "maxHeight": "80%",
+                  "objectFit": "contain",
+                  "filter": "drop-shadow(0 8px 24px rgba(0,0,0,0.12))"
+                },
+                {
+                  "id": "price-badge",
+                  "shadcn": "Badge (custom)",
+                  "position": "absolute top-16px right-16px",
+                  "background": "#fefce8 (yellow-50)",
+                  "color": "#a16207 (yellow-700)",
+                  "fontSize": "14px",
+                  "fontWeight": "semibold (600)",
+                  "padding": "6px 14px",
+                  "borderRadius": "full (pill)",
+                  "shadow": "0 2px 8px rgba(0,0,0,0.06)",
+                  "exampleText": "$8,500"
+                }
+              ]
+            },
+            {
+              "id": "product-info",
+              "type": "div",
+              "padding": "20px 24px 24px",
+              "children": [
+                {
+                  "id": "product-name",
+                  "type": "h2",
+                  "text": "Eternal Promise",
+                  "fontSize": "22px",
+                  "fontWeight": "bold (700)",
+                  "fontFamily": "Georgia, serif",
+                  "color": "#111827 (gray-900)",
+                  "marginBottom": "8px"
+                },
+                {
+                  "id": "product-specs",
+                  "type": "flex row",
+                  "description": "Caractéristiques séparées par des dots",
+                  "gap": "6px",
+                  "fontSize": "14px",
+                  "color": "#6b7280 (gray-500)",
+                  "marginBottom": "12px",
+                  "separator": {
+                    "type": "dot",
+                    "size": "4x4px",
+                    "borderRadius": "full",
+                    "color": "#d1d5db (gray-300)"
+                  },
+                  "exampleValues": ["2.5 Carat", "Platinum", "Princess Cut"]
+                },
+                {
+                  "id": "stars-row",
+                  "type": "flex row",
+                  "gap": "6px",
+                  "children": [
+                    {
+                      "id": "stars",
+                      "type": "flex row",
+                      "gap": "2px",
+                      "icon": "filled star ★",
+                      "fontSize": "16px",
+                      "color": "#f59e0b (amber-500)",
+                      "count": 5
+                    },
+                    {
+                      "id": "review-count",
+                      "type": "span",
+                      "text": "(2,847 reviews)",
+                      "fontSize": "13px",
+                      "color": "#9ca3af (gray-400)"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action-buttons",
+          "type": "flex row centered",
+          "gap": "20px",
+          "padding": "16px 24px 24px",
+          "children": [
+            {
+              "id": "nope-btn",
+              "shadcn": "Button",
+              "variant": "outline",
+              "size": "icon",
+              "icon": "lucide:X",
+              "iconSize": "28x28px",
+              "width": "56px",
+              "height": "56px",
+              "borderRadius": "full (circle)",
+              "border": "2px solid #fca5a5 (red-300)",
+              "iconColor": "#f87171 (red-400)",
+              "hoverBg": "red-50",
+              "shadow": "shadow-md"
+            },
+            {
+              "id": "super-btn",
+              "shadcn": "Button",
+              "variant": "outline",
+              "size": "icon",
+              "icon": "lucide:Star",
+              "iconSize": "20x20px",
+              "width": "48px",
+              "height": "48px",
+              "borderRadius": "full (circle)",
+              "border": "2px solid #93c5fd (blue-300)",
+              "iconColor": "#60a5fa (blue-400)",
+              "hoverBg": "blue-50",
+              "shadow": "shadow-md"
+            },
+            {
+              "id": "like-btn",
+              "shadcn": "Button",
+              "variant": "outline",
+              "size": "icon",
+              "icon": "lucide:Heart",
+              "iconSize": "28x28px",
+              "width": "56px",
+              "height": "56px",
+              "borderRadius": "full (circle)",
+              "border": "2px solid #86efac (green-300)",
+              "iconColor": "#22c55e (green-500)",
+              "hoverBg": "green-50",
+              "shadow": "shadow-md"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
