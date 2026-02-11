@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ring - Swipe Mockup</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f3f4f6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* Phone frame */
+    .phone {
+      width: 390px;
+      height: 844px;
+      background: #000;
+      border-radius: 60px;
+      padding: 14px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+      position: relative;
+    }
+    .notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 126px;
+      height: 34px;
+      background: #000;
+      border-radius: 0 0 24px 24px;
+      z-index: 20;
+    }
+    .screen {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, #fff1f2, #fce7f3);
+      border-radius: 48px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Status bar */
+    .status-bar {
+      height: 54px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 0 32px 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #000;
+      flex-shrink: 0;
+    }
+    .battery {
+      width: 22px;
+      height: 11px;
+      border: 1.5px solid #000;
+      border-radius: 3px;
+      position: relative;
+    }
+    .battery::after {
+      content: '';
+      position: absolute;
+      inset: 2px;
+      right: 3px;
+      background: #000;
+      border-radius: 1px;
+    }
+    .battery::before {
+      content: '';
+      position: absolute;
+      right: -4px;
+      top: 2px;
+      width: 2px;
+      height: 5px;
+      background: #000;
+      border-radius: 0 1px 1px 0;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 24px;
+      flex-shrink: 0;
+    }
+    .header-logo {
+      font-size: 20px;
+      font-weight: 700;
+      background: linear-gradient(to right, #fb7185, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: #4b5563;
+    }
+
+    /* Product card */
+    .card-area {
+      flex: 1;
+      padding: 8px 20px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .product-card {
+      width: 100%;
+      flex: 1;
+      border-radius: 20px;
+      background: #fff;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Image area */
+    .image-area {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      min-height: 0;
+      background: #fafafa;
+      border-radius: 20px 20px 0 0;
+    }
+    .product-image {
+      max-width: 65%;
+      max-height: 80%;
+      object-fit: contain;
+      filter: drop-shadow(0 8px 24px rgba(0,0,0,0.12));
+    }
+
+    /* Price badge */
+    .price-badge {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: #fefce8;
+      color: #a16207;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 999px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    /* Product info */
+    .product-info {
+      padding: 20px 24px 24px;
+    }
+    .product-name {
+      font-size: 22px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 8px;
+      font-family: Georgia, 'Times New Roman', serif;
+    }
+    .product-specs {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 12px;
+    }
+    .spec-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #d1d5db;
+    }
+    .stars-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .stars {
+      display: flex;
+      gap: 2px;
+    }
+    .star {
+      color: #f59e0b;
+      font-size: 16px;
+    }
+    .review-count {
+      font-size: 13px;
+      color: #9ca3af;
+    }
+
+    /* Action buttons */
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 16px 24px 24px;
+      flex-shrink: 0;
+    }
+    .action-btn {
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .action-btn.nope {
+      width: 56px;
+      height: 56px;
+      border: 2px solid #fca5a5;
+    }
+    .action-btn.nope svg { color: #f87171; }
+    .action-btn.super {
+      width: 48px;
+      height: 48px;
+      border: 2px solid #93c5fd;
+    }
+    .action-btn.super svg { color: #60a5fa; }
+    .action-btn.like {
+      width: 56px;
+      height: 56px;
+      border: 2px solid #86efac;
+    }
+    .action-btn.like svg { color: #22c55e; }
+
+    /* Annotations */
+    .annotations {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 20px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.8;
+      max-width: 340px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .annotations h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 8px;
+    }
+    .annotations code {
+      background: #334155;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #93c5fd;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="battery"></div>
+      </div>
+
+      <!-- Header -->
+      <div class="header">
+        <span class="header-logo">Ring</span>
+        <div class="header-avatar">JD</div>
+      </div>
+
+      <!-- Product card -->
+      <div class="card-area">
+        <div class="product-card">
+          <div class="image-area">
+            <div class="price-badge">$8,500</div>
+            <img
+              class="product-image"
+              src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop"
+              alt="Eternal Promise Ring"
+              onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23d1d5db%22 stroke-width=%221%22><circle cx=%2212%22 cy=%2212%22 r=%228%22/><path d=%22M12 4a1 1 0 011 1%22/></svg>'"
+            />
+          </div>
+          <div class="product-info">
+            <div class="product-name">Eternal Promise</div>
+            <div class="product-specs">
+              <span>2.5 Carat</span>
+              <div class="spec-dot"></div>
+              <span>Platinum</span>
+              <div class="spec-dot"></div>
+              <span>Princess Cut</span>
+            </div>
+            <div class="stars-row">
+              <div class="stars">
+                <span class="star">&#9733;</span>
+                <span class="star">&#9733;</span>
+                <span class="star">&#9733;</span>
+                <span class="star">&#9733;</span>
+                <span class="star">&#9733;</span>
+              </div>
+              <span class="review-count">(2,847 reviews)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="actions">
+        <div class="action-btn nope">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </div>
+        <div class="action-btn super">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+        </div>
+        <div class="action-btn like">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="annotations">
+    <h3>Swipe Screen - Specs</h3>
+    <strong>Header</strong> : <code>py-8px px-24px</code><br>
+    &nbsp;&nbsp;Logo : <code>20px</code> bold, gradient text<br>
+    &nbsp;&nbsp;Avatar : <code>32x32px</code> circle, <code>bg-gray-200</code><br><br>
+    <strong>Product Card</strong> : <code>r-20px</code> bg-white shadow<br>
+    &nbsp;&nbsp;Image zone : <code>flex-1</code> <code>bg-gray-50</code> center<br>
+    &nbsp;&nbsp;Image : <code>max-w-65%</code> <code>object-contain</code> drop-shadow<br>
+    &nbsp;&nbsp;Price badge : <code>abs top-16 right-16</code> pill<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;<code>bg-yellow-50</code> <code>text-yellow-700</code> <code>14px</code> semibold<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;<code>px-14 py-6</code> rounded-full<br><br>
+    <strong>Product Info</strong> : <code>p-20px 24px</code><br>
+    &nbsp;&nbsp;Nom : <code>22px</code> bold serif (Georgia)<br>
+    &nbsp;&nbsp;Specs : <code>14px</code> gray-500, dot separators <code>4px</code><br>
+    &nbsp;&nbsp;Stars : <code>16px</code> <code>amber-500</code> filled<br>
+    &nbsp;&nbsp;Reviews : <code>13px</code> <code>gray-400</code><br><br>
+    <strong>Boutons action</strong> : <code>gap-20px</code> <code>py-16px</code><br>
+    &nbsp;&nbsp;Nope (X) : <code>56x56px</code> <code>border-red-300</code><br>
+    &nbsp;&nbsp;Super (Star) : <code>48x48px</code> <code>border-blue-300</code><br>
+    &nbsp;&nbsp;Like (Heart) : <code>56x56px</code> <code>border-green-300</code><br><br>
+    <strong>shadcn :</strong> Card, Button (outline, icon), Badge<br>
+    <strong>icons :</strong> lucide X, Star, Heart
+  </div>
+</body>
+</html>
