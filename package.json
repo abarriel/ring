@@ -16,6 +16,12 @@
     "db:studio": "pnpm --filter @ring/api db:studio"
   },
   "pnpm": {
+    "overrides": {
+      "react": "19.2.4",
+      "react-dom": "19.2.4",
+      "react-native": "0.83.1",
+      "react-native-svg": "15.15.3"
+    },
     "peerDependencyRules": {
       "allowedVersions": {
         "react-dom>react": ">=19"
