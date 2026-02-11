@@ -14,6 +14,28 @@ jobs:
   quality:
     name: Lint, Typecheck & Build
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - uses: oven-sh/setup-bun@v2
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm build
+
+  api-health:
+    name: API Health Check
+    needs: quality
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
     steps:
       - uses: actions/checkout@v4
 
@@ -28,25 +50,4 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm build
-
-  api-health:
-    name: API Health Check
-    needs: quality
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-
-      - uses: oven-sh/setup-bun@v2
-
-      - run: pnpm install --frozen-lockfile
       - run: pnpm db:test

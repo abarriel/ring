@@ -31,6 +31,7 @@ dist/
 Thumbs.db
 
 # Prisma
+apps/api/prisma/generated/
 apps/api/prisma/*.db
 apps/api/prisma/*.db-journal
 

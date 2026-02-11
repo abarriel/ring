@@ -43,6 +43,7 @@
     "@orpc/server": "^1.13.5",
     "@ring/api": "workspace:*",
     "@types/react": "~19.2.14",
+    "react-native-css-interop": "^0.2.1",
     "tailwindcss": "~4.1.18"
   }
 }

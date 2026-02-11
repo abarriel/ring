@@ -13,6 +13,9 @@
       "correctness": {
         "noUnusedImports": "warn",
         "noUnusedVariables": "warn"
+      },
+      "suspicious": {
+        "noUnknownAtRules": "off"
       }
     }
   },

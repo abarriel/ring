@@ -1,5 +1,11 @@
 import { os } from '@orpc/server'
-import { CreateUserSchema, LoginSchema, UpdateUserSchema, UserSchema } from '@ring/shared'
+import {
+  CreateUserSchema,
+  LoginSchema,
+  type UpdateUser,
+  UpdateUserSchema,
+  UserSchema,
+} from '@ring/shared'
 import { z } from 'zod'
 import { db } from './db.js'
 
@@ -53,7 +59,7 @@ const updateUser = os
   .handler(async ({ input }) => {
     const user = await db.user.update({
       where: { id: input.id },
-      data: input.data,
+      data: input.data as UpdateUser,
     })
     return user
   })
