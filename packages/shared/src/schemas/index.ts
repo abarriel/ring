@@ -20,7 +20,12 @@ export const CreateUserSchema = UserSchema.omit({
 
 export const UpdateUserSchema = CreateUserSchema.partial()
 
+export const LoginSchema = z.object({
+  name: z.string().min(1).max(100),
+})
+
 // ── Inferred types ──────────────────────────────────────────────────────────
 export type User = z.infer<typeof UserSchema>
 export type CreateUser = z.infer<typeof CreateUserSchema>
 export type UpdateUser = z.infer<typeof UpdateUserSchema>
+export type Login = z.infer<typeof LoginSchema>

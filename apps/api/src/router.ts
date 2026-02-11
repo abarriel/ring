@@ -1,7 +1,21 @@
 import { os } from '@orpc/server'
-import { CreateUserSchema, UpdateUserSchema, UserSchema } from '@ring/shared'
+import { CreateUserSchema, LoginSchema, UpdateUserSchema, UserSchema } from '@ring/shared'
 import { z } from 'zod'
 import { db } from './db.js'
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+
+const login = os.input(LoginSchema).handler(async ({ input }) => {
+  const user = await db.user.upsert({
+    where: { name: input.name },
+    create: {
+      name: input.name,
+      email: `${input.name.toLowerCase().replace(/\s+/g, '_')}@ring.local`,
+    },
+    update: {},
+  })
+  return user
+})
 
 // ── Procedures ──────────────────────────────────────────────────────────────
 
@@ -52,6 +66,9 @@ const deleteUser = os.input(z.object({ id: z.string().uuid() })).handler(async (
 // ── Router ──────────────────────────────────────────────────────────────────
 
 export const router = {
+  auth: {
+    login,
+  },
   user: {
     list: listUsers,
     get: getUser,

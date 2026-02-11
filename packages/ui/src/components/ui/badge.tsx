@@ -1,5 +1,5 @@
 import * as Slot from '@rn-primitives/slot'
-import { type VariantProps, cva } from 'class-variance-authority'
+import { cva, type VariantProps } from 'class-variance-authority'
 import { Platform, View, type ViewProps } from 'react-native'
 import { cn } from '../../lib/utils'
 import { TextClassContext } from './text'

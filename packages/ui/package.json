@@ -3,10 +3,20 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "main": "./src/index.ts",
   "exports": {
-    ".": { "types": "./src/index.ts", "default": "./src/index.ts" },
-    "./components/*": { "types": "./src/components/*.tsx", "default": "./src/components/*.tsx" },
-    "./lib/*": { "types": "./src/lib/*.ts", "default": "./src/lib/*.ts" },
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./components/*": {
+      "types": "./src/components/*.tsx",
+      "default": "./src/components/*.tsx"
+    },
+    "./lib/*": {
+      "types": "./src/lib/*.ts",
+      "default": "./src/lib/*.ts"
+    },
     "./tailwind-preset": {
       "types": "./src/tailwind-preset.ts",
       "default": "./src/tailwind-preset.ts"
@@ -22,15 +32,15 @@
     "@rn-primitives/slot": "~1.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "lucide-react-native": "^0.545.0",
+    "lucide-react-native": "^0.563.0",
     "nativewind": "^4.2.1",
-    "react-native-reanimated": "~3.16.1",
-    "react-native-svg": "15.8.0",
-    "tailwind-merge": "^3.3.1"
+    "react-native-reanimated": "~4.2.1",
+    "react-native-svg": "15.15.3",
+    "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
-    "@types/react": "~18.3.12",
-    "tailwindcss": "~3.4.0"
+    "@types/react": "~19.2.14",
+    "tailwindcss": "~4.1.18"
   },
   "peerDependencies": {
     "react": "*",
