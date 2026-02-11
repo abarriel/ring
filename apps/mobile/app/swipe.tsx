@@ -1,7 +1,7 @@
 import { Heart, Star, theme, X } from '@ring/ui'
 import { LinearGradient } from 'expo-linear-gradient'
-import { useCallback, useState } from 'react'
-import { Dimensions, Image, Pressable, StyleSheet, Text, View } from 'react-native'
+import { useCallback, useMemo, useState } from 'react'
+import { Image, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, {
   interpolate,
@@ -73,19 +73,17 @@ const PRODUCTS: Product[] = [
   },
 ]
 
-// ── Constants ────────────────────────────────────────────────────────────────
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window')
-const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.35
-
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function SwipeScreen() {
   const insets = useSafeAreaInsets()
+  const { width: screenWidth } = useWindowDimensions()
+  const swipeThreshold = screenWidth * 0.35
   const [currentIndex, setCurrentIndex] = useState(0)
 
   const translateX = useSharedValue(0)
   const translateY = useSharedValue(0)
+  const isAnimating = useSharedValue(false)
 
   const currentProduct = PRODUCTS[currentIndex]
 
@@ -93,38 +91,48 @@ export default function SwipeScreen() {
     setCurrentIndex((prev) => prev + 1)
     translateX.value = 0
     translateY.value = 0
-  }, [translateX, translateY])
+    isAnimating.value = false
+  }, [translateX, translateY, isAnimating])
 
   const swipeOff = useCallback(
     (direction: 'left' | 'right') => {
-      const target = direction === 'left' ? -SCREEN_WIDTH * 1.5 : SCREEN_WIDTH * 1.5
+      if (isAnimating.value) return
+      isAnimating.value = true
+      const target = direction === 'left' ? -screenWidth * 1.5 : screenWidth * 1.5
       translateX.value = withTiming(target, { duration: 300 }, () => {
         runOnJS(advanceCard)()
       })
     },
-    [translateX, advanceCard],
+    [translateX, isAnimating, screenWidth, advanceCard],
   )
 
-  const panGesture = Gesture.Pan()
-    .onUpdate((event) => {
-      translateX.value = event.translationX
-      translateY.value = event.translationY * 0.4
-    })
-    .onEnd((event) => {
-      if (Math.abs(event.translationX) > SWIPE_THRESHOLD) {
-        const direction = event.translationX > 0 ? 'right' : 'left'
-        const target = direction === 'left' ? -SCREEN_WIDTH * 1.5 : SCREEN_WIDTH * 1.5
-        translateX.value = withTiming(target, { duration: 300 }, () => {
-          runOnJS(advanceCard)()
+  const panGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .onUpdate((event) => {
+          if (isAnimating.value) return
+          translateX.value = event.translationX
+          translateY.value = event.translationY * 0.4
         })
-      } else {
-        translateX.value = withSpring(0, { damping: 15, stiffness: 150 })
-        translateY.value = withSpring(0, { damping: 15, stiffness: 150 })
-      }
-    })
+        .onEnd((event) => {
+          if (isAnimating.value) return
+          if (Math.abs(event.translationX) > swipeThreshold) {
+            isAnimating.value = true
+            const direction = event.translationX > 0 ? 'right' : 'left'
+            const target = direction === 'left' ? -screenWidth * 1.5 : screenWidth * 1.5
+            translateX.value = withTiming(target, { duration: 300 }, () => {
+              runOnJS(advanceCard)()
+            })
+          } else {
+            translateX.value = withSpring(0, { damping: 15, stiffness: 150 })
+            translateY.value = withSpring(0, { damping: 15, stiffness: 150 })
+          }
+        }),
+    [translateX, translateY, isAnimating, screenWidth, swipeThreshold, advanceCard],
+  )
 
   const cardAnimatedStyle = useAnimatedStyle(() => {
-    const rotate = interpolate(translateX.value, [-SCREEN_WIDTH, 0, SCREEN_WIDTH], [-15, 0, 15])
+    const rotate = interpolate(translateX.value, [-screenWidth, 0, screenWidth], [-15, 0, 15])
     return {
       transform: [
         { translateX: translateX.value },
@@ -135,20 +143,23 @@ export default function SwipeScreen() {
   })
 
   const likeOverlayStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(translateX.value, [0, SWIPE_THRESHOLD], [0, 1]),
+    opacity: interpolate(translateX.value, [0, swipeThreshold], [0, 1]),
   }))
 
   const nopeOverlayStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(translateX.value, [0, -SWIPE_THRESHOLD], [0, 1]),
+    opacity: interpolate(translateX.value, [0, -swipeThreshold], [0, 1]),
   }))
 
   const handleNope = useCallback(() => swipeOff('left'), [swipeOff])
   const handleSuper = useCallback(() => {
-    // Super-like: animate upward
-    translateY.value = withTiming(-SCREEN_WIDTH * 1.5, { duration: 300 }, () => {
+    if (isAnimating.value) return
+    isAnimating.value = true
+    // Reset horizontal offset so the card flies straight up
+    translateX.value = withTiming(0, { duration: 100 })
+    translateY.value = withTiming(-screenWidth * 1.5, { duration: 300 }, () => {
       runOnJS(advanceCard)()
     })
-  }, [translateY, advanceCard])
+  }, [translateX, translateY, isAnimating, screenWidth, advanceCard])
   const handleLike = useCallback(() => swipeOff('right'), [swipeOff])
 
   const formatPrice = (price: number) => `$${price.toLocaleString('en-US')}`
