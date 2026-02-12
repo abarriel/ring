@@ -48,8 +48,19 @@ Add relation fields to the existing `User` model:
 
 ### Dev catalog
 
-No seeder needed. Hardcode 2-3 rings with 2 images each using random Unsplash CDN URLs (`https://images.unsplash.com/photo-ID?w=800`). This is enough to develop and test all features.
+No seeder needed. Hardcode 3 rings with 2 images each using a fixed set of Unsplash CDN URLs so the dev catalog is deterministic and stable across environments. For example:
 
+- **Ring 1 images**
+  - `https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&auto=format&fit=crop`
+  - `https://images.unsplash.com/photo-1522336572468-97b06e8ef143?w=800&auto=format&fit=crop`
+- **Ring 2 images**
+  - `https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=800&auto=format&fit=crop`
+  - `https://images.unsplash.com/photo-1514986888952-8cd320577b68?w=800&auto=format&fit=crop`
+- **Ring 3 images**
+  - `https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&auto=format&fit=crop`
+  - `https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=800&auto=format&fit=crop`
+
+These images are for development/testing only. Before any production or marketing use, verify Unsplash licensing and attribution requirements for each photo ID.
 > **Data strategy**: once the app is fully built, ring data will be acquired by crawling jewelry sites. No need to invest in fake data generation now.
 
 ### Tasks
