@@ -1,5 +1,7 @@
+import { theme } from '@ring/ui'
 import { useQuery } from '@tanstack/react-query'
-import { StyleSheet, Text, View } from 'react-native'
+import { router } from 'expo-router'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { orpc } from '@/lib/orpc'
 
 export default function HomeScreen() {
@@ -12,6 +14,10 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Ring</Text>
+
+      <Pressable style={styles.swipeButton} onPress={() => router.push('/swipe')}>
+        <Text style={styles.swipeButtonText}>Swipe</Text>
+      </Pressable>
 
       {isLoading && <Text>Loading...</Text>}
 
@@ -39,6 +45,19 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     marginBottom: 24,
+  },
+  swipeButton: {
+    backgroundColor: theme.colors.ring.rose400,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  swipeButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   card: {
     padding: 16,
