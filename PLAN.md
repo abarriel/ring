@@ -80,7 +80,7 @@ Define a unified approach to errors before building features:
 
 For viral growth tracking, instrument core events from day one:
 
-- Choose analytics tool (Expo Analytics, Posthog, or simple custom events)
+- Choose analytics tool (Expo Analytics, PostHog, or simple custom events)
 - Define core events: `signup`, `swipe`, `match`, `share`, `invite_sent`, `invite_accepted`
 - Track signup conversion from anonymous mode
 - Track swipes per session and match rate
