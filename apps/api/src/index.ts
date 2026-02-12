@@ -1,6 +1,8 @@
 import { onError } from '@orpc/server'
 import { RPCHandler } from '@orpc/server/fetch'
 import { CORSPlugin } from '@orpc/server/plugins'
+import { db } from './db.js'
+import { seedDevCatalog } from './dev-catalog.js'
 import { router } from './router.js'
 
 const handler = new RPCHandler(router, {
@@ -35,5 +37,7 @@ const server = Bun.serve({
     return new Response('Not Found', { status: 404 })
   },
 })
+
+await seedDevCatalog(db)
 
 console.log(`🚀 Ring API running at http://localhost:${server.port}`)
