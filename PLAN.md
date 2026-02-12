@@ -289,7 +289,7 @@ When a match is found:
 - **"Share" button** generates a shareable card (ring image + couple names + Ring branding) and opens the native share sheet
 - Targets: Instagram Stories, iMessage, WhatsApp, generic share
 - The shared link deep-links back to the app (or App Store if not installed)
-- Deep link includes attribution params: `ring://match/[matchId]?referrer=[coupleId]` for growth tracking
+- Deep link includes attribution params: `ring://match/:matchId?referrer=:coupleId` for growth tracking
 
 This is the primary organic growth mechanism. Every shared match is free advertising.
 
