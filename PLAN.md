@@ -68,8 +68,10 @@ These images are for development/testing only. Before any production or marketin
 - [ ] Design & add Prisma schema (all models + all 5 enums + relations + unique constraints)
 - [ ] Add relation fields + sessionToken to existing User model
 - [ ] Add Zod schemas in `@ring/shared`: `RingSchema`, `RingImageSchema`, `SwipeSchema`, `CoupleSchema`, `MatchSchema` + create/update variants, plus all enum schemas
-- [ ] Hardcode 2-3 dev rings with CDN image URLs directly in a migration or manual insert
-- [ ] Run `pnpm db:push` and verify
+- [ ] Create `prisma/seed.ts` with 2-3 dev rings + CDN image URLs (using the fixed Unsplash URLs from the Dev catalog section above)
+- [ ] Configure `prisma.seed` in `apps/api/package.json` to point to the seed script
+- [ ] Add `db:seed` script to `apps/api/package.json` that runs `bunx --bun prisma db seed`
+- [ ] Run `pnpm db:push` and `pnpm --filter @ring/api db:seed` to verify
 - [ ] Verify Unsplash licensing terms for production use (consider paid stock or AI-generated alternatives)
 
 ---
