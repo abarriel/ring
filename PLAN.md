@@ -57,7 +57,7 @@ No seeder needed. Hardcode 3 rings with 2 images each using a fixed set of Unspl
   - `https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=800&auto=format&fit=crop`
   - `https://images.unsplash.com/photo-1514986888952-8cd320577b68?w=800&auto=format&fit=crop`
 - **Ring 3 images**
-  - `https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&auto=format&fit=crop`
+  - `https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop`
   - `https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=800&auto=format&fit=crop`
 
 These images are for development/testing only. Before any production or marketing use, verify Unsplash licensing and attribution requirements for each photo ID.
@@ -68,7 +68,7 @@ These images are for development/testing only. Before any production or marketin
 - [ ] Design & add Prisma schema (all models + all 5 enums + relations + unique constraints)
 - [ ] Add relation fields + sessionToken to existing User model
 - [ ] Add Zod schemas in `@ring/shared`: `RingSchema`, `RingImageSchema`, `SwipeSchema`, `CoupleSchema`, `MatchSchema` + create/update variants, plus all enum schemas
-- [ ] Create `prisma/seed.ts` with 2-3 dev rings + CDN image URLs (using the fixed Unsplash URLs from the Dev catalog section above)
+- [ ] Create `prisma/seed.ts` with 3 dev rings + CDN image URLs (using the fixed Unsplash URLs from the Dev catalog section above)
 - [ ] Configure `prisma.seed` in `apps/api/package.json` to point to the seed script
 - [ ] Add `db:seed` script to `apps/api/package.json` that runs `bunx --bun prisma db seed`
 - [ ] Run `pnpm db:push` and `pnpm --filter @ring/api db:seed` to verify
