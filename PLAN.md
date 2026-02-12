@@ -12,9 +12,9 @@ Ring lets users **swipe** through a curated catalog of engagement rings to build
 
 ---
 
-## Phase 0 -- Data Model & Seed Catalog
+## Phase 0 -- Data Model & Dev Catalog
 
-> Foundation: design the DB schema and populate with ring data.
+> Foundation: design the DB schema and add a few dev rings.
 
 ### Prisma models
 
@@ -46,18 +46,29 @@ Add relation fields to the existing `User` model:
 - `preferredStones StoneType[]` (for Phase 7 feed personalization)
 - `preferredStyles RingStyle[]` (for Phase 7 feed personalization)
 
-### Seed strategy
+### Dev catalog
 
-- ~150 rings with realistic names, descriptions, specs
-- 3-5 images per ring from curated Unsplash collections (via `https://images.unsplash.com/photo-ID?w=800` -- stable CDN URLs with size params, not hotlinks)
-- Seed script: `apps/api/prisma/seed.ts`
+No seeder needed. Hardcode 3 rings with 2 images each using a fixed set of Unsplash CDN URLs so the dev catalog is deterministic and stable across environments. For example:
+
+- **Ring 1 images**
+  - `https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&auto=format&fit=crop`
+  - `https://images.unsplash.com/photo-1522336572468-97b06e8ef143?w=800&auto=format&fit=crop`
+- **Ring 2 images**
+  - `https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=800&auto=format&fit=crop`
+  - `https://images.unsplash.com/photo-1514986888952-8cd320577b68?w=800&auto=format&fit=crop`
+- **Ring 3 images**
+  - `https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&auto=format&fit=crop`
+  - `https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=800&auto=format&fit=crop`
+
+These images are for development/testing only. Before any production or marketing use, verify Unsplash licensing and attribution requirements for each photo ID.
+> **Data strategy**: once the app is fully built, ring data will be acquired by crawling jewelry sites. No need to invest in fake data generation now.
 
 ### Tasks
 
 - [ ] Design & add Prisma schema (all models + all 5 enums + relations + unique constraints)
 - [ ] Add relation fields + sessionToken to existing User model
 - [ ] Add Zod schemas in `@ring/shared`: `RingSchema`, `RingImageSchema`, `SwipeSchema`, `CoupleSchema`, `MatchSchema` + create/update variants, plus all enum schemas
-- [ ] Write seed script (~150 rings, 3-5 images each)
+- [ ] Hardcode 2-3 dev rings with CDN image URLs directly in a migration or manual insert
 - [ ] Run `pnpm db:push` and verify
 - [ ] Verify Unsplash licensing terms for production use (consider paid stock or AI-generated alternatives)
 
@@ -430,7 +441,7 @@ This is the primary organic growth mechanism. Every shared match is free adverti
 
 | Phase | What | Key deliverable |
 |-------|------|----------------|
-| **0** | Data model + seed | All models, enums, constraints, 150 rings in DB |
+| **0** | Data model + dev catalog | All models, enums, constraints, 2-3 dev rings with CDN images |
 | **0.5** | Cross-cutting foundations | Error handling, analytics, test harness |
 | **1** | Auth + Ring API + swipe backend | Token auth with expiration, data-driven swiping, anonymous try-before-signup |
 | **2** | Ring detail screen | Full ring info with image carousel |
