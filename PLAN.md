@@ -330,7 +330,7 @@ This is the primary organic growth mechanism. Every shared match is free adverti
 
 - [ ] Add preference fields to User model
 - [ ] Build profile screen UI
-- [ ] Wire stats (count queries: total swipes = LIKE + NOPE + SUPER, likes count, match count. Ignore re-swipes by using `createdAt` only)
+- [ ] Wire stats (count queries: total unique rings swiped = count of distinct `(userId, ringId)` in `Swipe`, likes count, match count. Treat re-swipes as updates (`updatedAt`) that must not increment counts.)
 - [ ] Implement preference-based feed sorting
 - [ ] Logout flow (clear AsyncStorage + session token, redirect to login)
 - [ ] Add loading + error states
