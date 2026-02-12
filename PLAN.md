@@ -116,7 +116,7 @@ The current login is name-only with no session management. Before building any u
 - Add `authMiddleware` to oRPC that reads the token from headers, resolves the current user, and injects `ctx.user` into all protected procedures
 - Public procedures (ring catalog browsing) don't require auth
 - Protected procedures (swipe, couple, match) require auth
-- Add `sessionExpiresAt DateTime?` to User model. Set to 30 days from login. Validate in `authMiddleware` -- reject expired tokens. Refresh expiration on every authenticated request.
+- Add `sessionExpiresAt DateTime?` to User model. Set to 30 days from login. Validate in `authMiddleware` -- reject expired tokens. Refresh expiration only when the session is close to expiry (for example, when less than 7 days remain) to avoid a DB write on every request.
 
 ### API procedures
 
