@@ -438,10 +438,10 @@ This is the primary organic growth mechanism. Every shared match is free adverti
 | **4** | Favorites list | View all liked rings |
 | **5** | Partner pairing | Couple system with share-first invite flow + error handling |
 | **6** | Match list + sharing | See matches, share to social (viral loop) with attribution |
-| **7** | Profile &amp; settings | User prefs, stats, preference-scored feed |
+| **7** | Profile & settings | User prefs, stats, preference-scored feed |
 | **8** | Push notifications | Match alerts, partner joined, new rings, deep link mapping |
-| **9** | Polish &amp; ship | Skeletons, haptics, onboarding, EAS build, E2E tests |
-| **10** | Admin &amp; post-MVP | Admin web app, ring CRUD, analytics dashboard |
+| **9** | Polish & ship | Skeletons, haptics, onboarding, EAS build, E2E tests |
+| **10** | Admin & post-MVP | Admin web app, ring CRUD, analytics dashboard |
 
 ---
 
