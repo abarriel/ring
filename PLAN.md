@@ -22,7 +22,7 @@ Ring lets users **swipe** through a curated catalog of engagement rings to build
 |-------|-----------|
 | `Ring` | id, name, description, metalType (enum), stoneType (enum), caratWeight (float), style (enum), rating (float), reviewCount (int), createdAt, updatedAt |
 | `RingImage` | id, ringId (FK), url, position (int for ordering) |
-| `Swipe` | id, userId (FK), ringId (FK), direction (enum), createdAt, updatedAt. **Unique constraint on (userId, ringId)** -- one swipe per ring per user |
+| `Swipe` | id, userId (FK), ringId (FK), direction (enum), createdAt, updatedAt. **Unique constraint on `(userId, ringId)`** -- one swipe per ring per user |
 | `Couple` | id, code (unique 6-char), inviterId (FK), partnerId (FK nullable), status (enum), createdAt, dissolvedAt (nullable) |
 | `Match` | id, coupleId (FK), ringId (FK), createdAt. **Unique constraint on `(coupleId, ringId)`** -- prevents duplicate matches from concurrent swipes |
 
