@@ -23,7 +23,7 @@
   "dependencies": {
     "@orpc/server": "^1.13.5",
     "@orpc/zod": "^1.13.5",
-    "@prisma/adapter-pg": "^7.3.0",
+    "@prisma/adapter-pg": "^7.4.0",
     "@prisma/client": "^7.4.0",
     "@ring/shared": "workspace:*",
     "zod": "^4.3.6"
