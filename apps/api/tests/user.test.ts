@@ -58,6 +58,7 @@ describe('user.list', () => {
     const users = await call(router.user.list, { limit: 10, offset: 0 })
 
     expect(users).toHaveLength(2)
+    expect(users[1]?.id).toBeDefined()
     // Most recent first
     expect(users[0]?.id).toBe(b.id)
     expect(users[0]?.createdAt.getTime()).toBeGreaterThanOrEqual(users[1]?.createdAt.getTime())
