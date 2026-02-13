@@ -23,6 +23,12 @@ export const theme = {
       super: { border: '#93c5fd', icon: '#60a5fa', bg: '#eff6ff' },
       like: { border: '#86efac', icon: '#22c55e', bg: '#f0fdf4' },
     },
+    feedback: {
+      error: { bg: '#fef2f2', text: '#dc2626', border: '#fca5a5' },
+      success: { bg: '#f0fdf4', text: '#16a34a', border: '#86efac' },
+      warning: { bg: '#fffbeb', text: '#d97706', border: '#fcd34d' },
+      info: { bg: '#eff6ff', text: '#2563eb', border: '#93c5fd' },
+    },
     ui: {
       border: '#e5e7eb',
       avatarBg: '#e5e7eb',

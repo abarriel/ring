@@ -18,7 +18,8 @@ export function testContext(token?: string) {
 }
 
 beforeEach(async () => {
-  await db.$executeRawUnsafe('TRUNCATE TABLE users CASCADE')
-  await db.$executeRawUnsafe('TRUNCATE TABLE rings CASCADE')
-  await db.$executeRawUnsafe('TRUNCATE TABLE swipes CASCADE')
+  // Truncate all tables in dependency order (matches/swipes first, then rings/couples, then users)
+  await db.$executeRawUnsafe(`
+    TRUNCATE TABLE matches, swipes, ring_images, rings, couples, users CASCADE
+  `)
 })
