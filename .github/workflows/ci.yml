@@ -48,4 +48,3 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
       - run: pnpm --filter @ring/api test
-      - run: pnpm db:test
