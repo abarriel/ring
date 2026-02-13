@@ -138,12 +138,12 @@ export default function ProfileScreen() {
 
   const handleDissolve = () => {
     if (Platform.OS === 'web') {
-      if (window.confirm('Es-tu sur de vouloir dissoudre le couple ?')) {
+      if (window.confirm('Es-tu sûr de vouloir dissoudre le couple ?')) {
         dissolveCoupleMutation.mutate()
       }
       return
     }
-    Alert.alert('Dissoudre le couple', 'Es-tu sur de vouloir dissoudre le couple ?', [
+    Alert.alert('Dissoudre le couple', 'Es-tu sûr de vouloir dissoudre le couple ?', [
       { text: 'Annuler', style: 'cancel' },
       {
         text: 'Dissoudre',
@@ -178,14 +178,14 @@ export default function ProfileScreen() {
 
   const handleLogout = async () => {
     if (Platform.OS === 'web') {
-      if (window.confirm('Es-tu sur de vouloir te deconnecter ?')) {
+      if (window.confirm('Es-tu sûr de vouloir te déconnecter ?')) {
         await clearUser()
         queryClient.clear()
         expoRouter.replace('/login')
       }
       return
     }
-    Alert.alert('Deconnexion', 'Es-tu sur de vouloir te deconnecter ?', [
+    Alert.alert('Déconnexion', 'Es-tu sûr de vouloir te déconnecter ?', [
       { text: 'Annuler', style: 'cancel' },
       {
         text: 'Deconnecter',
