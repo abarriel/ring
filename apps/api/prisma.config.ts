@@ -6,4 +6,7 @@ export default defineConfig({
   datasource: {
     url: Bun.env.DATABASE_URL,
   },
+  migrations: {
+    seed: 'bun prisma/seed.ts',
+  },
 })

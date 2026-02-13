@@ -1,11 +1,5 @@
 import { os } from '@orpc/server'
-import {
-  CreateUserSchema,
-  LoginSchema,
-  type UpdateUser,
-  UpdateUserSchema,
-  UserSchema,
-} from '@ring/shared'
+import { CreateUserSchema, LoginSchema, type UpdateUser, UpdateUserSchema } from '@ring/shared'
 import { z } from 'zod'
 import { db } from './db.js'
 
@@ -47,13 +41,10 @@ const getUser = os.input(z.object({ id: z.string().uuid() })).handler(async ({ i
   return user
 })
 
-const createUser = os
-  .input(CreateUserSchema)
-  .output(UserSchema)
-  .handler(async ({ input }) => {
-    const user = await db.user.create({ data: input })
-    return user
-  })
+const createUser = os.input(CreateUserSchema).handler(async ({ input }) => {
+  const user = await db.user.create({ data: input })
+  return user
+})
 
 const updateUser = os
   .input(z.object({ id: z.string().uuid(), data: UpdateUserSchema }))

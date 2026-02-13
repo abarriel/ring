@@ -7,12 +7,146 @@ datasource db {
   provider = "postgresql"
 }
 
+// ── Enums ───────────────────────────────────────────────────────────────────
+
+enum MetalType {
+  YELLOW_GOLD
+  WHITE_GOLD
+  ROSE_GOLD
+  PLATINUM
+  SILVER
+}
+
+enum StoneType {
+  DIAMOND
+  SAPPHIRE
+  EMERALD
+  RUBY
+  MOISSANITE
+  MORGANITE
+  NONE
+}
+
+enum RingStyle {
+  SOLITAIRE
+  HALO
+  VINTAGE
+  PAVE
+  THREE_STONE
+  CLUSTER
+  ETERNITY
+  TENSION
+  CATHEDRAL
+  BEZEL
+}
+
+enum SwipeDirection {
+  LIKE
+  NOPE
+  SUPER
+}
+
+enum CoupleStatus {
+  PENDING
+  ACTIVE
+  DISSOLVED
+}
+
+// ── Models ──────────────────────────────────────────────────────────────────
+
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String   @unique
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String   @unique
+  sessionToken String?  @unique @map("session_token")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Preferences (Phase 7)
+  preferredMetals MetalType[] @map("preferred_metals")
+  preferredStones StoneType[] @map("preferred_stones")
+  preferredStyles RingStyle[] @map("preferred_styles")
+
+  // Relations
+  swipes         Swipe[]
+  invitedCouples Couple[] @relation("inviter")
+  joinedCouples  Couple[] @relation("partner")
 
   @@map("users")
+}
+
+model Ring {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  metalType   MetalType @map("metal_type")
+  stoneType   StoneType @map("stone_type")
+  caratWeight Float     @map("carat_weight")
+  style       RingStyle
+  rating      Float     @default(0)
+  reviewCount Int       @default(0) @map("review_count")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  images  RingImage[]
+  swipes  Swipe[]
+  matches Match[]
+
+  @@map("rings")
+}
+
+model RingImage {
+  id       String @id @default(uuid())
+  ringId   String @map("ring_id")
+  url      String
+  position Int
+
+  ring Ring @relation(fields: [ringId], references: [id], onDelete: Cascade)
+
+  @@map("ring_images")
+}
+
+model Swipe {
+  id        String         @id @default(uuid())
+  userId    String         @map("user_id")
+  ringId    String         @map("ring_id")
+  direction SwipeDirection
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ring Ring @relation(fields: [ringId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ringId])
+  @@map("swipes")
+}
+
+model Couple {
+  id          String       @id @default(uuid())
+  code        String       @unique @db.VarChar(6)
+  inviterId   String       @map("inviter_id")
+  partnerId   String?      @map("partner_id")
+  status      CoupleStatus @default(PENDING)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  dissolvedAt DateTime?    @map("dissolved_at")
+
+  inviter  User    @relation("inviter", fields: [inviterId], references: [id], onDelete: Cascade)
+  partner  User?   @relation("partner", fields: [partnerId], references: [id], onDelete: Cascade)
+  matches  Match[]
+
+  @@map("couples")
+}
+
+model Match {
+  id        String   @id @default(uuid())
+  coupleId  String   @map("couple_id")
+  ringId    String   @map("ring_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  couple Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  ring   Ring   @relation(fields: [ringId], references: [id], onDelete: Cascade)
+
+  @@unique([coupleId, ringId])
+  @@map("matches")
 }

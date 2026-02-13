@@ -1,3 +1,4 @@
+import type { User } from '@ring/shared'
 import { router } from 'expo-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { saveUser } from '@/lib/auth'
@@ -19,10 +20,14 @@ describe('login logic', () => {
   })
 
   it('calls client.auth.login with trimmed name', async () => {
-    const mockUser = {
+    const mockUser: User = {
       id: '1',
       name: 'Alice',
       email: 'alice@ring.local',
+      sessionToken: null,
+      preferredMetals: [],
+      preferredStones: [],
+      preferredStyles: [],
       createdAt: new Date(),
       updatedAt: new Date(),
     }
@@ -34,10 +39,14 @@ describe('login logic', () => {
   })
 
   it('saves user and navigates on success', async () => {
-    const mockUser = {
+    const mockUser: User = {
       id: '1',
       name: 'Alice',
       email: 'alice@ring.local',
+      sessionToken: null,
+      preferredMetals: [],
+      preferredStones: [],
+      preferredStyles: [],
       createdAt: new Date(),
       updatedAt: new Date(),
     }
