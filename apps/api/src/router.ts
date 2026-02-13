@@ -242,8 +242,77 @@ const createSwipe = authed.input(CreateSwipeSchema).handler(async ({ input, cont
     },
   })
 
-  return swipe
+  // Match detection: on LIKE/SUPER, if user is in an active couple, check partner's swipe
+  let match: Awaited<ReturnType<typeof db.match.upsert>> | null = null
+  if (input.direction === 'LIKE' || input.direction === 'SUPER') {
+    const couple = await db.couple.findFirst({
+      where: {
+        status: 'ACTIVE',
+        OR: [{ inviterId: userId }, { partnerId: userId }],
+      },
+    })
+
+    if (couple) {
+      const partnerId = couple.inviterId === userId ? couple.partnerId : couple.inviterId
+      if (partnerId) {
+        const partnerSwipe = await db.swipe.findUnique({
+          where: { userId_ringId: { userId: partnerId, ringId: input.ringId } },
+        })
+
+        if (
+          partnerSwipe &&
+          (partnerSwipe.direction === 'LIKE' || partnerSwipe.direction === 'SUPER')
+        ) {
+          // Both liked -> upsert match (unique constraint prevents duplicates)
+          match = await db.match.upsert({
+            where: { coupleId_ringId: { coupleId: couple.id, ringId: input.ringId } },
+            create: { coupleId: couple.id, ringId: input.ringId },
+            update: {},
+          })
+        }
+      }
+    }
+  }
+
+  return { swipe, match }
 })
+
+// ── Match procedures ────────────────────────────────────────────────────────
+
+const listMatches = authed
+  .input(
+    z.object({
+      limit: z.number().int().min(1).max(100).default(20),
+      offset: z.number().int().min(0).default(0),
+    }),
+  )
+  .handler(async ({ input, context }) => {
+    const userId = context.user.id
+
+    // Find user's active couple
+    const couple = await db.couple.findFirst({
+      where: {
+        status: 'ACTIVE',
+        OR: [{ inviterId: userId }, { partnerId: userId }],
+      },
+    })
+
+    if (!couple) {
+      return []
+    }
+
+    const matches = await db.match.findMany({
+      where: { coupleId: couple.id },
+      orderBy: { createdAt: 'desc' },
+      take: input.limit,
+      skip: input.offset,
+      include: {
+        ring: { include: { images: { orderBy: { position: 'asc' } } } },
+      },
+    })
+
+    return matches
+  })
 
 // ── Couple helpers ──────────────────────────────────────────────────────────
 
@@ -411,6 +480,9 @@ export const router = {
   swipe: {
     create: createSwipe,
     listLiked: listLikedSwipes,
+  },
+  match: {
+    list: listMatches,
   },
   couple: {
     create: createCouple,

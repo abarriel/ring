@@ -1,4 +1,4 @@
-import type { RingWithImages } from '@ring/shared'
+import type { Match, RingWithImages } from '@ring/shared'
 import { Heart, Star, theme, X } from '@ring/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -23,6 +23,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { CelebrationModal } from '@/components/celebration-modal'
 import { getUser } from '@/lib/auth'
 import { client, orpc } from '@/lib/orpc'
 import { getInitials } from '@/lib/utils'
@@ -52,6 +53,8 @@ export default function SwipeScreen() {
   const swipeThreshold = screenWidth * 0.35
   const [currentIndex, setCurrentIndex] = useState(0)
   const [userInitials, setUserInitials] = useState('?')
+  const [celebrationMatch, setCelebrationMatch] = useState<Match | null>(null)
+  const [celebrationRing, setCelebrationRing] = useState<RingWithImages | null>(null)
   const queryClient = useQueryClient()
 
   // Fetch user initials from storage
@@ -69,7 +72,7 @@ export default function SwipeScreen() {
   const swipeMutation = useMutation({
     mutationFn: (input: { ringId: string; direction: 'LIKE' | 'NOPE' | 'SUPER' }) =>
       client.swipe.create(input),
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Invalidate feed so next fetch excludes swiped rings
       queryClient.invalidateQueries({
         queryKey: orpc.ring.feed.queryOptions({ input: { limit: 50 } }).queryKey,
@@ -78,6 +81,16 @@ export default function SwipeScreen() {
       queryClient.invalidateQueries({
         queryKey: orpc.swipe.listLiked.queryOptions({ input: { limit: 50, offset: 0 } }).queryKey,
       })
+      // Invalidate matches list when a match is detected
+      if (data.match) {
+        queryClient.invalidateQueries({
+          queryKey: orpc.match.list.queryOptions({ input: { limit: 50, offset: 0 } }).queryKey,
+        })
+        // Find the ring that was matched and show celebration
+        const matchedRing = rings.find((r) => r.id === data.match?.ringId) ?? null
+        setCelebrationMatch(data.match)
+        setCelebrationRing(matchedRing)
+      }
     },
   })
 
@@ -299,6 +312,21 @@ export default function SwipeScreen() {
         {/* Bottom safe area spacing */}
         <View style={{ height: insets.bottom + 8 }} />
       </View>
+
+      {/* Match celebration modal */}
+      <CelebrationModal
+        visible={celebrationMatch !== null}
+        ring={celebrationRing}
+        onClose={() => {
+          setCelebrationMatch(null)
+          setCelebrationRing(null)
+        }}
+        onViewMatch={() => {
+          setCelebrationMatch(null)
+          setCelebrationRing(null)
+          expoRouter.push('/matches')
+        }}
+      />
     </LinearGradient>
   )
 }

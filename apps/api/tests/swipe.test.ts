@@ -123,7 +123,7 @@ describe('swipe.create', () => {
     const ring = await seedRing()
     const authedCtx = testContext(sessionToken)
 
-    const swipe = await call(
+    const result = await call(
       router.swipe.create,
       {
         ringId: ring.id,
@@ -132,12 +132,13 @@ describe('swipe.create', () => {
       authedCtx,
     )
 
-    expect(swipe).toMatchObject({
+    expect(result.swipe).toMatchObject({
       ringId: ring.id,
       direction: 'LIKE',
     })
-    expect(swipe.id).toBeDefined()
-    expect(swipe.userId).toBeDefined()
+    expect(result.swipe.id).toBeDefined()
+    expect(result.swipe.userId).toBeDefined()
+    expect(result.match).toBeNull()
   })
 
   it('upserts on duplicate (userId, ringId)', async () => {
@@ -164,8 +165,8 @@ describe('swipe.create', () => {
     )
 
     // Same swipe record, updated direction
-    expect(second.id).toBe(first.id)
-    expect(second.direction).toBe('NOPE')
+    expect(second.swipe.id).toBe(first.swipe.id)
+    expect(second.swipe.direction).toBe('NOPE')
   })
 
   it('throws NOT_FOUND for non-existent ring', async () => {
@@ -215,8 +216,8 @@ describe('swipe.create', () => {
       authedCtx,
     )
 
-    expect(like.direction).toBe('LIKE')
-    expect(nope.direction).toBe('NOPE')
-    expect(superSwipe.direction).toBe('SUPER')
+    expect(like.swipe.direction).toBe('LIKE')
+    expect(nope.swipe.direction).toBe('NOPE')
+    expect(superSwipe.swipe.direction).toBe('SUPER')
   })
 })

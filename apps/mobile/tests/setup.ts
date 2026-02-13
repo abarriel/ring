@@ -14,8 +14,10 @@ vi.mock('react-native', () => ({
   ScrollView: 'ScrollView',
   FlatList: 'FlatList',
   Image: 'Image',
+  Modal: 'Modal',
   RefreshControl: 'RefreshControl',
   Share: { share: vi.fn() },
+  Dimensions: { get: () => ({ width: 375, height: 812 }) },
 }))
 
 vi.mock('expo-linear-gradient', () => ({
@@ -70,6 +72,7 @@ vi.mock('@ring/ui', () => ({
   ToastProvider: ({ children }: { children: unknown }) => children,
   useToast: () => ({ show: vi.fn(), dismiss: vi.fn() }),
   Copy: 'Copy',
+  Gem: 'Gem',
   Heart: 'Heart',
   Info: 'Info',
   LogOut: 'LogOut',
