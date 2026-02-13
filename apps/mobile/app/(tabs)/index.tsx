@@ -1,5 +1,5 @@
 import type { Match, RingWithImages } from '@ring/shared'
-import { Heart, Star, theme, X } from '@ring/ui'
+import { Heart, Sparkles, Star, theme, X } from '@ring/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router as expoRouter } from 'expo-router'
@@ -37,14 +37,6 @@ function formatEnum(value: string): string {
     .replace(/_/g, ' ')
     .toLowerCase()
     .replace(/\b\w/g, (c) => c.toUpperCase())
-}
-
-function formatSpec(ring: RingWithImages): string[] {
-  const specs: string[] = []
-  if (ring.caratWeight) specs.push(`${ring.caratWeight} Carat`)
-  if (ring.metalType) specs.push(formatEnum(ring.metalType))
-  if (ring.style) specs.push(formatEnum(ring.style))
-  return specs
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -251,8 +243,14 @@ export default function SwipeScreen() {
             </View>
           ) : isFinished ? (
             <View style={styles.emptyState}>
+              <View style={styles.emptyIcon}>
+                <Sparkles size={48} color={theme.colors.foreground.muted} />
+              </View>
               <Text style={styles.emptyTitle}>Plus de bagues !</Text>
-              <Text style={styles.emptySubtitle}>Reviens plus tard pour en voir d'autres.</Text>
+              <Text style={styles.emptySubtitle}>Tu as vu toutes les bagues disponibles.</Text>
+              <Pressable style={styles.retryBtn} onPress={() => expoRouter.push('/matches')}>
+                <Text style={styles.retryText}>Voir tes matchs</Text>
+              </Pressable>
             </View>
           ) : currentRing ? (
             <GestureDetector gesture={panGesture}>
@@ -276,37 +274,32 @@ export default function SwipeScreen() {
                 <View style={styles.productInfo}>
                   <Text style={styles.productName}>{currentRing.name}</Text>
 
-                  {/* Specs */}
-                  <View style={styles.specsRow}>
-                    {formatSpec(currentRing).map((spec, i) => (
-                      <View key={spec} style={styles.specItem}>
-                        {i > 0 && <View style={styles.specDot} />}
-                        <Text style={styles.specText}>{spec}</Text>
-                      </View>
-                    ))}
+                  {/* Key-value specs */}
+                  <View style={styles.specsTable}>
+                    <View style={styles.specRow}>
+                      <Text style={styles.specLabel}>Style</Text>
+                      <Text style={styles.specValue}>{formatEnum(currentRing.style)}</Text>
+                    </View>
+                    <View style={styles.specRow}>
+                      <Text style={styles.specLabel}>Metal</Text>
+                      <Text style={styles.specValue}>{formatEnum(currentRing.metalType)}</Text>
+                    </View>
+                    <View style={styles.specRow}>
+                      <Text style={styles.specLabel}>Pierre</Text>
+                      <Text style={styles.specValue}>{formatEnum(currentRing.stoneType)}</Text>
+                    </View>
+                    <View style={styles.specRow}>
+                      <Text style={styles.specLabel}>Carat</Text>
+                      <Text style={styles.specValue}>{currentRing.caratWeight} ct</Text>
+                    </View>
                   </View>
 
-                  {/* Stars */}
-                  <View style={styles.starsRow}>
-                    <View style={styles.stars}>
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <Text
-                          key={`star-${n}`}
-                          style={[
-                            styles.starIcon,
-                            n <= Math.round(currentRing.rating)
-                              ? styles.starFilled
-                              : styles.starEmpty,
-                          ]}
-                        >
-                          *
-                        </Text>
-                      ))}
-                    </View>
-                    <Text style={styles.reviewCount}>
-                      ({currentRing.reviewCount.toLocaleString('en-US')} reviews)
+                  {/* Description */}
+                  {currentRing.description && (
+                    <Text style={styles.productDescription} numberOfLines={2}>
+                      {currentRing.description}
                     </Text>
-                  </View>
+                  )}
                 </View>
               </Animated.View>
             </GestureDetector>
@@ -491,50 +484,31 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 
-  // Specs
-  specsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  // Specs table (key-value rows)
+  specsTable: {
+    gap: 6,
     marginBottom: 12,
   },
-  specItem: {
+  specRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 6,
   },
-  specDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: theme.colors.ui.dot,
-  },
-  specText: {
-    fontSize: 14,
-    color: theme.colors.foreground.secondary,
-  },
-
-  // Stars
-  starsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  stars: {
-    flexDirection: 'row',
-    gap: 2,
-  },
-  starIcon: {
-    fontSize: 16,
-  },
-  starFilled: {
-    color: theme.colors.accent.stars,
-  },
-  starEmpty: {
-    color: theme.colors.ui.border,
-  },
-  reviewCount: {
+  specLabel: {
     fontSize: 13,
     color: theme.colors.foreground.muted,
+  },
+  specValue: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: theme.colors.foreground.DEFAULT,
+  },
+
+  // Description
+  productDescription: {
+    fontSize: 13,
+    color: theme.colors.foreground.secondary,
+    lineHeight: 18,
   },
 
   // Actions
@@ -582,6 +556,15 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  emptyIcon: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: theme.colors.background.imageZone,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
   },
   emptyTitle: {
     fontSize: 22,

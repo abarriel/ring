@@ -1,7 +1,8 @@
 import type { User } from '@ring/shared'
-import { Copy, LogOut, Share2, theme, Users, useToast } from '@ring/ui'
+import { Check, Copy, Heart, LogOut, Settings, Share2, theme, useToast } from '@ring/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import * as Clipboard from 'expo-clipboard'
+import { LinearGradient } from 'expo-linear-gradient'
 import { router as expoRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import {
@@ -29,6 +30,7 @@ export default function ProfileScreen() {
   const queryClient = useQueryClient()
   const [user, setUser] = useState<User | null>(null)
   const [joinCode, setJoinCode] = useState('')
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     getUser().then(setUser)
@@ -54,14 +56,14 @@ export default function ProfileScreen() {
         queryClient.invalidateQueries({ queryKey: coupleQueryKey })
         toast.show({
           type: 'warning',
-          title: 'Déjà en couple',
-          message: 'Tu es déjà dans un couple',
+          title: 'Deja en couple',
+          message: 'Tu es deja dans un couple',
         })
       } else {
         toast.show({
           type: 'error',
           title: 'Erreur',
-          message: 'Erreur lors de la création du couple',
+          message: 'Erreur lors de la creation du couple',
         })
       }
     },
@@ -73,7 +75,7 @@ export default function ProfileScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: coupleQueryKey })
       setJoinCode('')
-      toast.show({ type: 'success', title: 'Couple formé !' })
+      toast.show({ type: 'success', title: 'Couple forme !' })
     },
     onError: (error: Error) => {
       if (error.message.includes('Code not found')) {
@@ -88,14 +90,14 @@ export default function ProfileScreen() {
         queryClient.invalidateQueries({ queryKey: coupleQueryKey })
         toast.show({
           type: 'warning',
-          title: 'Déjà en couple',
-          message: 'Tu es déjà dans un couple',
+          title: 'Deja en couple',
+          message: 'Tu es deja dans un couple',
         })
       } else if (error.message.includes('Couple already full')) {
         toast.show({
           type: 'error',
           title: 'Couple complet',
-          message: 'Ce couple a déjà un partenaire',
+          message: 'Ce couple a deja un partenaire',
         })
       } else {
         toast.show({ type: 'error', title: 'Erreur', message: 'Erreur lors de la jonction' })
@@ -127,7 +129,7 @@ export default function ProfileScreen() {
       toast.show({
         type: 'warning',
         title: 'Code invalide',
-        message: 'Le code doit faire 6 caractères',
+        message: 'Le code doit faire 6 caracteres',
       })
       return
     }
@@ -136,12 +138,12 @@ export default function ProfileScreen() {
 
   const handleDissolve = () => {
     if (Platform.OS === 'web') {
-      if (window.confirm('Es-tu sûr de vouloir dissoudre le couple ?')) {
+      if (window.confirm('Es-tu sur de vouloir dissoudre le couple ?')) {
         dissolveCoupleMutation.mutate()
       }
       return
     }
-    Alert.alert('Dissoudre le couple', 'Es-tu sûr de vouloir dissoudre le couple ?', [
+    Alert.alert('Dissoudre le couple', 'Es-tu sur de vouloir dissoudre le couple ?', [
       { text: 'Annuler', style: 'cancel' },
       {
         text: 'Dissoudre',
@@ -161,24 +163,32 @@ export default function ProfileScreen() {
     }
   }
 
+  const handleCopyUserId = async () => {
+    if (!user) return
+    await Clipboard.setStringAsync(user.id)
+    setCopied(true)
+    toast.show({ type: 'success', title: 'Copie !' })
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   const handleCopyCode = async (code: string) => {
     await Clipboard.setStringAsync(code)
-    toast.show({ type: 'success', title: 'Copié !' })
+    toast.show({ type: 'success', title: 'Copie !' })
   }
 
   const handleLogout = async () => {
     if (Platform.OS === 'web') {
-      if (window.confirm('Es-tu sûr de vouloir te déconnecter ?')) {
+      if (window.confirm('Es-tu sur de vouloir te deconnecter ?')) {
         await clearUser()
         queryClient.clear()
         expoRouter.replace('/login')
       }
       return
     }
-    Alert.alert('Déconnexion', 'Es-tu sûr de vouloir te déconnecter ?', [
+    Alert.alert('Deconnexion', 'Es-tu sur de vouloir te deconnecter ?', [
       { text: 'Annuler', style: 'cancel' },
       {
-        text: 'Déconnecter',
+        text: 'Deconnecter',
         style: 'destructive',
         onPress: async () => {
           await clearUser()
@@ -194,8 +204,8 @@ export default function ProfileScreen() {
   const initials = getInitials(user.name)
   const isPaired = couple?.status === 'ACTIVE' && couple.partner !== null
   const isPending = couple?.status === 'PENDING'
+  const isPartnerConnected = isPaired || isPending
 
-  // Determine partner name
   const partnerName =
     isPaired && couple
       ? couple.inviter.id === user.id
@@ -208,51 +218,81 @@ export default function ProfileScreen() {
       style={[styles.container, { paddingTop: insets.top }]}
       contentContainerStyle={[styles.content, { paddingBottom: 40 + insets.bottom }]}
     >
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profil</Text>
-      </View>
-
-      {/* Avatar + Username */}
-      <View style={styles.avatarSection}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
-        </View>
-        <Text style={styles.userName}>{user.name}</Text>
-      </View>
-
-      {/* Couple Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Users size={20} color={theme.colors.foreground.DEFAULT} />
-          <Text style={styles.sectionTitle}>Couple</Text>
+      {/* ── Gradient header with avatar + stats ── */}
+      <LinearGradient colors={['#fce7f3', '#ffffff']} style={styles.profileHeader}>
+        <View style={styles.profileRow}>
+          <LinearGradient
+            colors={[theme.colors.ring.rose400, theme.colors.ring.pink500]}
+            style={styles.avatar}
+          >
+            <Text style={styles.avatarText}>{initials}</Text>
+          </LinearGradient>
+          <View>
+            <Text style={styles.userName}>{user.name}</Text>
+            <Text style={styles.userSubtitle}>Ring Explorer</Text>
+          </View>
         </View>
 
+        {/* Stats grid */}
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <View style={styles.statRow}>
+              <Heart size={16} color={theme.colors.ring.pink500} fill={theme.colors.ring.pink500} />
+              <Text style={styles.statValue}>-</Text>
+            </View>
+            <Text style={styles.statLabel}>Bagues likees</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{isPartnerConnected ? '\u2713' : '\u2014'}</Text>
+            <Text style={styles.statLabel}>
+              Partenaire {isPartnerConnected ? 'connecte' : 'non connecte'}
+            </Text>
+          </View>
+        </View>
+      </LinearGradient>
+
+      {/* ── Body cards ── */}
+      <View style={styles.body}>
+        {/* User ID card */}
+        <View style={styles.card}>
+          <Text style={styles.cardUpperLabel}>TON ID UTILISATEUR</Text>
+          <View style={styles.idRow}>
+            <TextInput style={styles.idInput} value={user.id} editable={false} selectTextOnFocus />
+            <Pressable style={styles.idCopyBtn} onPress={handleCopyUserId}>
+              {copied ? (
+                <Check size={16} color={theme.colors.foreground.secondary} />
+              ) : (
+                <Copy size={16} color={theme.colors.foreground.secondary} />
+              )}
+            </Pressable>
+          </View>
+          <Text style={styles.cardHint}>Partage ce code avec ton partenaire</Text>
+        </View>
+
+        {/* Partner code display (when paired) */}
+        {isPaired && couple && (
+          <View style={styles.partnerCodeCard}>
+            <Text style={styles.partnerCodeLabel}>PARTENAIRE</Text>
+            <Text style={styles.partnerCodeValue}>{partnerName}</Text>
+          </View>
+        )}
+
+        {/* Couple section */}
         {coupleQuery.isLoading ? (
           <ActivityIndicator size="small" color={theme.colors.ring.pink500} style={styles.loader} />
         ) : isPaired ? (
-          /* ── Paired state ──────────────────────────────────────────── */
-          <View style={styles.card}>
-            <View style={styles.pairedStatus}>
-              <View style={styles.statusDot} />
-              <Text style={styles.statusText}>Couple actif</Text>
-            </View>
-            <Text style={styles.partnerLabel}>Partenaire</Text>
-            <Text style={styles.partnerName}>{partnerName}</Text>
-            <Pressable
-              style={styles.dissolveBtn}
-              onPress={handleDissolve}
-              disabled={dissolveCoupleMutation.isPending}
-            >
-              <Text style={styles.dissolveBtnText}>
-                {dissolveCoupleMutation.isPending ? 'Dissolution...' : 'Dissoudre le couple'}
-              </Text>
-            </Pressable>
-          </View>
+          <Pressable
+            style={styles.dissolveBtn}
+            onPress={handleDissolve}
+            disabled={dissolveCoupleMutation.isPending}
+          >
+            <Text style={styles.dissolveBtnText}>
+              {dissolveCoupleMutation.isPending ? 'Dissolution...' : 'Dissoudre le couple'}
+            </Text>
+          </Pressable>
         ) : isPending && couple ? (
-          /* ── Pending state (code generated, waiting for partner) ──── */
           <View style={styles.card}>
-            <Text style={styles.cardLabel}>Ton code d'invitation</Text>
+            <Text style={styles.cardUpperLabel}>TON CODE D'INVITATION</Text>
             <View style={styles.codeRow}>
               <Text style={styles.codeText}>{couple.code}</Text>
               <Pressable style={styles.iconBtn} onPress={() => handleShareCode(couple.code)}>
@@ -262,7 +302,7 @@ export default function ProfileScreen() {
                 <Copy size={20} color={theme.colors.foreground.secondary} />
               </Pressable>
             </View>
-            <Text style={styles.codeHint}>Partage ce code avec ton partenaire</Text>
+            <Text style={styles.cardHint}>Partage ce code avec ton partenaire</Text>
 
             <View style={styles.separator} />
 
@@ -277,7 +317,6 @@ export default function ProfileScreen() {
             </Pressable>
           </View>
         ) : (
-          /* ── Unpaired state ────────────────────────────────────────── */
           <View style={styles.card}>
             <Pressable
               style={styles.inviteBtn}
@@ -285,7 +324,7 @@ export default function ProfileScreen() {
               disabled={createCoupleMutation.isPending}
             >
               <Text style={styles.inviteBtnText}>
-                {createCoupleMutation.isPending ? 'Création...' : 'Invite ton partenaire'}
+                {createCoupleMutation.isPending ? 'Creation...' : 'Invite ton partenaire'}
               </Text>
             </Pressable>
 
@@ -318,13 +357,27 @@ export default function ProfileScreen() {
             </View>
           </View>
         )}
-      </View>
 
-      {/* Logout */}
-      <Pressable style={styles.logoutBtn} onPress={handleLogout}>
-        <LogOut size={18} color={theme.colors.feedback.error.text} />
-        <Text style={styles.logoutText}>Déconnexion</Text>
-      </Pressable>
+        {/* Preferences button */}
+        <Pressable style={styles.menuBtn}>
+          <Settings size={20} color={theme.colors.foreground.secondary} />
+          <View style={styles.menuBtnContent}>
+            <Text style={styles.menuBtnTitle}>Preferences</Text>
+            <Text style={styles.menuBtnSubtitle}>Personnalise tes preferences de bagues</Text>
+          </View>
+        </Pressable>
+
+        {/* Logout button */}
+        <Pressable style={styles.menuBtnDanger} onPress={handleLogout}>
+          <LogOut size={20} color={theme.colors.feedback.error.text} />
+          <View style={styles.menuBtnContent}>
+            <Text style={styles.menuBtnTitleDanger}>Deconnexion</Text>
+            <Text style={styles.menuBtnSubtitleDanger}>
+              Efface toutes les donnees et recommence
+            </Text>
+          </View>
+        </Pressable>
+      </View>
     </ScrollView>
   )
 }
@@ -335,69 +388,94 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background.surface,
   },
   content: {},
-  header: {
-    paddingHorizontal: theme.spacing.page,
-    paddingVertical: 12,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: theme.colors.foreground.DEFAULT,
-  },
 
-  // Avatar
-  avatarSection: {
+  // Profile header
+  profileHeader: {
+    paddingHorizontal: theme.spacing.page,
+    paddingTop: 16,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.ui.border,
+  },
+  profileRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 20,
+    gap: 16,
+    marginBottom: 20,
   },
   avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: theme.colors.ui.avatarBg,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: {
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: 'bold',
-    color: theme.colors.ui.avatarText,
+    color: '#ffffff',
   },
   userName: {
-    marginTop: 10,
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 22,
+    fontWeight: 'bold',
     color: theme.colors.foreground.DEFAULT,
+  },
+  userSubtitle: {
+    fontSize: 13,
+    color: theme.colors.foreground.secondary,
+    marginTop: 2,
   },
 
-  // Section
-  section: {
-    paddingHorizontal: theme.spacing.page,
-    marginTop: 8,
+  // Stats grid
+  statsGrid: {
+    flexDirection: 'row',
+    gap: 12,
   },
-  sectionHeader: {
+  statCard: {
+    flex: 1,
+    backgroundColor: theme.colors.background.card,
+    borderRadius: theme.borderRadius.lg,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: theme.colors.ui.border,
+  },
+  statRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
+    gap: 6,
+    marginBottom: 4,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+  statValue: {
+    fontSize: 22,
+    fontWeight: 'bold',
     color: theme.colors.foreground.DEFAULT,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: theme.colors.foreground.secondary,
+  },
+
+  // Body
+  body: {
+    paddingHorizontal: theme.spacing.page,
+    paddingTop: 20,
+    gap: 12,
   },
 
   // Card
   card: {
     backgroundColor: theme.colors.background.card,
     borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.cardX,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.ui.border,
+  },
+  cardUpperLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: theme.colors.foreground.muted,
+    letterSpacing: 0.5,
+    marginBottom: 8,
   },
   cardLabel: {
     fontSize: 13,
@@ -405,40 +483,65 @@ const styles = StyleSheet.create({
     color: theme.colors.foreground.secondary,
     marginBottom: 8,
   },
+  cardHint: {
+    fontSize: 12,
+    color: theme.colors.foreground.muted,
+    marginTop: 8,
+  },
+
+  // User ID row
+  idRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  idInput: {
+    flex: 1,
+    height: 40,
+    borderWidth: 1,
+    borderColor: theme.colors.ui.border,
+    borderRadius: theme.borderRadius.md,
+    paddingHorizontal: 12,
+    fontSize: 12,
+    fontFamily: 'Courier',
+    color: theme.colors.foreground.DEFAULT,
+    backgroundColor: theme.colors.background.surface,
+  },
+  idCopyBtn: {
+    width: 40,
+    height: 40,
+    borderWidth: 1,
+    borderColor: theme.colors.ui.border,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.background.card,
+  },
+
+  // Partner code card
+  partnerCodeCard: {
+    backgroundColor: '#fce7f3',
+    borderRadius: theme.borderRadius.lg,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#f9a8d4',
+  },
+  partnerCodeLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: theme.colors.ring.pink500,
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  partnerCodeValue: {
+    fontSize: 14,
+    fontFamily: 'Courier',
+    color: theme.colors.foreground.DEFAULT,
+  },
 
   // Loader
   loader: {
     paddingVertical: 20,
-  },
-
-  // Paired state
-  pairedStatus: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: theme.colors.feedback.success.text,
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.colors.feedback.success.text,
-  },
-  partnerLabel: {
-    fontSize: 13,
-    color: theme.colors.foreground.secondary,
-    marginBottom: 4,
-  },
-  partnerName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: theme.colors.foreground.DEFAULT,
-    marginBottom: 20,
   },
 
   // Code display
@@ -446,7 +549,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginBottom: 8,
   },
   codeText: {
     fontSize: 28,
@@ -457,11 +559,6 @@ const styles = StyleSheet.create({
   },
   iconBtn: {
     padding: 8,
-  },
-  codeHint: {
-    fontSize: 12,
-    color: theme.colors.foreground.muted,
-    marginBottom: 4,
   },
 
   // Separator
@@ -537,23 +634,49 @@ const styles = StyleSheet.create({
     color: theme.colors.feedback.error.text,
   },
 
-  // Logout
-  logoutBtn: {
+  // Menu buttons
+  menuBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: 32,
-    paddingVertical: 14,
-    marginHorizontal: theme.spacing.page,
+    gap: 14,
+    backgroundColor: theme.colors.background.card,
+    borderRadius: theme.borderRadius.lg,
+    padding: 16,
     borderWidth: 1,
-    borderColor: theme.colors.feedback.error.border,
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.feedback.error.bg,
+    borderColor: theme.colors.ui.border,
   },
-  logoutText: {
+  menuBtnDanger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: theme.colors.background.card,
+    borderRadius: theme.borderRadius.lg,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.ui.border,
+  },
+  menuBtnContent: {
+    flex: 1,
+  },
+  menuBtnTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: theme.colors.foreground.DEFAULT,
+  },
+  menuBtnSubtitle: {
+    fontSize: 12,
+    color: theme.colors.foreground.muted,
+    marginTop: 2,
+  },
+  menuBtnTitleDanger: {
     fontSize: 15,
     fontWeight: '600',
     color: theme.colors.feedback.error.text,
+  },
+  menuBtnSubtitleDanger: {
+    fontSize: 12,
+    color: theme.colors.feedback.error.text,
+    opacity: 0.7,
+    marginTop: 2,
   },
 })
