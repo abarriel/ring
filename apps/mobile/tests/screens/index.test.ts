@@ -18,8 +18,28 @@ describe('home screen data', () => {
   it('fetches user list with limit and offset', async () => {
     const now = new Date()
     const mockUsers = [
-      { id: '1', name: 'Alice', email: 'alice@ring.local', createdAt: now, updatedAt: now },
-      { id: '2', name: 'Bob', email: 'bob@ring.local', createdAt: now, updatedAt: now },
+      {
+        id: '1',
+        name: 'Alice',
+        email: 'alice@ring.local',
+        sessionToken: null,
+        preferredMetals: [],
+        preferredStones: [],
+        preferredStyles: [],
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: '2',
+        name: 'Bob',
+        email: 'bob@ring.local',
+        sessionToken: null,
+        preferredMetals: [],
+        preferredStones: [],
+        preferredStyles: [],
+        createdAt: now,
+        updatedAt: now,
+      },
     ]
     vi.mocked(client.user.list).mockResolvedValue(mockUsers)
 
