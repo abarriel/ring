@@ -300,18 +300,7 @@ const createCouple = authed.handler(async ({ context }) => {
 const joinCouple = authed.input(JoinCoupleSchema).handler(async ({ input, context }) => {
   const userId = context.user.id
 
-  // Check if user is already in an active/pending couple
-  const existingCouple = await db.couple.findFirst({
-    where: {
-      status: { in: ['PENDING', 'ACTIVE'] },
-      OR: [{ inviterId: userId }, { partnerId: userId }],
-    },
-  })
-  if (existingCouple) {
-    throw new ORPCError('CONFLICT', { message: 'Already paired' })
-  }
-
-  // Find the couple by code
+  // Find the couple by code first
   const couple = await db.couple.findUnique({ where: { code: input.code } })
   if (!couple) {
     throw new ORPCError('NOT_FOUND', { message: 'Code not found' })
@@ -330,6 +319,17 @@ const joinCouple = authed.input(JoinCoupleSchema).handler(async ({ input, contex
   // Check if couple is still pending
   if (couple.status !== 'PENDING') {
     throw new ORPCError('BAD_REQUEST', { message: 'Couple is not available' })
+  }
+
+  // Check if user is already in an active/pending couple
+  const existingCouple = await db.couple.findFirst({
+    where: {
+      status: { in: ['PENDING', 'ACTIVE'] },
+      OR: [{ inviterId: userId }, { partnerId: userId }],
+    },
+  })
+  if (existingCouple) {
+    throw new ORPCError('CONFLICT', { message: 'Already paired' })
   }
 
   const updated = await db.couple.update({
