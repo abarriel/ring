@@ -18,9 +18,14 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsgo --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.18"
   }
 }

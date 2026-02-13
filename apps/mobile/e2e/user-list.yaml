@@ -1,0 +1,5 @@
+appId: com.ring.mobile
+---
+- launchApp
+- assertVisible: "Ring"
+- assertVisible: "Swipe"
