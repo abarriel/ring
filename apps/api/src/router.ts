@@ -183,7 +183,8 @@ const feedRings = authed
     if (excludeIds.length > 0) {
       rings = await db.$queryRaw(
         Prisma.sql`
-          SELECT * FROM rings
+          SELECT id, name, description, "caratWeight", "metalType", style, rating, "reviewCount", "createdAt", "updatedAt"
+          FROM rings
           WHERE id NOT IN (${Prisma.join(excludeIds)})
           ORDER BY RANDOM()
           LIMIT ${input.limit}
@@ -192,7 +193,8 @@ const feedRings = authed
     } else {
       rings = await db.$queryRaw(
         Prisma.sql`
-          SELECT * FROM rings
+          SELECT id, name, description, "caratWeight", "metalType", style, rating, "reviewCount", "createdAt", "updatedAt"
+          FROM rings
           ORDER BY RANDOM()
           LIMIT ${input.limit}
         `,
@@ -210,10 +212,22 @@ const feedRings = authed
       orderBy: { position: 'asc' },
     })
 
+    // Create a Map for O(n+m) complexity instead of O(n*m)
+    const imagesByRingId = images.reduce(
+      (acc, img) => {
+        if (!acc[img.ringId]) {
+          acc[img.ringId] = []
+        }
+        acc[img.ringId]?.push(img)
+        return acc
+      },
+      {} as Record<string, typeof images>,
+    )
+
     // Map images to rings
     const ringsWithImages = rings.map((ring) => ({
       ...ring,
-      images: images.filter((img) => img.ringId === ring.id),
+      images: imagesByRingId[ring.id] || [],
     }))
 
     return ringsWithImages
