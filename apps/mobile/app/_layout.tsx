@@ -34,9 +34,12 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <ToastProvider>
             <Stack>
-              <Stack.Screen name="index" options={{ title: 'Ring' }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="login" options={{ headerShown: false }} />
-              <Stack.Screen name="swipe" options={{ headerShown: false }} />
+              <Stack.Screen
+                name="ring/[id]"
+                options={{ headerShown: false, presentation: 'card' }}
+              />
             </Stack>
             <StatusBar style="auto" />
           </ToastProvider>

@@ -65,6 +65,26 @@ describe('ring.list', () => {
   })
 })
 
+describe('ring.get', () => {
+  it('returns a ring with images', async () => {
+    const rings = await seedRings(1)
+    const ring = rings[0]
+
+    const result = await call(router.ring.get, { id: ring?.id ?? '' }, ctx)
+
+    expect(result.id).toBe(ring?.id)
+    expect(result.name).toBe(ring?.name)
+    expect(result.images).toHaveLength(2)
+    expect(result.images[0]?.position).toBe(0)
+  })
+
+  it('throws NOT_FOUND for non-existent ring', async () => {
+    await expect(
+      call(router.ring.get, { id: '00000000-0000-0000-0000-000000000000' }, ctx),
+    ).rejects.toThrow('Ring not found')
+  })
+})
+
 describe('ring.feed', () => {
   it('returns unswiped rings for authenticated user', async () => {
     await seedRings(3)

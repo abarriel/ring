@@ -35,12 +35,18 @@ function getInitials(name: string): string {
     .join('')
 }
 
+function formatEnum(value: string): string {
+  return value
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
 function formatSpec(ring: RingWithImages): string[] {
   const specs: string[] = []
   if (ring.caratWeight) specs.push(`${ring.caratWeight} Carat`)
-  if (ring.metalType)
-    specs.push(ring.metalType.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()))
-  if (ring.style) specs.push(ring.style.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()))
+  if (ring.metalType) specs.push(formatEnum(ring.metalType))
+  if (ring.style) specs.push(formatEnum(ring.style))
   return specs
 }
 
@@ -73,6 +79,10 @@ export default function SwipeScreen() {
       // Invalidate feed so next fetch excludes swiped rings
       queryClient.invalidateQueries({
         queryKey: orpc.ring.feed.queryOptions({ input: { limit: 50 } }).queryKey,
+      })
+      // Invalidate favorites so liked rings appear on the Favorites tab
+      queryClient.invalidateQueries({
+        queryKey: orpc.swipe.listLiked.queryOptions({ input: { limit: 50, offset: 0 } }).queryKey,
       })
     },
   })

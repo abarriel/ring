@@ -54,132 +54,79 @@ Every phase follows this template:
 - Smart `QueryClient` retry (skip auth errors, no mutation retries)
 - API test setup with Testcontainers (PostgreSQL 17) + table truncation
 
+### Phase 1 -- "Je swipe des vraies bagues" [DONE]
+
+> I open the app, I log in, I swipe through rings that come from the database, and my swipes are saved.
+
+**What was built:**
+
+API:
+- `auth.login` updated: generates UUID session token + 30-day `sessionExpiresAt`, returns `{ user, sessionToken }`
+- Auth middleware (`authed`): reads `Authorization: Bearer <token>`, resolves user from DB, rejects expired tokens, auto-refreshes expiry when < 7 days remaining, injects `ctx.user`
+- `os.$context<{ headers: Headers }>()` base builder: server passes `request.headers` through oRPC context
+- `ring.list` (public): paginated with images, ordered by `createdAt asc`
+- `ring.feed` (protected): excludes already-swiped rings, Fisher-Yates shuffle for random order, includes images
+- `swipe.create` (protected): validates ring exists, upserts on `(userId, ringId)`, supports LIKE/NOPE/SUPER
+
+Shared:
+- `sessionExpiresAt: z.date().nullable()` added to `UserSchema`
+- New `LoginResponseSchema` (`{ user: UserSchema, sessionToken: z.string() }`) + `LoginResponse` type
+
+Prisma:
+- `sessionExpiresAt DateTime?` field added to User model
+
+Mobile:
+- Auth lib: `saveToken()`, `getToken()` for session token in AsyncStorage; `clearUser()` uses `multiRemove` for user + token
+- oRPC link: `headers` callback reads token from AsyncStorage, sends `Authorization: Bearer <token>` on every request
+- Login screen: destructures `{ user, sessionToken }` from new response shape, saves both
+- Swipe screen (full rewrite): fetches `ring.feed`, displays real Ring fields (name, metalType, stoneType, caratWeight, style, rating, reviewCount), no price, derives avatar initials from logged-in user name, calls `swipe.create` on each gesture, loading spinner, error retry, "Plus de bagues !" empty state
+
+Tests:
+- API: `auth.test.ts` (7) -- login returns token + expiry, new token on re-login, email derivation; `middleware.test.ts` (7) -- rejects no header, malformed, invalid token, accepts valid, rejects expired, refreshes < 7d, doesn't refresh > 7d; `ring.test.ts` (7) -- list with images, pagination, empty, feed returns unswiped, excludes swiped, empty when all swiped, requires auth; `swipe.test.ts` (5) -- creates swipe, upserts duplicate, NOT_FOUND for invalid ring, requires auth, all directions
+- Mobile: `auth.test.ts` (7) -- saveUser, saveToken, getUser, getToken, clearUser multiRemove; `login.test.ts` (5) -- updated for `{ user, sessionToken }` response; `index.test.ts` (3) -- updated with `sessionExpiresAt`; `swipe.test.ts` (6) -- swipe.create calls, initials derivation, error handling
+- Shared: `schemas.test.ts` (76 total, +5 new) -- `sessionExpiresAt` tests, `LoginResponseSchema` tests
+
+Verification: typecheck (3/3 packages pass), lint clean, shared 76/76, mobile 21/21, API integration tests written (require Docker)
+
+### Phase 2 -- "Je vois mes favoris" [DONE]
+
+> I swipe LIKE on some rings, then I open a Favorites tab and see them listed. I tap one, I see its full details.
+
+**What was built:**
+
+API:
+- `ring.get` (public): returns single ring with images, throws `NOT_FOUND` for invalid id
+- `swipe.listLiked` (protected): returns rings where direction is LIKE/SUPER, ordered by swipe date desc, paginated, includes images via Prisma join
+
+Mobile:
+- Restructured `app/` to `(tabs)` group: `app/(tabs)/_layout.tsx` with Heart (Swipe) and Star (Favoris) tabs
+- Swipe screen moved to `app/(tabs)/index.tsx` (default tab)
+- Login screen stays outside tabs as root stack screen
+- Favorites screen `app/(tabs)/favorites.tsx`: grid of liked ring cards (FlatList, 2 columns), thumbnail + name + metal type + rating, pull-to-refresh, loading/error/empty states
+- Ring detail screen `app/ring/[id].tsx`: horizontal FlatList image carousel with pagination dots, ring name (serif), specs table (metal, stone, carats, style), star rating + review count, description, Like/Nope action buttons, back navigation with ChevronLeft
+- Query invalidation: both swipe screen and detail screen invalidate `swipe.listLiked` and `ring.feed` after swipe mutations
+
+UI:
+- `ChevronLeft` icon exported from `@ring/ui`
+- Fixed `formatEnum()` to properly title-case enum values (`.toLowerCase()` before `.replace(/\b\w/g, ...)`)
+
+Tests:
+- API: `ring.test.ts` (+2) -- `ring.get` returns ring with images, throws NOT_FOUND; `swipe.test.ts` (+6) -- `swipe.listLiked` returns LIKE/SUPER only, excludes NOPE, includes images, orders by date desc, pagination, empty array, requires auth
+- Mobile: `favorites.test.ts` (5) -- fetches liked rings, empty state, image data for thumbnails, enum formatting, error handling; `ring-detail.test.ts` (6) -- fetches ring by id, all spec fields, LIKE/NOPE swipe calls, not found error, builds specs
+- Mock theme in `tests/setup.ts` updated with all theme keys (accent, action, ui sub-keys, icon exports)
+
+Verification: typecheck (3/3 packages pass), lint clean, shared 76/76, mobile 39/39, API integration tests written (require Docker)
+
 ### Current state of the app
 
 | Screen | Route | What you see | API connected? |
 |--------|-------|-------------|----------------|
-| Login | `/login` | Gradient pink screen, "Ring" logo, username input, "C'est parti" button | Yes -- `auth.login` |
-| Home | `/` | "Ring" title, "Swipe" button, user list from API | Yes -- `user.list` |
-| Swipe | `/swipe` | Full swipe card UI with gestures, LIKE/NOPE overlays, 3 action buttons | **No -- 5 hardcoded mock rings** |
+| Login | `/login` | Gradient pink screen, "Ring" logo, username input, "C'est parti" button | Yes -- `auth.login` (returns `{ user, sessionToken }`) |
+| Swipe | `/(tabs)/` | Full swipe card UI with gestures, LIKE/NOPE/SUPER overlays, 3 action buttons, loading/error/empty states | **Yes -- `ring.feed` + `swipe.create`** |
+| Favorites | `/(tabs)/favorites` | 2-column grid of liked ring cards (thumbnail, name, metal, rating), pull-to-refresh, empty state | **Yes -- `swipe.listLiked`** |
+| Ring Detail | `/ring/[id]` | Image carousel with dots, ring name (serif), specs table, rating, description, Like/Nope buttons | **Yes -- `ring.get` + `swipe.create`** |
 
-**Key gap**: The swipe screen is the core experience but uses hardcoded data with a local `Product` type that doesn't match the DB `Ring` model. No swipes are persisted. No auth tokens.
-
----
-
-## Phase 1 -- "Je swipe des vraies bagues"
-
-> I open the app, I log in, I swipe through rings that come from the database, and my swipes are saved.
-
-### Objectif Fonctionnel
-
-The swipe screen fetches real rings from the API (seeded data) instead of hardcoded mocks. When I swipe LIKE or NOPE, the decision is persisted in the database under my user account. Login generates a session token used for all subsequent requests.
-
-### API
-
-| Procedure | Auth | Input | Output | Description |
-|-----------|------|-------|--------|-------------|
-| `auth.login` (update) | Public | `{ name }` | `User` + `sessionToken` | Generate UUID session token, store on User, set `sessionExpiresAt` to +30 days, return token |
-| `ring.list` | Public | `{ limit, offset }` | `Ring[]` with images | Paginated ring list for anonymous browsing |
-| `ring.feed` | Protected | `{ limit }` | `Ring[]` with images | Next N rings the user hasn't swiped on. Random order. |
-| `swipe.create` | Protected | `{ ringId, direction }` | `Swipe` | Upsert swipe on `(userId, ringId)`. Returns created/updated swipe. |
-
-**Auth middleware**: reads `Authorization: Bearer <token>` header, resolves user from `sessionToken`, injects `ctx.user`. Rejects expired tokens. Refreshes `sessionExpiresAt` when < 7 days remaining.
-
-### UI/UX
-
-- **Login screen**: unchanged UX, but now stores `sessionToken` from response in AsyncStorage and sends it in `Authorization` header on all requests
-- **Swipe screen**: replace hardcoded `PRODUCTS` array with `ring.feed` API call (or `ring.list` for anonymous). Display ring data using real DB fields (name, metalType, stoneType, caratWeight, style, rating, images). Remove price display. Derive avatar initials from logged-in user name.
-- On each swipe gesture completion, call `swipe.create` to persist the decision
-- Loading spinner while fetching feed
-- "Plus de bagues !" empty state when feed is exhausted
-- Error toast on network failure with retry
-
-### Criteres d'Acceptation (QA)
-
-1. **Login + token**: Open app -> enter username -> tap "C'est parti" -> you're logged in. Check API logs or DB: user has a `sessionToken` and `sessionExpiresAt` set.
-2. **Real rings in feed**: After login, tap "Swipe" -> you see a ring card with a real name from the seed data (e.g., "Classic Solitaire Diamond") and a real image. Not "Eternal Promise" (the old hardcoded mock).
-3. **No price**: Ring cards do NOT display any price.
-4. **Swipe persisted**: Swipe right (LIKE) on a ring -> check DB (Prisma Studio or API call): a `Swipe` record exists with your `userId`, the `ringId`, and direction `LIKE`.
-5. **Feed excludes swiped rings**: After swiping on all 3 seed rings, the feed is empty -> "Plus de bagues !" message appears.
-6. **Re-swipe is an update**: Somehow trigger a second swipe on the same ring (e.g., via re-seed + re-login or direct API call) -> the existing Swipe record is updated (upsert), no duplicate created.
-7. **Auth required**: Call `swipe.create` without a token -> get an UNAUTHORIZED error.
-8. **Avatar shows your initials**: The avatar circle in the swipe header shows your actual initials, not "AB".
-
-### Tasks
-
-- [ ] Add `sessionExpiresAt DateTime?` field to User model + `db:push`
-- [ ] Update `auth.login` handler: generate UUID token, set `sessionExpiresAt` to now + 30 days, store on user, return token in response
-- [ ] Build `authMiddleware` for oRPC: read Bearer token, resolve user, inject `ctx.user`, reject expired, refresh when < 7 days remaining
-- [ ] Add `ring.list` procedure (public): paginated, include images, ordered by `createdAt`
-- [ ] Add `ring.feed` procedure (protected): exclude already-swiped rings, random order, include images
-- [ ] Add `swipe.create` procedure (protected): upsert on `(userId, ringId)`, validate ringId exists
-- [ ] Update mobile auth lib: store `sessionToken` in AsyncStorage alongside user, send `Authorization: Bearer <token>` header in oRPC link
-- [ ] Rewrite swipe screen: replace hardcoded `PRODUCTS` with `ring.feed` query, map `Ring` fields to card UI, remove price, derive avatar from user
-- [ ] Call `swipe.create` mutation on each swipe gesture completion
-- [ ] Handle loading state (spinner), error state (toast + retry), empty state ("Plus de bagues !")
-- [ ] Update shared schemas if needed (e.g., `LoginResponseSchema` with token)
-- [ ] Write API integration tests: auth.login returns token, authMiddleware rejects/accepts, ring.list, ring.feed excludes swiped, swipe.create upsert
-- [ ] Write mobile tests: auth lib stores/sends token, swipe screen renders ring data
-<!-- - [ ] Seed additional rings (10-15 total) so the feed isn't exhausted in 3 swipes during QA -->
-
-### Tests
-
-- **API**: `auth.test.ts` -- login returns sessionToken + sessionExpiresAt; `middleware.test.ts` -- valid token resolves user, expired token rejected, missing token rejected, token refresh logic; `ring.test.ts` -- list pagination, feed excludes swiped; `swipe.test.ts` -- create, upsert, auth required
-- **Mobile**: `auth.test.ts` -- token stored + sent; `swipe.test.ts` -- renders real ring data, calls swipe.create on gesture
-
----
-
-## Phase 2 -- "Je vois mes favoris"
-
-> I swipe LIKE on some rings, then I open a Favorites tab and see them listed. I tap one, I see its full details.
-
-### Objectif Fonctionnel
-
-A bottom tab bar with two tabs: Swipe and Favorites. The Favorites tab shows all rings I've liked. Tapping a ring opens a detail screen with image carousel, specs, and Like/Nope buttons.
-
-### API
-
-| Procedure | Auth | Input | Output | Description |
-|-----------|------|-------|--------|-------------|
-| `swipe.listLiked` | Protected | `{ limit, offset }` | `Ring[]` with images | All rings the user swiped LIKE/SUPER on, ordered by swipe date |
-| `ring.get` | Public | `{ id }` | `Ring` with images | Single ring with all details |
-
-### UI/UX
-
-- **Tab navigation**: restructure `app/` to `(tabs)` group with expo-router. Two tabs: Swipe (Heart icon) and Favorites (Star icon). Login stays outside tabs.
-- **Favorites screen** (`/(tabs)/favorites`): grid/list of liked ring cards (thumbnail, name, metal type). Pull-to-refresh. Empty state: "Pas encore de favoris -- swipe pour en ajouter !"
-- **Ring detail screen** (`/ring/[id]`): image carousel (horizontal FlatList), ring name (serif), specs list (metal, stone, carat, style), star rating + review count, description, Like/Nope action buttons at bottom, back navigation.
-- **Swipe -> Favorites flow**: after swiping LIKE, the favorites list updates on next visit (React Query invalidation)
-
-### Criteres d'Acceptation (QA)
-
-1. **Tab bar visible**: After login, you see a bottom tab bar with Swipe and Favorites tabs.
-2. **Favorites shows liked rings**: Swipe LIKE on 2 rings -> go to Favorites tab -> you see those 2 rings listed with thumbnails and names.
-3. **Favorites is empty initially**: Fresh user -> Favorites tab shows "Pas encore de favoris" message.
-4. **Ring detail from favorites**: Tap a ring in Favorites -> detail screen opens with image carousel, all specs, rating, description.
-5. **Like/Nope from detail**: On ring detail, tap "Nope" -> swipe is updated, navigate back. Tap "Like" on an unliked ring -> swipe created.
-6. **Pull to refresh**: Pull down on Favorites list -> data refreshes.
-7. **NOPE'd rings don't appear**: Rings swiped NOPE are NOT in the favorites list.
-
-### Tasks
-
-- [ ] Restructure `app/` to use `(tabs)` group with expo-router
-- [ ] Add tab bar with Swipe (Heart) and Favorites (Star) icons from `@ring/ui`
-- [ ] Keep login screen outside tabs (unauthenticated stack)
-- [ ] Add `swipe.listLiked` procedure (protected): return rings with images where direction = LIKE or SUPER
-- [ ] Build favorites tab screen with ring card grid/list, pull-to-refresh, loading + empty states
-- [ ] Build reusable ring card thumbnail component
-- [ ] Create `app/ring/[id].tsx` detail screen with image carousel, specs, rating, description
-- [ ] Wire detail screen to `ring.get` API
-- [ ] Add Like/Nope buttons on detail screen wired to `swipe.create`
-- [ ] Invalidate favorites query after swipe mutation
-- [ ] Write integration tests for `swipe.listLiked`
-- [ ] Write mobile tests for favorites screen + detail screen
-
-### Tests
-
-- **API**: `swipe.test.ts` -- listLiked returns only LIKE/SUPER, excludes NOPE, pagination
-- **Mobile**: `favorites.test.ts` -- renders liked rings, empty state; `ring-detail.test.ts` -- renders ring data, like/nope actions
+**Key gap**: Couple pairing, match detection, and push notifications are not yet implemented.
 
 ---
 
@@ -595,7 +542,7 @@ Production-ready polish. Not a feature phase -- a quality phase. Every screen ge
 |-------|-----|----------------------|
 | **0** | Data Model [DONE] | `db:seed` + Prisma Studio |
 | **0.5** | Foundations [DONE] | Error boundary, toasts, analytics logging |
-| **1** | "Je swipe des vraies bagues" | Login -> swipe -> voir des vraies bagues de la DB -> swipes sauvegardes |
+| **1** | "Je swipe des vraies bagues" [DONE] | Login -> swipe -> voir des vraies bagues de la DB -> swipes sauvegardes |
 | **2** | "Je vois mes favoris" | Tab bar + liste des favoris + detail bague avec carousel |
 | **3** | "Je me couple" | Creer un code -> partager -> partenaire rejoint -> statut couple visible |
 | **4** | "On a un match !" | Les deux aiment la meme bague -> match detecte + celebration |
@@ -617,3 +564,9 @@ Production-ready polish. Not a feature phase -- a quality phase. Every screen ge
 - **UserSchema changes cascade**: adding fields breaks mobile test mocks -- update all mock objects
 - **Biome lint** flags `!` assertions -- use `npx @biomejs/biome check --write --unsafe` to fix
 - **`as const` on objects with empty arrays** creates `readonly []` incompatible with mutable types -- use explicit type annotation
+- **oRPC context for auth**: use `os.$context<{ headers: Headers }>()` to create a typed base builder, pass `request.headers` from server `fetch()` handler via `context: { headers: request.headers }`
+- **oRPC `ORPCError`**: re-exported from `@orpc/server` (originally from `@orpc/client`) -- import from `@orpc/server` to avoid extra dependency
+- **oRPC middleware `.use()` callback signature**: `({ context, next }, _input, _output) => ...` -- second/third params for input/output types
+- **Fisher-Yates shuffle with `noUncheckedIndexedAccess`**: destructuring swap `[a[i], a[j]] = [a[j], a[i]]` with `as` cast avoids non-null assertions that Biome rejects
+- **`call()` requires context arg with `$context`**: when using `os.$context<T>()`, all `call(procedure, input, { context })` invocations in tests must include the third argument -- even for public procedures
+- **Login response shape change cascades widely**: changing `auth.login` from returning `User` to `{ user, sessionToken }` breaks login screen, all mobile test mocks, and any code destructuring the response
