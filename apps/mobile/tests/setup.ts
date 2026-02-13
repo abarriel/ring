@@ -9,6 +9,13 @@ vi.mock('react-native', () => ({
   Pressable: 'Pressable',
   Platform: { OS: 'ios' },
   KeyboardAvoidingView: 'KeyboardAvoidingView',
+  ActivityIndicator: 'ActivityIndicator',
+  Alert: { alert: vi.fn() },
+  ScrollView: 'ScrollView',
+  FlatList: 'FlatList',
+  Image: 'Image',
+  RefreshControl: 'RefreshControl',
+  Share: { share: vi.fn() },
 }))
 
 vi.mock('expo-linear-gradient', () => ({
@@ -58,12 +65,17 @@ vi.mock('@ring/ui', () => ({
   },
   ToastProvider: ({ children }: { children: unknown }) => children,
   useToast: () => ({ show: vi.fn(), dismiss: vi.fn() }),
+  Copy: 'Copy',
   Heart: 'Heart',
+  Info: 'Info',
+  LogOut: 'LogOut',
+  Share2: 'Share2',
   Star: 'Star',
+  UserCircle: 'UserCircle',
+  Users: 'Users',
   X: 'X',
   ChevronLeft: 'ChevronLeft',
   AlertTriangle: 'AlertTriangle',
   CheckCircle: 'CheckCircle',
-  Info: 'Info',
   XCircle: 'XCircle',
 }))

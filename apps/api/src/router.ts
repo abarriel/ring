@@ -2,6 +2,7 @@ import { ORPCError, os } from '@orpc/server'
 import {
   CreateSwipeSchema,
   CreateUserSchema,
+  JoinCoupleSchema,
   LoginSchema,
   type UpdateUser,
   UpdateUserSchema,
@@ -244,6 +245,138 @@ const createSwipe = authed.input(CreateSwipeSchema).handler(async ({ input, cont
   return swipe
 })
 
+// ── Couple helpers ──────────────────────────────────────────────────────────
+
+const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // no 0/O/1/I ambiguity
+
+function generateCoupleCode(): string {
+  let code = ''
+  for (let i = 0; i < 6; i++) {
+    code += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]
+  }
+  return code
+}
+
+// ── Couple procedures ──────────────────────────────────────────────────────
+
+const coupleInclude = {
+  inviter: { select: { id: true, name: true } },
+  partner: { select: { id: true, name: true } },
+} as const
+
+const createCouple = authed.handler(async ({ context }) => {
+  const userId = context.user.id
+
+  // Check if user is already in an active/pending couple
+  const existing = await db.couple.findFirst({
+    where: {
+      status: { in: ['PENDING', 'ACTIVE'] },
+      OR: [{ inviterId: userId }, { partnerId: userId }],
+    },
+  })
+  if (existing) {
+    throw new ORPCError('CONFLICT', { message: 'Already in a couple' })
+  }
+
+  // Generate a unique 6-char code
+  let code = generateCoupleCode()
+  let attempts = 0
+  while (await db.couple.findUnique({ where: { code } })) {
+    code = generateCoupleCode()
+    attempts++
+    if (attempts > 10) {
+      throw new ORPCError('INTERNAL_SERVER_ERROR', { message: 'Failed to generate unique code' })
+    }
+  }
+
+  const couple = await db.couple.create({
+    data: { code, inviterId: userId, status: 'PENDING' },
+    include: coupleInclude,
+  })
+
+  return couple
+})
+
+const joinCouple = authed.input(JoinCoupleSchema).handler(async ({ input, context }) => {
+  const userId = context.user.id
+
+  // Check if user is already in an active/pending couple
+  const existingCouple = await db.couple.findFirst({
+    where: {
+      status: { in: ['PENDING', 'ACTIVE'] },
+      OR: [{ inviterId: userId }, { partnerId: userId }],
+    },
+  })
+  if (existingCouple) {
+    throw new ORPCError('CONFLICT', { message: 'Already paired' })
+  }
+
+  // Find the couple by code
+  const couple = await db.couple.findUnique({ where: { code: input.code } })
+  if (!couple) {
+    throw new ORPCError('NOT_FOUND', { message: 'Code not found' })
+  }
+
+  // Cannot join own couple
+  if (couple.inviterId === userId) {
+    throw new ORPCError('BAD_REQUEST', { message: 'Cannot join your own couple' })
+  }
+
+  // Check if couple already has a partner
+  if (couple.partnerId) {
+    throw new ORPCError('CONFLICT', { message: 'Couple already full' })
+  }
+
+  // Check if couple is still pending
+  if (couple.status !== 'PENDING') {
+    throw new ORPCError('BAD_REQUEST', { message: 'Couple is not available' })
+  }
+
+  const updated = await db.couple.update({
+    where: { id: couple.id },
+    data: { partnerId: userId, status: 'ACTIVE' },
+    include: coupleInclude,
+  })
+
+  return updated
+})
+
+const getCouple = authed.handler(async ({ context }) => {
+  const userId = context.user.id
+
+  const couple = await db.couple.findFirst({
+    where: {
+      status: { in: ['PENDING', 'ACTIVE'] },
+      OR: [{ inviterId: userId }, { partnerId: userId }],
+    },
+    include: coupleInclude,
+  })
+
+  return couple
+})
+
+const dissolveCouple = authed.handler(async ({ context }) => {
+  const userId = context.user.id
+
+  const couple = await db.couple.findFirst({
+    where: {
+      status: { in: ['PENDING', 'ACTIVE'] },
+      OR: [{ inviterId: userId }, { partnerId: userId }],
+    },
+  })
+  if (!couple) {
+    throw new ORPCError('NOT_FOUND', { message: 'No active couple found' })
+  }
+
+  const dissolved = await db.couple.update({
+    where: { id: couple.id },
+    data: { status: 'DISSOLVED', dissolvedAt: new Date() },
+    include: coupleInclude,
+  })
+
+  return dissolved
+})
+
 // ── Router ──────────────────────────────────────────────────────────────────
 
 export const router = {
@@ -265,6 +398,12 @@ export const router = {
   swipe: {
     create: createSwipe,
     listLiked: listLikedSwipes,
+  },
+  couple: {
+    create: createCouple,
+    join: joinCouple,
+    get: getCouple,
+    dissolve: dissolveCouple,
   },
 }
 

@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest'
 import {
   CoupleSchema,
   CoupleStatusSchema,
+  CoupleWithPartnerSchema,
   CreateRingSchema,
   CreateSwipeSchema,
   CreateUserSchema,
+  JoinCoupleSchema,
   LoginResponseSchema,
   LoginSchema,
   MatchSchema,
@@ -541,6 +543,61 @@ describe('CoupleSchema', () => {
 
   it('rejects invalid status', () => {
     expect(CoupleSchema.safeParse({ ...validCouple, status: 'INACTIVE' }).success).toBe(false)
+  })
+})
+
+// ── CoupleWithPartnerSchema ─────────────────────────────────────────────────
+
+describe('CoupleWithPartnerSchema', () => {
+  const validCoupleWithPartner = {
+    id: '550e8400-e29b-41d4-a716-446655440000',
+    code: 'ABC123',
+    inviterId: '660e8400-e29b-41d4-a716-446655440000',
+    partnerId: '770e8400-e29b-41d4-a716-446655440000',
+    status: 'ACTIVE' as const,
+    createdAt: new Date(),
+    dissolvedAt: null,
+    inviter: { id: '660e8400-e29b-41d4-a716-446655440000', name: 'Alice' },
+    partner: { id: '770e8400-e29b-41d4-a716-446655440000', name: 'Bob' },
+  }
+
+  it('accepts a valid couple with partner', () => {
+    expect(CoupleWithPartnerSchema.safeParse(validCoupleWithPartner).success).toBe(true)
+  })
+
+  it('accepts couple with null partner', () => {
+    expect(
+      CoupleWithPartnerSchema.safeParse({
+        ...validCoupleWithPartner,
+        partner: null,
+        partnerId: null,
+      }).success,
+    ).toBe(true)
+  })
+
+  it('rejects couple missing inviter', () => {
+    const { inviter: _, ...noInviter } = validCoupleWithPartner
+    expect(CoupleWithPartnerSchema.safeParse(noInviter).success).toBe(false)
+  })
+})
+
+// ── JoinCoupleSchema ────────────────────────────────────────────────────────
+
+describe('JoinCoupleSchema', () => {
+  it('accepts a valid 6-char code', () => {
+    expect(JoinCoupleSchema.safeParse({ code: 'ABC123' }).success).toBe(true)
+  })
+
+  it('rejects code shorter than 6 chars', () => {
+    expect(JoinCoupleSchema.safeParse({ code: 'ABC' }).success).toBe(false)
+  })
+
+  it('rejects code longer than 6 chars', () => {
+    expect(JoinCoupleSchema.safeParse({ code: 'ABCDEFG' }).success).toBe(false)
+  })
+
+  it('rejects missing code', () => {
+    expect(JoinCoupleSchema.safeParse({}).success).toBe(false)
   })
 })
 

@@ -156,7 +156,18 @@ export const CoupleSchema = z.object({
   dissolvedAt: z.date().nullable(),
 })
 
+export const CoupleWithPartnerSchema = CoupleSchema.extend({
+  inviter: UserSchema.pick({ id: true, name: true }),
+  partner: UserSchema.pick({ id: true, name: true }).nullable(),
+})
+
+export const JoinCoupleSchema = z.object({
+  code: z.string().length(6),
+})
+
 export type Couple = z.infer<typeof CoupleSchema>
+export type CoupleWithPartner = z.infer<typeof CoupleWithPartnerSchema>
+export type JoinCouple = z.infer<typeof JoinCoupleSchema>
 
 // ── Match schemas ───────────────────────────────────────────────────────────
 

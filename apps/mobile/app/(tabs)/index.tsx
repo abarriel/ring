@@ -2,6 +2,7 @@ import type { RingWithImages } from '@ring/shared'
 import { Heart, Star, theme, X } from '@ring/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { LinearGradient } from 'expo-linear-gradient'
+import { router as expoRouter } from 'expo-router'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
@@ -192,9 +193,9 @@ export default function SwipeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerLogo}>Ring</Text>
-          <View style={styles.avatar}>
+          <Pressable style={styles.avatar} onPress={() => expoRouter.push('/profile')}>
             <Text style={styles.avatarText}>{userInitials}</Text>
-          </View>
+          </Pressable>
         </View>
 
         {/* Card area */}
