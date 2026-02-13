@@ -18,9 +18,11 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { clearUser, getUser } from '@/lib/auth'
 import { client, orpc } from '@/lib/orpc'
+import { useAuthGuard } from '@/lib/use-auth-guard'
 import { getInitials } from '@/lib/utils'
 
 export default function ProfileScreen() {
+  const isAuthed = useAuthGuard()
   const insets = useSafeAreaInsets()
   const toast = useToast()
   const queryClient = useQueryClient()
@@ -32,7 +34,10 @@ export default function ProfileScreen() {
   }, [])
 
   // ── Couple query ──────────────────────────────────────────────────────
-  const coupleQuery = useQuery(orpc.couple.get.queryOptions({ input: undefined }))
+  const coupleQuery = useQuery({
+    ...orpc.couple.get.queryOptions({ input: undefined }),
+    enabled: isAuthed,
+  })
   const couple = coupleQuery.data ?? null
 
   // ── Create couple mutation ────────────────────────────────────────────

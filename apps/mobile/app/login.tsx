@@ -12,8 +12,21 @@ import {
   TextInput,
   View,
 } from 'react-native'
+import { clearAnonymousSwipes, getAnonymousSwipes } from '@/lib/anonymous-swipes'
 import { saveToken, saveUser } from '@/lib/auth'
 import { client } from '@/lib/orpc'
+
+async function replayAnonymousSwipes() {
+  const swipes = await getAnonymousSwipes()
+  for (const swipe of swipes) {
+    try {
+      await client.swipe.create({ ringId: swipe.ringId, direction: swipe.direction })
+    } catch {
+      // Skip failures (e.g., ring deleted, duplicate) — continue with remaining
+    }
+  }
+  await clearAnonymousSwipes()
+}
 
 export default function LoginScreen() {
   const [name, setName] = useState('')
@@ -23,6 +36,8 @@ export default function LoginScreen() {
     onSuccess: async (result) => {
       await saveUser(result.user)
       await saveToken(result.sessionToken)
+      // Replay anonymous swipes to the API before navigating
+      await replayAnonymousSwipes()
       router.replace('/')
     },
   })

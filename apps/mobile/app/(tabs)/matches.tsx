@@ -14,6 +14,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { orpc } from '@/lib/orpc'
+import { useAuthGuard } from '@/lib/use-auth-guard'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,14 +65,18 @@ function MatchCard({ match }: { match: MatchWithRing }) {
 // ── Screen ───────────────────────────────────────────────────────────────────
 
 export default function MatchesScreen() {
+  const isAuthed = useAuthGuard()
   const insets = useSafeAreaInsets()
 
-  const coupleQuery = useQuery(orpc.couple.get.queryOptions({ input: undefined }))
+  const coupleQuery = useQuery({
+    ...orpc.couple.get.queryOptions({ input: undefined }),
+    enabled: isAuthed,
+  })
   const couple = coupleQuery.data
 
   const matchesQuery = useQuery({
     ...orpc.match.list.queryOptions({ input: { limit: 50, offset: 0 } }),
-    enabled: couple?.status === 'ACTIVE',
+    enabled: isAuthed && couple?.status === 'ACTIVE',
   })
   const matches = (matchesQuery.data as MatchWithRing[] | undefined) ?? []
 

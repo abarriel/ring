@@ -14,6 +14,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { orpc } from '@/lib/orpc'
+import { useAuthGuard } from '@/lib/use-auth-guard'
 
 function RingCard({ ring }: { ring: RingWithImages }) {
   const imageUrl = ring.images[0]?.url
@@ -49,11 +50,13 @@ function RingCard({ ring }: { ring: RingWithImages }) {
 }
 
 export default function FavoritesScreen() {
+  const isAuthed = useAuthGuard()
   const insets = useSafeAreaInsets()
 
-  const favoritesQuery = useQuery(
-    orpc.swipe.listLiked.queryOptions({ input: { limit: 50, offset: 0 } }),
-  )
+  const favoritesQuery = useQuery({
+    ...orpc.swipe.listLiked.queryOptions({ input: { limit: 50, offset: 0 } }),
+    enabled: isAuthed,
+  })
   const rings = (favoritesQuery.data as RingWithImages[] | undefined) ?? []
 
   const isLoading = favoritesQuery.isLoading
