@@ -19,7 +19,7 @@ const server = Bun.serve({
   async fetch(request: Request) {
     const { matched, response } = await handler.handle(request, {
       prefix: '/rpc',
-      context: {},
+      context: { headers: request.headers },
     })
 
     if (matched) {
@@ -36,4 +36,4 @@ const server = Bun.serve({
   },
 })
 
-console.log(`🚀 Ring API running at http://localhost:${server.port}`)
+console.log(`Ring API running at http://localhost:${server.port}`)

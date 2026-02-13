@@ -52,6 +52,7 @@ export const UserSchema = z.object({
   email: z.string().email(),
   name: z.string().min(1).max(100),
   sessionToken: z.string().nullable(),
+  sessionExpiresAt: z.date().nullable(),
   preferredMetals: z.array(MetalTypeSchema),
   preferredStones: z.array(StoneTypeSchema),
   preferredStyles: z.array(RingStyleSchema),
@@ -70,10 +71,16 @@ export const LoginSchema = z.object({
   name: z.string().min(1).max(100),
 })
 
+export const LoginResponseSchema = z.object({
+  user: UserSchema,
+  sessionToken: z.string(),
+})
+
 export type User = z.infer<typeof UserSchema>
 export type CreateUser = z.infer<typeof CreateUserSchema>
 export type UpdateUser = z.infer<typeof UpdateUserSchema>
 export type Login = z.infer<typeof LoginSchema>
+export type LoginResponse = z.infer<typeof LoginResponseSchema>
 
 // ── Ring schemas ────────────────────────────────────────────────────────────
 

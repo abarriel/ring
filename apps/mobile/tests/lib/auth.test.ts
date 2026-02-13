@@ -1,13 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import type { User } from '@ring/shared'
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
-import { clearUser, getUser, saveUser } from '@/lib/auth'
+import { clearUser, getToken, getUser, saveToken, saveUser } from '@/lib/auth'
 
 const mockUser: User = {
   id: '550e8400-e29b-41d4-a716-446655440000',
   email: 'alice@ring.local',
   name: 'Alice',
   sessionToken: null,
+  sessionExpiresAt: null,
   preferredMetals: [],
   preferredStones: [],
   preferredStyles: [],
@@ -25,6 +26,14 @@ describe('auth', () => {
       await saveUser(mockUser)
 
       expect(AsyncStorage.setItem).toHaveBeenCalledWith('ring:user', JSON.stringify(mockUser))
+    })
+  })
+
+  describe('saveToken', () => {
+    it('stores token string', async () => {
+      await saveToken('test-token-123')
+
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith('ring:token', 'test-token-123')
     })
   })
 
@@ -51,11 +60,29 @@ describe('auth', () => {
     })
   })
 
+  describe('getToken', () => {
+    it('returns token when stored', async () => {
+      ;(AsyncStorage.getItem as Mock).mockResolvedValue('test-token-123')
+
+      const token = await getToken()
+
+      expect(token).toBe('test-token-123')
+    })
+
+    it('returns null when no token stored', async () => {
+      ;(AsyncStorage.getItem as Mock).mockResolvedValue(null)
+
+      const token = await getToken()
+
+      expect(token).toBeNull()
+    })
+  })
+
   describe('clearUser', () => {
-    it('removes the key', async () => {
+    it('removes user and token keys', async () => {
       await clearUser()
 
-      expect(AsyncStorage.removeItem).toHaveBeenCalledWith('ring:user')
+      expect(AsyncStorage.multiRemove).toHaveBeenCalledWith(['ring:user', 'ring:token'])
     })
   })
 })

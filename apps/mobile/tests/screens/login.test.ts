@@ -1,7 +1,7 @@
-import type { User } from '@ring/shared'
+import type { LoginResponse, User } from '@ring/shared'
 import { router } from 'expo-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { saveUser } from '@/lib/auth'
+import { saveToken, saveUser } from '@/lib/auth'
 import { client } from '@/lib/orpc'
 
 vi.mock('@/lib/orpc', () => ({
@@ -12,7 +12,26 @@ vi.mock('@/lib/orpc', () => ({
 
 vi.mock('@/lib/auth', () => ({
   saveUser: vi.fn(),
+  saveToken: vi.fn(),
 }))
+
+const mockUser: User = {
+  id: '1',
+  name: 'Alice',
+  email: 'alice@ring.local',
+  sessionToken: 'test-token-123',
+  sessionExpiresAt: new Date('2025-03-15'),
+  preferredMetals: [],
+  preferredStones: [],
+  preferredStyles: [],
+  createdAt: new Date(),
+  updatedAt: new Date(),
+}
+
+const mockLoginResponse: LoginResponse = {
+  user: mockUser,
+  sessionToken: 'test-token-123',
+}
 
 describe('login logic', () => {
   beforeEach(() => {
@@ -20,44 +39,25 @@ describe('login logic', () => {
   })
 
   it('calls client.auth.login with trimmed name', async () => {
-    const mockUser: User = {
-      id: '1',
-      name: 'Alice',
-      email: 'alice@ring.local',
-      sessionToken: null,
-      preferredMetals: [],
-      preferredStones: [],
-      preferredStyles: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
-    vi.mocked(client.auth.login).mockResolvedValue(mockUser)
+    vi.mocked(client.auth.login).mockResolvedValue(mockLoginResponse)
 
     await client.auth.login({ name: 'Alice' })
 
     expect(client.auth.login).toHaveBeenCalledWith({ name: 'Alice' })
   })
 
-  it('saves user and navigates on success', async () => {
-    const mockUser: User = {
-      id: '1',
-      name: 'Alice',
-      email: 'alice@ring.local',
-      sessionToken: null,
-      preferredMetals: [],
-      preferredStones: [],
-      preferredStyles: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
-    vi.mocked(client.auth.login).mockResolvedValue(mockUser)
+  it('saves user, token, and navigates on success', async () => {
+    vi.mocked(client.auth.login).mockResolvedValue(mockLoginResponse)
     vi.mocked(saveUser).mockResolvedValue(undefined)
+    vi.mocked(saveToken).mockResolvedValue(undefined)
 
-    const user = await client.auth.login({ name: 'Alice' })
-    await saveUser(user)
+    const result = await client.auth.login({ name: 'Alice' })
+    await saveUser(result.user)
+    await saveToken(result.sessionToken)
     router.replace('/')
 
     expect(saveUser).toHaveBeenCalledWith(mockUser)
+    expect(saveToken).toHaveBeenCalledWith('test-token-123')
     expect(router.replace).toHaveBeenCalledWith('/')
   })
 

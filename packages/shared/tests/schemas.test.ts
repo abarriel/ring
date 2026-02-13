@@ -5,6 +5,7 @@ import {
   CreateRingSchema,
   CreateSwipeSchema,
   CreateUserSchema,
+  LoginResponseSchema,
   LoginSchema,
   MatchSchema,
   MetalTypeSchema,
@@ -110,6 +111,7 @@ describe('UserSchema', () => {
     email: 'alice@ring.local',
     name: 'Alice',
     sessionToken: null,
+    sessionExpiresAt: null,
     preferredMetals: [],
     preferredStones: [],
     preferredStyles: [],
@@ -135,6 +137,22 @@ describe('UserSchema', () => {
     const result = UserSchema.safeParse({
       ...validUser,
       sessionToken: 'abc123-session-token',
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts user with sessionExpiresAt date', () => {
+    const result = UserSchema.safeParse({
+      ...validUser,
+      sessionExpiresAt: new Date('2025-03-15'),
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts user with null sessionExpiresAt', () => {
+    const result = UserSchema.safeParse({
+      ...validUser,
+      sessionExpiresAt: null,
     })
     expect(result.success).toBe(true)
   })
@@ -223,6 +241,37 @@ describe('LoginSchema', () => {
 
   it('rejects missing name', () => {
     expect(LoginSchema.safeParse({}).success).toBe(false)
+  })
+})
+
+describe('LoginResponseSchema', () => {
+  const validUser = {
+    id: '550e8400-e29b-41d4-a716-446655440000',
+    email: 'alice@ring.local',
+    name: 'Alice',
+    sessionToken: 'test-token-123',
+    sessionExpiresAt: new Date(),
+    preferredMetals: [],
+    preferredStones: [],
+    preferredStyles: [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }
+
+  it('accepts valid login response', () => {
+    const result = LoginResponseSchema.safeParse({
+      user: validUser,
+      sessionToken: 'test-token-123',
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects missing user', () => {
+    expect(LoginResponseSchema.safeParse({ sessionToken: 'abc' }).success).toBe(false)
+  })
+
+  it('rejects missing sessionToken', () => {
+    expect(LoginResponseSchema.safeParse({ user: validUser }).success).toBe(false)
   })
 })
 
