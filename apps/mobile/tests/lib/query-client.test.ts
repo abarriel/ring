@@ -27,7 +27,7 @@ describe('queryClient retry logic', () => {
     expect(retryFn(2, genericError)).toBe(false)
   })
 
-  it('does not retry on non-oRPC errors that look like oRPC errors', () => {
+  it('retries on non-oRPC errors that look like oRPC errors', () => {
     const retryFn = queryClient.getDefaultOptions().queries?.retry
     if (typeof retryFn !== 'function') {
       throw new Error('Expected retry to be a function')
