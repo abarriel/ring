@@ -5,6 +5,7 @@ import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testconta
 
 const URL_FILE = resolve(import.meta.dirname, '../.test-db-url')
 let container: StartedPostgreSqlContainer
+let cleanupHandlers: Array<() => void> = []
 
 function cleanupUrlFile() {
   try {
@@ -16,19 +17,41 @@ function cleanupUrlFile() {
   }
 }
 
+function registerCleanupHandlers() {
+  const sigintHandler = () => {
+    console.log('\nReceived SIGINT, cleaning up...')
+    cleanupUrlFile()
+    process.exit(130)
+  }
+
+  const sigtermHandler = () => {
+    console.log('\nReceived SIGTERM, cleaning up...')
+    cleanupUrlFile()
+    process.exit(143)
+  }
+
+  process.once('SIGINT', sigintHandler)
+  process.once('SIGTERM', sigtermHandler)
+
+  cleanupHandlers = [
+    () => process.removeListener('SIGINT', sigintHandler),
+    () => process.removeListener('SIGTERM', sigtermHandler),
+  ]
+}
+
+function removeCleanupHandlers() {
+  for (const removeHandler of cleanupHandlers) {
+    removeHandler()
+  }
+  cleanupHandlers = []
+}
+
 export async function setup() {
   container = await new PostgreSqlContainer('postgres:17').start()
   const url = container.getConnectionUri()
   writeFileSync(URL_FILE, url)
 
-  // Register cleanup handlers for process exit signals
-  const cleanup = () => {
-    cleanupUrlFile()
-    process.exit(0)
-  }
-
-  process.once('SIGINT', cleanup)
-  process.once('SIGTERM', cleanup)
+  registerCleanupHandlers()
 
   execSync(`bunx --bun prisma db push --url "${url}"`, {
     cwd: resolve(import.meta.dirname, '..'),
@@ -38,8 +61,12 @@ export async function setup() {
 }
 
 export async function teardown() {
+  removeCleanupHandlers()
+
   try {
     await container?.stop()
+  } catch (error) {
+    console.error('Failed to stop container:', error)
   } finally {
     cleanupUrlFile()
   }
