@@ -16,6 +16,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { client, orpc } from '@/lib/orpc'
+import { formatEnum } from '@/lib/utils'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const IMAGE_HEIGHT = SCREEN_WIDTH * 0.85
@@ -56,12 +57,12 @@ export default function RingDetailScreen() {
   const handleNope = useCallback(() => {
     if (!ring) return
     swipeMutation.mutate({ ringId: ring.id, direction: 'NOPE' })
-  }, [ring, swipeMutation])
+  }, [ring, swipeMutation.mutate])
 
   const handleLike = useCallback(() => {
     if (!ring) return
     swipeMutation.mutate({ ringId: ring.id, direction: 'LIKE' })
-  }, [ring, swipeMutation])
+  }, [ring, swipeMutation.mutate])
 
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: Array<{ index: number | null }> }) => {
@@ -200,13 +201,6 @@ export default function RingDetailScreen() {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatEnum(value: string): string {
-  return value
-    .replace(/_/g, ' ')
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-}
 
 function buildSpecs(ring: RingWithImages) {
   const specs: { label: string; value: string }[] = []

@@ -1,6 +1,7 @@
 import type { RingWithImages } from '@ring/shared'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { client } from '@/lib/orpc'
+import { formatEnum } from '@/lib/utils'
 
 vi.mock('@/lib/orpc', () => ({
   client: {
@@ -133,12 +134,6 @@ describe('ring detail screen logic', () => {
   })
 
   it('builds specs from ring data', () => {
-    const formatEnum = (value: string) =>
-      value
-        .replace(/_/g, ' ')
-        .toLowerCase()
-        .replace(/\b\w/g, (c) => c.toUpperCase())
-
     const specs: { label: string; value: string }[] = []
     specs.push({ label: 'Metal', value: formatEnum(mockRing.metalType) })
     specs.push({ label: 'Pierre', value: formatEnum(mockRing.stoneType) })

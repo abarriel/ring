@@ -24,6 +24,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { getUser } from '@/lib/auth'
 import { client, orpc } from '@/lib/orpc'
+import { formatEnum } from '@/lib/utils'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -33,13 +34,6 @@ function getInitials(name: string): string {
     .slice(0, 2)
     .map((w) => w[0]?.toUpperCase() ?? '')
     .join('')
-}
-
-function formatEnum(value: string): string {
-  return value
-    .replace(/_/g, ' ')
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
 function formatSpec(ring: RingWithImages): string[] {

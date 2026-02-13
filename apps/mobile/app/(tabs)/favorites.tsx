@@ -14,6 +14,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { orpc } from '@/lib/orpc'
+import { formatEnum } from '@/lib/utils'
 
 function RingCard({ ring }: { ring: RingWithImages }) {
   const imageUrl = ring.images[0]?.url
@@ -34,10 +35,7 @@ function RingCard({ ring }: { ring: RingWithImages }) {
           {ring.name}
         </Text>
         <Text style={styles.cardMetal} numberOfLines={1}>
-          {ring.metalType
-            .replace(/_/g, ' ')
-            .toLowerCase()
-            .replace(/\b\w/g, (c) => c.toUpperCase())}
+          {formatEnum(ring.metalType)}
         </Text>
         <View style={styles.cardRating}>
           <Text style={styles.cardStars}>{'*'.repeat(Math.round(ring.rating))}</Text>
@@ -75,7 +73,7 @@ export default function FavoritesScreen() {
           <Text style={styles.emptyTitle}>Oups !</Text>
           <Text style={styles.emptySubtitle}>Impossible de charger les favoris.</Text>
           <Pressable style={styles.retryBtn} onPress={() => favoritesQuery.refetch()}>
-            <Text style={styles.retryText}>Reessayer</Text>
+            <Text style={styles.retryText}>Réessayer</Text>
           </Pressable>
         </View>
       ) : rings.length === 0 ? (
