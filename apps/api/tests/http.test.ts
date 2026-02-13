@@ -26,6 +26,7 @@ beforeAll(async () => {
       if (res.ok) return
     } catch {}
   }
+  server?.kill()
   throw new Error('Server did not start in time')
 })
 
