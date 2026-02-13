@@ -12,7 +12,7 @@
     "typecheck": "turbo typecheck",
     "db:generate": "turbo db:generate",
     "db:push": "turbo db:push",
-    "db:test": "turbo db:test",
+
     "db:studio": "pnpm --filter @ring/api db:studio",
     "test": "turbo test",
     "test:e2e": "pnpm --filter @ring/mobile test:e2e"

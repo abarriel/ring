@@ -34,7 +34,7 @@ pnpm format               # Biome format --write
 pnpm typecheck            # tsgo --noEmit (all workspaces)
 pnpm db:generate          # Generate Prisma client
 pnpm db:push              # Push schema to PostgreSQL
-pnpm db:test              # Smoke test: Testcontainers + health check
+
 pnpm db:studio            # Open Prisma Studio
 ```
 
@@ -164,5 +164,5 @@ Use inline `type` keyword for type-only imports: `import type { User } from '@ri
 - **DB access**: Always through `db` from `apps/api/src/db.ts`
 - **Mobile env vars**: Prefix with `EXPO_PUBLIC_` to expose client-side
 - **No NativeWind**: Use `StyleSheet.create()` + `theme` from `@ring/ui`
-- **No test framework** yet — only `pnpm db:test` (smoke test via Testcontainers)
+- **Testing**: Vitest across the monorepo (`pnpm test`), API integration tests use Testcontainers
 - **Pre-commit hooks**: Lefthook runs lint + format + typecheck automatically
