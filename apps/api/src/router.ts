@@ -149,6 +149,17 @@ const listRings = base
     return rings
   })
 
+const getRing = base.input(z.object({ id: z.string().uuid() })).handler(async ({ input }) => {
+  const ring = await db.ring.findUnique({
+    where: { id: input.id },
+    include: { images: { orderBy: { position: 'asc' } } },
+  })
+  if (!ring) {
+    throw new ORPCError('NOT_FOUND', { message: 'Ring not found' })
+  }
+  return ring
+})
+
 const feedRings = authed
   .input(
     z.object({
@@ -184,6 +195,29 @@ const feedRings = authed
   })
 
 // ── Swipe procedures ────────────────────────────────────────────────────────
+
+const listLikedSwipes = authed
+  .input(
+    z.object({
+      limit: z.number().int().min(1).max(100).default(20),
+      offset: z.number().int().min(0).default(0),
+    }),
+  )
+  .handler(async ({ input, context }) => {
+    const userId = context.user.id
+
+    const swipes = await db.swipe.findMany({
+      where: { userId, direction: { in: ['LIKE', 'SUPER'] } },
+      orderBy: { createdAt: 'desc' },
+      take: input.limit,
+      skip: input.offset,
+      include: {
+        ring: { include: { images: { orderBy: { position: 'asc' } } } },
+      },
+    })
+
+    return swipes.map((s) => s.ring)
+  })
 
 const createSwipe = authed.input(CreateSwipeSchema).handler(async ({ input, context }) => {
   const userId = context.user.id
@@ -225,10 +259,12 @@ export const router = {
   },
   ring: {
     list: listRings,
+    get: getRing,
     feed: feedRings,
   },
   swipe: {
     create: createSwipe,
+    listLiked: listLikedSwipes,
   },
 }
 
