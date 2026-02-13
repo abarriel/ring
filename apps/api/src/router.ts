@@ -213,16 +213,15 @@ const feedRings = authed
     })
 
     // Create a Map for O(n+m) complexity instead of O(n*m)
-    const imagesByRingId = images.reduce(
-      (acc, img) => {
-        if (!acc[img.ringId]) {
-          acc[img.ringId] = []
-        }
-        acc[img.ringId]?.push(img)
-        return acc
-      },
-      {} as Record<string, typeof images>,
-    )
+    const imagesByRingId: Record<string, typeof images> = {}
+    for (const img of images) {
+      const existing = imagesByRingId[img.ringId]
+      if (existing) {
+        existing.push(img)
+      } else {
+        imagesByRingId[img.ringId] = [img]
+      }
+    }
 
     // Map images to rings
     const ringsWithImages = rings.map((ring) => ({

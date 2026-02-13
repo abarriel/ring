@@ -94,7 +94,8 @@ export default function SwipeScreen() {
           await swipeMutation.mutateAsync({ ringId: currentRing.id, direction })
         }
       } catch (_error) {
-        // Error already logged in onError, but don't block UI
+        // Error already logged in onError handler
+        console.error('Failed to advance card after swipe:', _error)
       }
       setCurrentIndex((prev) => prev + 1)
       translateX.value = 0
