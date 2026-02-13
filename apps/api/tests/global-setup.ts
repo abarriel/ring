@@ -30,8 +30,8 @@ function registerCleanupHandlers() {
     process.exit(143)
   }
 
-  process.once('SIGINT', sigintHandler)
-  process.once('SIGTERM', sigtermHandler)
+  process.on('SIGINT', sigintHandler)
+  process.on('SIGTERM', sigtermHandler)
 
   cleanupHandlers = [
     () => process.removeListener('SIGINT', sigintHandler),
