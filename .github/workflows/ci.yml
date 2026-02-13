@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   quality:
-    name: Lint, Typecheck & Build
+    name: Lint, Typecheck, Build & Test
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
@@ -29,25 +29,22 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm build
+      - run: pnpm --filter @ring/shared test
+      - run: pnpm --filter @ring/mobile test
 
-  api-health:
-    name: API Health Check
-    needs: quality
+  test-api:
+    name: Test API
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
-
-      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .nvmrc
           cache: pnpm
-
       - uses: oven-sh/setup-bun@3d267786b128fe76c2f16a390aa2448b815359f3 # v2
-
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
-      - run: pnpm db:test
+      - run: pnpm --filter @ring/api test

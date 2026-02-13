@@ -18,7 +18,9 @@
     "db:generate": "bunx --bun prisma generate",
     "db:push": "bunx --bun prisma db push",
     "db:studio": "bunx --bun prisma studio",
-    "db:test": "bun scripts/with-db.ts"
+
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@orpc/server": "^1.13.5",
@@ -33,6 +35,7 @@
     "@types/bun": "^1.3.9",
     "dotenv": "^17.2.4",
     "prisma": "^7.4.0",
-    "testcontainers": "^11.11.0"
+    "testcontainers": "^11.11.0",
+    "vitest": "^4.0.18"
   }
 }

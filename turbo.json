@@ -28,7 +28,8 @@
     "db:push": {
       "cache": false
     },
-    "db:test": {
+
+    "test": {
       "dependsOn": ["db:generate"],
       "cache": false
     }

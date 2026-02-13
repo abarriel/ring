@@ -12,8 +12,10 @@
     "typecheck": "turbo typecheck",
     "db:generate": "turbo db:generate",
     "db:push": "turbo db:push",
-    "db:test": "turbo db:test",
-    "db:studio": "pnpm --filter @ring/api db:studio"
+
+    "db:studio": "pnpm --filter @ring/api db:studio",
+    "test": "turbo test",
+    "test:e2e": "pnpm --filter @ring/mobile test:e2e"
   },
   "pnpm": {
     "overrides": {
@@ -31,8 +33,10 @@
   "devDependencies": {
     "@biomejs/biome": "^2.3.15",
     "@typescript/native-preview": "7.0.0-dev.20260212.1",
+    "@vitest/coverage-v8": "^4.0.18",
     "lefthook": "^2.1.1",
     "turbo": "^2.8.7",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
   }
 }

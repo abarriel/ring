@@ -35,6 +35,9 @@ apps/api/prisma/generated/
 apps/api/prisma/*.db
 apps/api/prisma/*.db-journal
 
+# Test
+.test-db-url
+
 # Logs
 *.log
 npm-debug.log*
