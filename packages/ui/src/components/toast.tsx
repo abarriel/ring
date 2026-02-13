@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { createContext, useCallback, useContext, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { theme } from '../theme'
@@ -98,11 +98,13 @@ function ToastItem({ toast, onDismiss }: { toast: ToastMessage; onDismiss: (id: 
   const colors = TYPE_STYLES[toast.type]
 
   // Fade in on mount
-  Animated.timing(opacity, {
-    toValue: 1,
-    duration: 200,
-    useNativeDriver: true,
-  }).start()
+  useEffect(() => {
+    Animated.timing(opacity, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start()
+  }, [opacity])
 
   const handleDismiss = () => {
     Animated.timing(opacity, {
