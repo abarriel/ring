@@ -1,7 +1,8 @@
 import type { User } from '@ring/shared'
 import { Copy, LogOut, Share2, theme, Users, useToast } from '@ring/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { router } from 'expo-router'
+import * as Clipboard from 'expo-clipboard'
+import { router as expoRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
@@ -17,15 +18,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { clearUser, getUser } from '@/lib/auth'
 import { client, orpc } from '@/lib/orpc'
-
-function getInitials(name: string): string {
-  return name
-    .split(/\s+/)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
-}
+import { getInitials } from '@/lib/utils'
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets()
@@ -52,14 +45,14 @@ export default function ProfileScreen() {
       if (error.message.includes('Already in a couple')) {
         toast.show({
           type: 'warning',
-          title: 'Deja en couple',
-          message: 'Tu es deja dans un couple',
+          title: 'Déjà en couple',
+          message: 'Tu es déjà dans un couple',
         })
       } else {
         toast.show({
           type: 'error',
           title: 'Erreur',
-          message: 'Erreur lors de la creation du couple',
+          message: 'Erreur lors de la création du couple',
         })
       }
     },
@@ -71,22 +64,28 @@ export default function ProfileScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['couple'] })
       setJoinCode('')
-      toast.show({ type: 'success', title: 'Couple forme !' })
+      toast.show({ type: 'success', title: 'Couple formé !' })
     },
     onError: (error: Error) => {
       if (error.message.includes('Code not found')) {
         toast.show({ type: 'error', title: 'Code introuvable', message: "Ce code n'existe pas" })
+      } else if (error.message.includes('Cannot join your own couple')) {
+        toast.show({
+          type: 'warning',
+          title: 'Code invalide',
+          message: 'Tu ne peux pas rejoindre ton propre couple',
+        })
       } else if (error.message.includes('Already paired')) {
         toast.show({
           type: 'warning',
-          title: 'Deja en couple',
-          message: 'Tu es deja dans un couple',
+          title: 'Déjà en couple',
+          message: 'Tu es déjà dans un couple',
         })
       } else if (error.message.includes('Couple already full')) {
         toast.show({
           type: 'error',
           title: 'Couple complet',
-          message: 'Ce couple a deja un partenaire',
+          message: 'Ce couple a déjà un partenaire',
         })
       } else {
         toast.show({ type: 'error', title: 'Erreur', message: 'Erreur lors de la jonction' })
@@ -118,7 +117,7 @@ export default function ProfileScreen() {
       toast.show({
         type: 'warning',
         title: 'Code invalide',
-        message: 'Le code doit faire 6 caracteres',
+        message: 'Le code doit faire 6 caractères',
       })
       return
     }
@@ -126,7 +125,7 @@ export default function ProfileScreen() {
   }
 
   const handleDissolve = () => {
-    Alert.alert('Dissoudre le couple', 'Es-tu sur de vouloir dissoudre le couple ?', [
+    Alert.alert('Dissoudre le couple', 'Es-tu sûr de vouloir dissoudre le couple ?', [
       { text: 'Annuler', style: 'cancel' },
       {
         text: 'Dissoudre',
@@ -146,16 +145,21 @@ export default function ProfileScreen() {
     }
   }
 
+  const handleCopyCode = async (code: string) => {
+    await Clipboard.setStringAsync(code)
+    toast.show({ type: 'success', title: 'Copié !' })
+  }
+
   const handleLogout = () => {
-    Alert.alert('Deconnexion', 'Es-tu sur de vouloir te deconnecter ?', [
+    Alert.alert('Déconnexion', 'Es-tu sûr de vouloir te déconnecter ?', [
       { text: 'Annuler', style: 'cancel' },
       {
-        text: 'Deconnecter',
+        text: 'Déconnecter',
         style: 'destructive',
         onPress: async () => {
           await clearUser()
           queryClient.clear()
-          router.replace('/login')
+          expoRouter.replace('/login')
         },
       },
     ])
@@ -230,13 +234,7 @@ export default function ProfileScreen() {
               <Pressable style={styles.iconBtn} onPress={() => handleShareCode(couple.code)}>
                 <Share2 size={20} color={theme.colors.ring.pink500} />
               </Pressable>
-              <Pressable
-                style={styles.iconBtn}
-                onPress={() => {
-                  // Copy to clipboard is handled by Share on RN
-                  handleShareCode(couple.code)
-                }}
-              >
+              <Pressable style={styles.iconBtn} onPress={() => handleCopyCode(couple.code)}>
                 <Copy size={20} color={theme.colors.foreground.secondary} />
               </Pressable>
             </View>
@@ -263,7 +261,7 @@ export default function ProfileScreen() {
               disabled={createCoupleMutation.isPending}
             >
               <Text style={styles.inviteBtnText}>
-                {createCoupleMutation.isPending ? 'Creation...' : 'Invite ton partenaire'}
+                {createCoupleMutation.isPending ? 'Création...' : 'Invite ton partenaire'}
               </Text>
             </Pressable>
 
@@ -301,7 +299,7 @@ export default function ProfileScreen() {
       {/* Logout */}
       <Pressable style={styles.logoutBtn} onPress={handleLogout}>
         <LogOut size={18} color={theme.colors.feedback.error.text} />
-        <Text style={styles.logoutText}>Deconnexion</Text>
+        <Text style={styles.logoutText}>Déconnexion</Text>
       </Pressable>
     </ScrollView>
   )
