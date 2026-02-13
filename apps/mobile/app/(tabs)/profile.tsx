@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   Pressable,
   ScrollView,
   Share,
@@ -34,20 +35,23 @@ export default function ProfileScreen() {
   }, [])
 
   // ── Couple query ──────────────────────────────────────────────────────
+  const coupleQueryOptions = orpc.couple.get.queryOptions({ input: undefined })
   const coupleQuery = useQuery({
-    ...orpc.couple.get.queryOptions({ input: undefined }),
+    ...coupleQueryOptions,
     enabled: isAuthed,
   })
   const couple = coupleQuery.data ?? null
+  const coupleQueryKey = coupleQueryOptions.queryKey
 
   // ── Create couple mutation ────────────────────────────────────────────
   const createCoupleMutation = useMutation({
     mutationFn: () => client.couple.create(undefined),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['couple'] })
+      queryClient.invalidateQueries({ queryKey: coupleQueryKey })
     },
     onError: (error: Error) => {
       if (error.message.includes('Already in a couple')) {
+        queryClient.invalidateQueries({ queryKey: coupleQueryKey })
         toast.show({
           type: 'warning',
           title: 'Déjà en couple',
@@ -67,7 +71,7 @@ export default function ProfileScreen() {
   const joinCoupleMutation = useMutation({
     mutationFn: (code: string) => client.couple.join({ code }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['couple'] })
+      queryClient.invalidateQueries({ queryKey: coupleQueryKey })
       setJoinCode('')
       toast.show({ type: 'success', title: 'Couple formé !' })
     },
@@ -81,6 +85,7 @@ export default function ProfileScreen() {
           message: 'Tu ne peux pas rejoindre ton propre couple',
         })
       } else if (error.message.includes('Already paired')) {
+        queryClient.invalidateQueries({ queryKey: coupleQueryKey })
         toast.show({
           type: 'warning',
           title: 'Déjà en couple',
@@ -102,7 +107,7 @@ export default function ProfileScreen() {
   const dissolveCoupleMutation = useMutation({
     mutationFn: () => client.couple.dissolve(undefined),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['couple'] })
+      queryClient.invalidateQueries({ queryKey: coupleQueryKey })
       toast.show({ type: 'info', title: 'Couple dissous' })
     },
     onError: () => {
@@ -130,6 +135,12 @@ export default function ProfileScreen() {
   }
 
   const handleDissolve = () => {
+    if (Platform.OS === 'web') {
+      if (window.confirm('Es-tu sûr de vouloir dissoudre le couple ?')) {
+        dissolveCoupleMutation.mutate()
+      }
+      return
+    }
     Alert.alert('Dissoudre le couple', 'Es-tu sûr de vouloir dissoudre le couple ?', [
       { text: 'Annuler', style: 'cancel' },
       {
@@ -155,7 +166,15 @@ export default function ProfileScreen() {
     toast.show({ type: 'success', title: 'Copié !' })
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (Platform.OS === 'web') {
+      if (window.confirm('Es-tu sûr de vouloir te déconnecter ?')) {
+        await clearUser()
+        queryClient.clear()
+        expoRouter.replace('/login')
+      }
+      return
+    }
     Alert.alert('Déconnexion', 'Es-tu sûr de vouloir te déconnecter ?', [
       { text: 'Annuler', style: 'cancel' },
       {
@@ -187,7 +206,7 @@ export default function ProfileScreen() {
   return (
     <ScrollView
       style={[styles.container, { paddingTop: insets.top }]}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingBottom: 40 + insets.bottom }]}
     >
       {/* Header */}
       <View style={styles.header}>
@@ -315,9 +334,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background.surface,
   },
-  content: {
-    paddingBottom: 40,
-  },
+  content: {},
   header: {
     paddingHorizontal: theme.spacing.page,
     paddingVertical: 12,
