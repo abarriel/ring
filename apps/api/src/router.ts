@@ -7,6 +7,7 @@ import {
   UpdateUserSchema,
 } from '@ring/shared'
 import { z } from 'zod'
+import { Prisma } from '../prisma/generated/prisma/client.js'
 import { db } from './db.js'
 
 // ── Auth helpers ────────────────────────────────────────────────────────────
@@ -44,7 +45,7 @@ const authed = base.use(async ({ context, next }, _input, _output) => {
     throw new ORPCError('UNAUTHORIZED', { message: 'Invalid session token' })
   }
 
-  if (user.sessionExpiresAt && user.sessionExpiresAt < new Date()) {
+  if (!user.sessionExpiresAt || user.sessionExpiresAt < new Date()) {
     throw new ORPCError('UNAUTHORIZED', { message: 'Session expired' })
   }
 
@@ -165,22 +166,57 @@ const feedRings = authed
     })
     const excludeIds = swipedRingIds.map((s) => s.ringId)
 
-    // Fetch unswiped rings in random order
-    const rings = await db.ring.findMany({
-      where: excludeIds.length > 0 ? { id: { notIn: excludeIds } } : undefined,
-      include: { images: { orderBy: { position: 'asc' } } },
-    })
+    // Use database-level random ordering with proper parameterization
+    let rings: Array<{
+      id: string
+      name: string
+      description: string | null
+      caratWeight: number | null
+      metalType: string | null
+      style: string | null
+      rating: number
+      reviewCount: number
+      createdAt: Date
+      updatedAt: Date
+    }>
 
-    // Shuffle for random order (Fisher-Yates)
-    for (let i = rings.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      ;[rings[i], rings[j]] = [rings[j], rings[i]] as [
-        (typeof rings)[number],
-        (typeof rings)[number],
-      ]
+    if (excludeIds.length > 0) {
+      rings = await db.$queryRaw(
+        Prisma.sql`
+          SELECT * FROM rings
+          WHERE id NOT IN (${Prisma.join(excludeIds)})
+          ORDER BY RANDOM()
+          LIMIT ${input.limit}
+        `,
+      )
+    } else {
+      rings = await db.$queryRaw(
+        Prisma.sql`
+          SELECT * FROM rings
+          ORDER BY RANDOM()
+          LIMIT ${input.limit}
+        `,
+      )
     }
 
-    return rings.slice(0, input.limit)
+    // Fetch images for the selected rings
+    if (rings.length === 0) {
+      return []
+    }
+
+    const ringIds = rings.map((r) => r.id)
+    const images = await db.ringImage.findMany({
+      where: { ringId: { in: ringIds } },
+      orderBy: { position: 'asc' },
+    })
+
+    // Map images to rings
+    const ringsWithImages = rings.map((ring) => ({
+      ...ring,
+      images: images.filter((img) => img.ringId === ring.id),
+    }))
+
+    return ringsWithImages
   })
 
 // ── Swipe procedures ────────────────────────────────────────────────────────

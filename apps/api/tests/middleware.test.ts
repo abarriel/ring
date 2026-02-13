@@ -52,6 +52,20 @@ describe('authMiddleware', () => {
     )
   })
 
+  it('rejects session with null expiry date', async () => {
+    const { sessionToken, user } = await loginUser('Alice')
+
+    // Manually set expiry to null
+    await db.user.update({
+      where: { id: user.id },
+      data: { sessionExpiresAt: null },
+    })
+
+    await expect(call(router.ring.feed, { limit: 10 }, testContext(sessionToken))).rejects.toThrow(
+      'Session expired',
+    )
+  })
+
   it('refreshes token expiry when less than 7 days remaining', async () => {
     const { sessionToken, user } = await loginUser('Alice')
 

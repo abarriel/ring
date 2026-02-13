@@ -20,7 +20,7 @@ const mockUser: User = {
   name: 'Alice',
   email: 'alice@ring.local',
   sessionToken: 'test-token-123',
-  sessionExpiresAt: new Date('2025-03-15'),
+  sessionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
   preferredMetals: [],
   preferredStones: [],
   preferredStyles: [],

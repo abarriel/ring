@@ -70,10 +70,14 @@ export default function SwipeScreen() {
     mutationFn: (input: { ringId: string; direction: 'LIKE' | 'NOPE' | 'SUPER' }) =>
       client.swipe.create(input),
     onSuccess: () => {
-      // Invalidate feed so next fetch excludes swiped rings
+      // Invalidate all feed queries regardless of limit
       queryClient.invalidateQueries({
-        queryKey: orpc.ring.feed.queryOptions({ input: { limit: 50 } }).queryKey,
+        queryKey: ['ring', 'feed'],
       })
+    },
+    onError: (error) => {
+      console.error('Failed to persist swipe:', error)
+      // Optionally show user feedback here
     },
   })
 
@@ -83,24 +87,21 @@ export default function SwipeScreen() {
 
   const currentRing = rings[currentIndex]
 
-  const persistSwipe = useCallback(
-    (direction: 'LIKE' | 'NOPE' | 'SUPER') => {
-      if (currentRing) {
-        swipeMutation.mutate({ ringId: currentRing.id, direction })
-      }
-    },
-    [currentRing, swipeMutation],
-  )
-
   const advanceCard = useCallback(
-    (direction: 'LIKE' | 'NOPE' | 'SUPER') => {
-      persistSwipe(direction)
+    async (direction: 'LIKE' | 'NOPE' | 'SUPER') => {
+      try {
+        if (currentRing) {
+          await swipeMutation.mutateAsync({ ringId: currentRing.id, direction })
+        }
+      } catch (_error) {
+        // Error already logged in onError, but don't block UI
+      }
       setCurrentIndex((prev) => prev + 1)
       translateX.value = 0
       translateY.value = 0
       isAnimating.value = false
     },
-    [translateX, translateY, isAnimating, persistSwipe],
+    [translateX, translateY, isAnimating, currentRing, swipeMutation],
   )
 
   const swipeOff = useCallback(
@@ -132,7 +133,7 @@ export default function SwipeScreen() {
             const target = direction === 'left' ? -screenWidth * 1.5 : screenWidth * 1.5
             const swipeDirection = direction === 'left' ? 'NOPE' : 'LIKE'
             translateX.value = withTiming(target, { duration: 300 }, () => {
-              runOnJS(advanceCard)(swipeDirection as 'LIKE' | 'NOPE' | 'SUPER')
+              runOnJS(advanceCard)(swipeDirection)
             })
           } else {
             translateX.value = withSpring(0, { damping: 15, stiffness: 150 })
@@ -222,7 +223,12 @@ export default function SwipeScreen() {
 
                 {/* Image zone */}
                 <View style={styles.imageZone}>
-                  <Image source={{ uri: currentRing.images[0]?.url }} style={styles.productImage} />
+                  {currentRing.images?.[0]?.url ? (
+                    <Image
+                      source={{ uri: currentRing.images[0].url }}
+                      style={styles.productImage}
+                    />
+                  ) : null}
                 </View>
 
                 {/* Ring info */}
@@ -243,17 +249,21 @@ export default function SwipeScreen() {
                   <View style={styles.starsRow}>
                     <View style={styles.stars}>
                       {[1, 2, 3, 4, 5].map((n) => (
-                        <Text
+                        <Star
                           key={`star-${n}`}
-                          style={[
-                            styles.starIcon,
+                          size={16}
+                          color={
                             n <= Math.round(currentRing.rating)
-                              ? styles.starFilled
-                              : styles.starEmpty,
-                          ]}
-                        >
-                          *
-                        </Text>
+                              ? theme.colors.accent.stars
+                              : theme.colors.ui.border
+                          }
+                          fill={
+                            n <= Math.round(currentRing.rating)
+                              ? theme.colors.accent.stars
+                              : 'transparent'
+                          }
+                          strokeWidth={1.5}
+                        />
                       ))}
                     </View>
                     <Text style={styles.reviewCount}>
@@ -446,15 +456,6 @@ const styles = StyleSheet.create({
   stars: {
     flexDirection: 'row',
     gap: 2,
-  },
-  starIcon: {
-    fontSize: 16,
-  },
-  starFilled: {
-    color: theme.colors.accent.stars,
-  },
-  starEmpty: {
-    color: theme.colors.ui.border,
   },
   reviewCount: {
     fontSize: 13,
