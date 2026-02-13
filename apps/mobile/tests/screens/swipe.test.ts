@@ -51,12 +51,15 @@ describe('swipe screen logic', () => {
 
   it('calls swipe.create with ringId and LIKE direction', async () => {
     vi.mocked(client.swipe.create).mockResolvedValue({
-      id: 'swipe-1',
-      userId: 'user-1',
-      ringId: mockRing.id,
-      direction: 'LIKE',
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      swipe: {
+        id: 'swipe-1',
+        userId: 'user-1',
+        ringId: mockRing.id,
+        direction: 'LIKE',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      match: null,
     })
 
     const result = await client.swipe.create({
@@ -68,17 +71,21 @@ describe('swipe screen logic', () => {
       ringId: mockRing.id,
       direction: 'LIKE',
     })
-    expect(result.direction).toBe('LIKE')
+    expect(result.swipe.direction).toBe('LIKE')
+    expect(result.match).toBeNull()
   })
 
   it('calls swipe.create with NOPE direction', async () => {
     vi.mocked(client.swipe.create).mockResolvedValue({
-      id: 'swipe-2',
-      userId: 'user-1',
-      ringId: mockRing.id,
-      direction: 'NOPE',
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      swipe: {
+        id: 'swipe-2',
+        userId: 'user-1',
+        ringId: mockRing.id,
+        direction: 'NOPE',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      match: null,
     })
 
     const result = await client.swipe.create({
@@ -86,17 +93,20 @@ describe('swipe screen logic', () => {
       direction: 'NOPE',
     })
 
-    expect(result.direction).toBe('NOPE')
+    expect(result.swipe.direction).toBe('NOPE')
   })
 
   it('calls swipe.create with SUPER direction', async () => {
     vi.mocked(client.swipe.create).mockResolvedValue({
-      id: 'swipe-3',
-      userId: 'user-1',
-      ringId: mockRing.id,
-      direction: 'SUPER',
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      swipe: {
+        id: 'swipe-3',
+        userId: 'user-1',
+        ringId: mockRing.id,
+        direction: 'SUPER',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      match: null,
     })
 
     const result = await client.swipe.create({
@@ -104,7 +114,7 @@ describe('swipe screen logic', () => {
       direction: 'SUPER',
     })
 
-    expect(result.direction).toBe('SUPER')
+    expect(result.swipe.direction).toBe('SUPER')
   })
 
   it('derives user initials from stored user name', async () => {

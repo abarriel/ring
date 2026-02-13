@@ -10,12 +10,14 @@ import {
   LoginResponseSchema,
   LoginSchema,
   MatchSchema,
+  MatchWithRingSchema,
   MetalTypeSchema,
   RingImageSchema,
   RingSchema,
   RingStyleSchema,
   RingWithImagesSchema,
   StoneTypeSchema,
+  SwipeCreateResponseSchema,
   SwipeDirectionSchema,
   SwipeSchema,
   UpdateRingSchema,
@@ -626,5 +628,113 @@ describe('MatchSchema', () => {
   it('rejects missing createdAt', () => {
     const { createdAt: _, ...noCreatedAt } = validMatch
     expect(MatchSchema.safeParse(noCreatedAt).success).toBe(false)
+  })
+})
+
+describe('MatchWithRingSchema', () => {
+  const validMatchWithRing = {
+    id: '550e8400-e29b-41d4-a716-446655440000',
+    coupleId: '660e8400-e29b-41d4-a716-446655440000',
+    ringId: '770e8400-e29b-41d4-a716-446655440000',
+    createdAt: new Date(),
+    ring: {
+      id: '770e8400-e29b-41d4-a716-446655440000',
+      name: 'Test Ring',
+      description: null,
+      metalType: 'YELLOW_GOLD',
+      stoneType: 'DIAMOND',
+      caratWeight: 1.5,
+      style: 'SOLITAIRE',
+      rating: 4.5,
+      reviewCount: 10,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      images: [
+        {
+          id: '880e8400-e29b-41d4-a716-446655440000',
+          ringId: '770e8400-e29b-41d4-a716-446655440000',
+          url: 'https://example.com/ring.jpg',
+          position: 0,
+        },
+      ],
+    },
+  }
+
+  it('accepts a valid match with ring', () => {
+    expect(MatchWithRingSchema.safeParse(validMatchWithRing).success).toBe(true)
+  })
+
+  it('rejects match with missing ring', () => {
+    const { ring: _, ...noRing } = validMatchWithRing
+    expect(MatchWithRingSchema.safeParse(noRing).success).toBe(false)
+  })
+
+  it('rejects match with invalid ring (missing name)', () => {
+    const invalid = {
+      ...validMatchWithRing,
+      ring: { ...validMatchWithRing.ring, name: '' },
+    }
+    expect(MatchWithRingSchema.safeParse(invalid).success).toBe(false)
+  })
+
+  it('accepts match with ring with empty images array', () => {
+    const withEmptyImages = {
+      ...validMatchWithRing,
+      ring: { ...validMatchWithRing.ring, images: [] },
+    }
+    expect(MatchWithRingSchema.safeParse(withEmptyImages).success).toBe(true)
+  })
+})
+
+describe('SwipeCreateResponseSchema', () => {
+  const validSwipe = {
+    id: '550e8400-e29b-41d4-a716-446655440000',
+    userId: '660e8400-e29b-41d4-a716-446655440000',
+    ringId: '770e8400-e29b-41d4-a716-446655440000',
+    direction: 'LIKE',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }
+
+  const validMatch = {
+    id: '880e8400-e29b-41d4-a716-446655440000',
+    coupleId: '990e8400-e29b-41d4-a716-446655440000',
+    ringId: '770e8400-e29b-41d4-a716-446655440000',
+    createdAt: new Date(),
+  }
+
+  it('accepts response with swipe and null match', () => {
+    expect(SwipeCreateResponseSchema.safeParse({ swipe: validSwipe, match: null }).success).toBe(
+      true,
+    )
+  })
+
+  it('accepts response with swipe and a match', () => {
+    expect(
+      SwipeCreateResponseSchema.safeParse({ swipe: validSwipe, match: validMatch }).success,
+    ).toBe(true)
+  })
+
+  it('rejects response missing swipe', () => {
+    expect(SwipeCreateResponseSchema.safeParse({ match: null }).success).toBe(false)
+  })
+
+  it('rejects response missing match field', () => {
+    expect(SwipeCreateResponseSchema.safeParse({ swipe: validSwipe }).success).toBe(false)
+  })
+
+  it('rejects invalid swipe in response', () => {
+    expect(SwipeCreateResponseSchema.safeParse({ swipe: { id: 'bad' }, match: null }).success).toBe(
+      false,
+    )
+  })
+
+  it('rejects invalid match in response', () => {
+    expect(
+      SwipeCreateResponseSchema.safeParse({
+        swipe: validSwipe,
+        match: { id: 'bad' },
+      }).success,
+    ).toBe(false)
   })
 })

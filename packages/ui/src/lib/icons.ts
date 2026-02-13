@@ -3,6 +3,7 @@ export {
   CheckCircle,
   ChevronLeft,
   Copy,
+  Gem,
   Heart,
   Info,
   LogOut,

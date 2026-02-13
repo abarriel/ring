@@ -178,4 +178,16 @@ export const MatchSchema = z.object({
   createdAt: z.date(),
 })
 
+export const MatchWithRingSchema = MatchSchema.extend({
+  ring: RingWithImagesSchema,
+})
+
 export type Match = z.infer<typeof MatchSchema>
+export type MatchWithRing = z.infer<typeof MatchWithRingSchema>
+
+// ── Swipe response schemas ──────────────────────────────────────────────────
+
+export const SwipeCreateResponseSchema = z.object({
+  swipe: SwipeSchema,
+  match: MatchSchema.nullable(),
+})
