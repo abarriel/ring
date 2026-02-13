@@ -65,13 +65,13 @@ These images are for development/testing only. Before any production or marketin
 
 ### Tasks
 
-- [ ] Design & add Prisma schema (all models + all 5 enums + relations + unique constraints)
-- [ ] Add relation fields + sessionToken to existing User model
-- [ ] Add Zod schemas in `@ring/shared`: `RingSchema`, `RingImageSchema`, `SwipeSchema`, `CoupleSchema`, `MatchSchema` + create/update variants, plus all enum schemas
-- [ ] Create `prisma/seed.ts` with 3 dev rings + CDN image URLs (using the fixed Unsplash URLs from the Dev catalog section above)
-- [ ] Configure `prisma.seed` in `apps/api/package.json` to point to the seed script
-- [ ] Add `db:seed` script to `apps/api/package.json` that runs `bunx --bun prisma db seed`
-- [ ] Run `pnpm db:push` and `pnpm --filter @ring/api db:seed` to verify
+- [x] Design & add Prisma schema (all models + all 5 enums + relations + unique constraints)
+- [x] Add relation fields + sessionToken to existing User model
+- [x] Add Zod schemas in `@ring/shared`: `RingSchema`, `RingImageSchema`, `SwipeSchema`, `CoupleSchema`, `MatchSchema` + create/update variants, plus all enum schemas
+- [x] Create `prisma/seed.ts` with 3 dev rings + CDN image URLs (using the fixed Unsplash URLs from the Dev catalog section above)
+- [x] Configure `prisma.seed` in `prisma.config.ts` (Prisma 7 uses config file, not package.json)
+- [x] Add `db:seed` script to `apps/api/package.json` and root `package.json`
+- [x] Run `pnpm db:push` and `pnpm --filter @ring/api db:seed` to verify
 
 ---
 
@@ -106,12 +106,12 @@ For viral growth tracking, instrument core events from day one:
 
 ### Tasks
 
-- [ ] Build error boundary component (React Error Boundary for mobile)
-- [ ] Build toast/snackbar component for user-facing errors (add to `@ring/ui`)
-- [ ] Choose + integrate analytics tool
-- [ ] Define + instrument core tracking events
-- [ ] Set up API integration test harness (vitest or similar)
-- [ ] Add error logging utility (Sentry or simple console logging for MVP)
+- [x] Build error boundary component (`apps/mobile/src/components/error-boundary.tsx`)
+- [x] Build toast/snackbar component (`packages/ui/src/components/toast.tsx` -- `ToastProvider` + `useToast`)
+- [x] Choose + integrate analytics tool (custom typed event system in `apps/mobile/src/lib/analytics.ts`, swappable to PostHog later)
+- [x] Define + instrument core tracking events (`signup`, `login`, `swipe`, `match`, `share`, `invite_sent`, `invite_accepted`, `screen_view`)
+- [x] Set up API integration test harness (Vitest + Testcontainers, truncates all Phase 0 tables)
+- [x] Add error logging utility (`apps/api/src/logger.ts` -- structured JSON logger)
 
 ---
 
