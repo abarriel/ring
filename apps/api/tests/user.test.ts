@@ -1,9 +1,12 @@
 import { call } from '@orpc/server'
 import { describe, expect, it } from 'vitest'
 import { router } from '../src/router.js'
+import { testContext } from './setup.js'
+
+const ctx = testContext()
 
 async function createTestUser(name = 'Alice', email = 'alice@ring.local') {
-  return call(router.user.create, { name, email })
+  return call(router.user.create, { name, email }, ctx)
 }
 
 describe('user.create', () => {
@@ -35,7 +38,7 @@ describe('user.create', () => {
 describe('user.get', () => {
   it('returns existing user', async () => {
     const created = await createTestUser()
-    const fetched = await call(router.user.get, { id: created.id })
+    const fetched = await call(router.user.get, { id: created.id }, ctx)
 
     expect(fetched.id).toBe(created.id)
     expect(fetched.name).toBe('Alice')
@@ -43,7 +46,7 @@ describe('user.get', () => {
 
   it('throws on non-existent UUID', async () => {
     await expect(
-      call(router.user.get, { id: '00000000-0000-0000-0000-000000000000' }),
+      call(router.user.get, { id: '00000000-0000-0000-0000-000000000000' }, ctx),
     ).rejects.toThrow()
   })
 })
@@ -53,7 +56,7 @@ describe('user.list', () => {
     const a = await createTestUser('Alice', 'alice@ring.local')
     const b = await createTestUser('Bob', 'bob@ring.local')
 
-    const users = await call(router.user.list, { limit: 10, offset: 0 })
+    const users = await call(router.user.list, { limit: 10, offset: 0 }, ctx)
 
     expect(users).toHaveLength(2)
     // Most recent first
@@ -66,8 +69,8 @@ describe('user.list', () => {
     await createTestUser('Bob', 'bob@ring.local')
     await createTestUser('Charlie', 'charlie@ring.local')
 
-    const all = await call(router.user.list, { limit: 10, offset: 0 })
-    const page = await call(router.user.list, { limit: 1, offset: 1 })
+    const all = await call(router.user.list, { limit: 10, offset: 0 }, ctx)
+    const page = await call(router.user.list, { limit: 1, offset: 1 }, ctx)
 
     expect(page).toHaveLength(1)
     // offset=1 skips the first result, so we get the second one
@@ -75,7 +78,7 @@ describe('user.list', () => {
   })
 
   it('returns empty list when no users', async () => {
-    const users = await call(router.user.list, { limit: 10, offset: 0 })
+    const users = await call(router.user.list, { limit: 10, offset: 0 }, ctx)
     expect(users).toEqual([])
   })
 })
@@ -83,10 +86,14 @@ describe('user.list', () => {
 describe('user.update', () => {
   it('updates name', async () => {
     const user = await createTestUser()
-    const updated = await call(router.user.update, {
-      id: user.id,
-      data: { name: 'Alicia' },
-    })
+    const updated = await call(
+      router.user.update,
+      {
+        id: user.id,
+        data: { name: 'Alicia' },
+      },
+      ctx,
+    )
 
     expect(updated.name).toBe('Alicia')
     expect(updated.email).toBe('alice@ring.local')
@@ -94,10 +101,14 @@ describe('user.update', () => {
 
   it('updates email', async () => {
     const user = await createTestUser()
-    const updated = await call(router.user.update, {
-      id: user.id,
-      data: { email: 'new@ring.local' },
-    })
+    const updated = await call(
+      router.user.update,
+      {
+        id: user.id,
+        data: { email: 'new@ring.local' },
+      },
+      ctx,
+    )
 
     expect(updated.email).toBe('new@ring.local')
     expect(updated.name).toBe('Alice')
@@ -105,20 +116,28 @@ describe('user.update', () => {
 
   it('partial update keeps other fields', async () => {
     const user = await createTestUser()
-    const updated = await call(router.user.update, {
-      id: user.id,
-      data: { name: 'Alicia' },
-    })
+    const updated = await call(
+      router.user.update,
+      {
+        id: user.id,
+        data: { name: 'Alicia' },
+      },
+      ctx,
+    )
 
     expect(updated.email).toBe(user.email)
   })
 
   it('throws on non-existent UUID', async () => {
     await expect(
-      call(router.user.update, {
-        id: '00000000-0000-0000-0000-000000000000',
-        data: { name: 'Ghost' },
-      }),
+      call(
+        router.user.update,
+        {
+          id: '00000000-0000-0000-0000-000000000000',
+          data: { name: 'Ghost' },
+        },
+        ctx,
+      ),
     ).rejects.toThrow()
   })
 })
@@ -126,22 +145,22 @@ describe('user.update', () => {
 describe('user.delete', () => {
   it('deletes user', async () => {
     const user = await createTestUser()
-    const result = await call(router.user.delete, { id: user.id })
+    const result = await call(router.user.delete, { id: user.id }, ctx)
 
     expect(result).toEqual({ success: true })
   })
 
   it('throws on non-existent UUID', async () => {
     await expect(
-      call(router.user.delete, { id: '00000000-0000-0000-0000-000000000000' }),
+      call(router.user.delete, { id: '00000000-0000-0000-0000-000000000000' }, ctx),
     ).rejects.toThrow()
   })
 
   it('deleted user no longer in list', async () => {
     const user = await createTestUser()
-    await call(router.user.delete, { id: user.id })
+    await call(router.user.delete, { id: user.id }, ctx)
 
-    const users = await call(router.user.list, { limit: 10, offset: 0 })
+    const users = await call(router.user.list, { limit: 10, offset: 0 }, ctx)
     expect(users).toEqual([])
   })
 })

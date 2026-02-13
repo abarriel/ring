@@ -1,7 +1,17 @@
+import type { RingWithImages } from '@ring/shared'
 import { Heart, Star, theme, X } from '@ring/ui'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { LinearGradient } from 'expo-linear-gradient'
-import { useCallback, useMemo, useState } from 'react'
-import { Image, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, {
   interpolate,
@@ -12,66 +22,27 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { getUser } from '@/lib/auth'
+import { client, orpc } from '@/lib/orpc'
 
-// ── Mock data ────────────────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
-interface Product {
-  id: string
-  name: string
-  specs: string[]
-  price: number
-  rating: number
-  reviews: number
-  image: string
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? '')
+    .join('')
 }
 
-const PRODUCTS: Product[] = [
-  {
-    id: '1',
-    name: 'Eternal Promise',
-    specs: ['2.5 Carat', 'Platinum', 'Princess Cut'],
-    price: 8500,
-    rating: 5,
-    reviews: 2847,
-    image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop',
-  },
-  {
-    id: '2',
-    name: 'Celestial Halo',
-    specs: ['1.8 Carat', 'White Gold', 'Round Cut'],
-    price: 6200,
-    rating: 4,
-    reviews: 1923,
-    image: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?w=400&h=400&fit=crop',
-  },
-  {
-    id: '3',
-    name: 'Vintage Rosalie',
-    specs: ['3.0 Carat', 'Rose Gold', 'Oval Cut'],
-    price: 12400,
-    rating: 5,
-    reviews: 3156,
-    image: 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?w=400&h=400&fit=crop',
-  },
-  {
-    id: '4',
-    name: 'Diamond Solitaire',
-    specs: ['2.0 Carat', 'Platinum', 'Emerald Cut'],
-    price: 9800,
-    rating: 4,
-    reviews: 2104,
-    image: 'https://images.unsplash.com/photo-1589674781759-c21c37956a44?w=400&h=400&fit=crop',
-  },
-  {
-    id: '5',
-    name: 'Moonlight Pavé',
-    specs: ['1.5 Carat', 'White Gold', 'Cushion Cut'],
-    price: 5400,
-    rating: 5,
-    reviews: 1687,
-    image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&h=400&fit=crop',
-  },
-]
+function formatSpec(ring: RingWithImages): string[] {
+  const specs: string[] = []
+  if (ring.caratWeight) specs.push(`${ring.caratWeight} Carat`)
+  if (ring.metalType)
+    specs.push(ring.metalType.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()))
+  if (ring.style) specs.push(ring.style.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()))
+  return specs
+}
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -80,27 +51,66 @@ export default function SwipeScreen() {
   const { width: screenWidth } = useWindowDimensions()
   const swipeThreshold = screenWidth * 0.35
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [userInitials, setUserInitials] = useState('?')
+  const queryClient = useQueryClient()
+
+  // Fetch user initials from storage
+  useEffect(() => {
+    getUser().then((user) => {
+      if (user?.name) setUserInitials(getInitials(user.name))
+    })
+  }, [])
+
+  // Fetch ring feed from API
+  const feedQuery = useQuery(orpc.ring.feed.queryOptions({ input: { limit: 50 } }))
+  const rings: RingWithImages[] = (feedQuery.data as RingWithImages[] | undefined) ?? []
+
+  // Swipe mutation
+  const swipeMutation = useMutation({
+    mutationFn: (input: { ringId: string; direction: 'LIKE' | 'NOPE' | 'SUPER' }) =>
+      client.swipe.create(input),
+    onSuccess: () => {
+      // Invalidate feed so next fetch excludes swiped rings
+      queryClient.invalidateQueries({
+        queryKey: orpc.ring.feed.queryOptions({ input: { limit: 50 } }).queryKey,
+      })
+    },
+  })
 
   const translateX = useSharedValue(0)
   const translateY = useSharedValue(0)
   const isAnimating = useSharedValue(false)
 
-  const currentProduct = PRODUCTS[currentIndex]
+  const currentRing = rings[currentIndex]
 
-  const advanceCard = useCallback(() => {
-    setCurrentIndex((prev) => prev + 1)
-    translateX.value = 0
-    translateY.value = 0
-    isAnimating.value = false
-  }, [translateX, translateY, isAnimating])
+  const persistSwipe = useCallback(
+    (direction: 'LIKE' | 'NOPE' | 'SUPER') => {
+      if (currentRing) {
+        swipeMutation.mutate({ ringId: currentRing.id, direction })
+      }
+    },
+    [currentRing, swipeMutation],
+  )
+
+  const advanceCard = useCallback(
+    (direction: 'LIKE' | 'NOPE' | 'SUPER') => {
+      persistSwipe(direction)
+      setCurrentIndex((prev) => prev + 1)
+      translateX.value = 0
+      translateY.value = 0
+      isAnimating.value = false
+    },
+    [translateX, translateY, isAnimating, persistSwipe],
+  )
 
   const swipeOff = useCallback(
     (direction: 'left' | 'right') => {
       if (isAnimating.value) return
       isAnimating.value = true
       const target = direction === 'left' ? -screenWidth * 1.5 : screenWidth * 1.5
+      const swipeDirection = direction === 'left' ? 'NOPE' : 'LIKE'
       translateX.value = withTiming(target, { duration: 300 }, () => {
-        runOnJS(advanceCard)()
+        runOnJS(advanceCard)(swipeDirection)
       })
     },
     [translateX, isAnimating, screenWidth, advanceCard],
@@ -120,8 +130,9 @@ export default function SwipeScreen() {
             isAnimating.value = true
             const direction = event.translationX > 0 ? 'right' : 'left'
             const target = direction === 'left' ? -screenWidth * 1.5 : screenWidth * 1.5
+            const swipeDirection = direction === 'left' ? 'NOPE' : 'LIKE'
             translateX.value = withTiming(target, { duration: 300 }, () => {
-              runOnJS(advanceCard)()
+              runOnJS(advanceCard)(swipeDirection as 'LIKE' | 'NOPE' | 'SUPER')
             })
           } else {
             translateX.value = withSpring(0, { damping: 15, stiffness: 150 })
@@ -154,17 +165,16 @@ export default function SwipeScreen() {
   const handleSuper = useCallback(() => {
     if (isAnimating.value) return
     isAnimating.value = true
-    // Reset horizontal offset so the card flies straight up
     translateX.value = withTiming(0, { duration: 100 })
     translateY.value = withTiming(-screenWidth * 1.5, { duration: 300 }, () => {
-      runOnJS(advanceCard)()
+      runOnJS(advanceCard)('SUPER')
     })
   }, [translateX, translateY, isAnimating, screenWidth, advanceCard])
   const handleLike = useCallback(() => swipeOff('right'), [swipeOff])
 
-  const formatPrice = (price: number) => `$${price.toLocaleString('en-US')}`
-
-  const isFinished = currentIndex >= PRODUCTS.length
+  const isFinished = !feedQuery.isLoading && currentIndex >= rings.length
+  const isLoading = feedQuery.isLoading
+  const isError = feedQuery.isError
 
   return (
     <LinearGradient colors={['#fff1f2', '#fce7f3']} style={styles.gradient}>
@@ -173,18 +183,31 @@ export default function SwipeScreen() {
         <View style={styles.header}>
           <Text style={styles.headerLogo}>Ring</Text>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>AB</Text>
+            <Text style={styles.avatarText}>{userInitials}</Text>
           </View>
         </View>
 
         {/* Card area */}
         <View style={styles.cardArea}>
-          {isFinished ? (
+          {isLoading ? (
+            <View style={styles.emptyState}>
+              <ActivityIndicator size="large" color={theme.colors.ring.pink500} />
+              <Text style={styles.emptySubtitle}>Chargement des bagues...</Text>
+            </View>
+          ) : isError ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>Oups !</Text>
+              <Text style={styles.emptySubtitle}>Impossible de charger les bagues.</Text>
+              <Pressable style={styles.retryBtn} onPress={() => feedQuery.refetch()}>
+                <Text style={styles.retryText}>Reessayer</Text>
+              </Pressable>
+            </View>
+          ) : isFinished ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>Plus de bagues !</Text>
               <Text style={styles.emptySubtitle}>Reviens plus tard pour en voir d'autres.</Text>
             </View>
-          ) : currentProduct ? (
+          ) : currentRing ? (
             <GestureDetector gesture={panGesture}>
               <Animated.View style={[styles.card, cardAnimatedStyle]}>
                 {/* LIKE overlay */}
@@ -199,19 +222,16 @@ export default function SwipeScreen() {
 
                 {/* Image zone */}
                 <View style={styles.imageZone}>
-                  <Image source={{ uri: currentProduct.image }} style={styles.productImage} />
-                  <View style={styles.priceBadge}>
-                    <Text style={styles.priceText}>{formatPrice(currentProduct.price)}</Text>
-                  </View>
+                  <Image source={{ uri: currentRing.images[0]?.url }} style={styles.productImage} />
                 </View>
 
-                {/* Product info */}
+                {/* Ring info */}
                 <View style={styles.productInfo}>
-                  <Text style={styles.productName}>{currentProduct.name}</Text>
+                  <Text style={styles.productName}>{currentRing.name}</Text>
 
                   {/* Specs */}
                   <View style={styles.specsRow}>
-                    {currentProduct.specs.map((spec, i) => (
+                    {formatSpec(currentRing).map((spec, i) => (
                       <View key={spec} style={styles.specItem}>
                         {i > 0 && <View style={styles.specDot} />}
                         <Text style={styles.specText}>{spec}</Text>
@@ -227,15 +247,17 @@ export default function SwipeScreen() {
                           key={`star-${n}`}
                           style={[
                             styles.starIcon,
-                            n <= currentProduct.rating ? styles.starFilled : styles.starEmpty,
+                            n <= Math.round(currentRing.rating)
+                              ? styles.starFilled
+                              : styles.starEmpty,
                           ]}
                         >
-                          ★
+                          *
                         </Text>
                       ))}
                     </View>
                     <Text style={styles.reviewCount}>
-                      ({currentProduct.reviews.toLocaleString('en-US')} reviews)
+                      ({currentRing.reviewCount.toLocaleString('en-US')} reviews)
                     </Text>
                   </View>
                 </View>
@@ -245,7 +267,7 @@ export default function SwipeScreen() {
         </View>
 
         {/* Action buttons */}
-        {!isFinished && (
+        {!isFinished && !isLoading && !isError && (
           <View style={styles.actions}>
             <Pressable
               style={[styles.actionBtn, styles.actionBtnLarge, styles.nopeBtn]}
@@ -378,27 +400,8 @@ const styles = StyleSheet.create({
     height: '80%',
     resizeMode: 'contain',
   },
-  priceBadge: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    backgroundColor: theme.colors.accent.price.bg,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 999,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  priceText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.colors.accent.price.text,
-  },
 
-  // Product info
+  // Ring info
   productInfo: {
     paddingHorizontal: theme.spacing.cardX,
     paddingTop: theme.spacing.cardY,
@@ -498,7 +501,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.action.like.border,
   },
 
-  // Empty state
+  // Empty / loading / error states
   emptyState: {
     flex: 1,
     alignItems: 'center',
@@ -513,5 +516,18 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     fontSize: 14,
     color: theme.colors.foreground.muted,
+    marginTop: 8,
+  },
+  retryBtn: {
+    marginTop: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.ring.pink500,
+  },
+  retryText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#ffffff',
   },
 })

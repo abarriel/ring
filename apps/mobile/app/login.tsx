@@ -12,7 +12,7 @@ import {
   TextInput,
   View,
 } from 'react-native'
-import { saveUser } from '@/lib/auth'
+import { saveToken, saveUser } from '@/lib/auth'
 import { client } from '@/lib/orpc'
 
 export default function LoginScreen() {
@@ -20,8 +20,9 @@ export default function LoginScreen() {
 
   const loginMutation = useMutation({
     mutationFn: (input: { name: string }) => client.auth.login(input),
-    onSuccess: async (user) => {
-      await saveUser(user)
+    onSuccess: async (result) => {
+      await saveUser(result.user)
+      await saveToken(result.sessionToken)
       router.replace('/')
     },
   })

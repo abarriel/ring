@@ -2,9 +2,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import type { User } from '@ring/shared'
 
 const USER_KEY = 'ring:user'
+const TOKEN_KEY = 'ring:token'
 
 export async function saveUser(user: User) {
   await AsyncStorage.setItem(USER_KEY, JSON.stringify(user))
+}
+
+export async function saveToken(token: string) {
+  await AsyncStorage.setItem(TOKEN_KEY, token)
 }
 
 export async function getUser(): Promise<User | null> {
@@ -13,6 +18,10 @@ export async function getUser(): Promise<User | null> {
   return JSON.parse(raw)
 }
 
+export async function getToken(): Promise<string | null> {
+  return AsyncStorage.getItem(TOKEN_KEY)
+}
+
 export async function clearUser() {
-  await AsyncStorage.removeItem(USER_KEY)
+  await AsyncStorage.multiRemove([USER_KEY, TOKEN_KEY])
 }
