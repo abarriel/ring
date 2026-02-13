@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { createContext, useCallback, useContext, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { theme } from '../theme'
@@ -38,8 +38,15 @@ const DEFAULT_DURATION = 4000
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastMessage[]>([])
   const nextId = useRef(0)
+  const timeouts = useRef<Map<number, NodeJS.Timeout>>(new Map())
 
   const dismiss = useCallback((id: number) => {
+    // Clear the timeout if it exists
+    const timeout = timeouts.current.get(id)
+    if (timeout) {
+      clearTimeout(timeout)
+      timeouts.current.delete(id)
+    }
     setToasts((prev) => prev.filter((t) => t.id !== id))
   }, [])
 
@@ -49,10 +56,21 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       setToasts((prev) => [...prev, { ...toast, id }])
 
       const duration = toast.duration ?? DEFAULT_DURATION
-      setTimeout(() => dismiss(id), duration)
+      const timeout = setTimeout(() => dismiss(id), duration)
+      timeouts.current.set(id, timeout)
     },
     [dismiss],
   )
+
+  // Cleanup all timeouts on unmount
+  useEffect(() => {
+    return () => {
+      timeouts.current.forEach((timeout) => {
+        clearTimeout(timeout)
+      })
+      timeouts.current.clear()
+    }
+  }, [])
 
   return (
     <ToastContext.Provider value={{ show, dismiss }}>
