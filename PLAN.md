@@ -10,408 +10,530 @@ Ring lets users **swipe** through a curated catalog of engagement rings to build
 
 **Viral hook**: every match is a shareable moment. Couples share their matches to social media, driving organic growth.
 
+## Methodology: Vertical Slices
+
+Each phase delivers a **complete vertical slice**: API + UI + testable behavior. At the end of every phase, you can open the app, perform an action, and see a real result from the database. No phase is "backend only" or "frontend only."
+
+### Phase structure
+
+Every phase follows this template:
+
+1. **Objectif Fonctionnel** -- What concrete feature is delivered?
+2. **API** -- Only the endpoints strictly necessary for this feature
+3. **UI/UX** -- A functional screen or component to test the feature (even if minimal)
+4. **Criteres d'Acceptation (QA)** -- Manual tests you can run yourself to validate "Done"
+5. **Tasks** -- Implementation checklist
+6. **Tests** -- Automated tests (integration + unit)
+
 ---
 
-## Phase 0 -- Data Model & Dev Catalog
+## Completed Phases
 
-> Foundation: design the DB schema and add a few dev rings.
+### Phase 0 -- Data Model & Dev Catalog [DONE]
 
-### Prisma models
+> Foundation: DB schema + dev data.
 
-| Model | Key fields |
-|-------|-----------|
-| `Ring` | id, name, description, metalType (enum), stoneType (enum), caratWeight (float), style (enum), rating (float), reviewCount (int), createdAt, updatedAt |
-| `RingImage` | id, ringId (FK), url, position (int for ordering) |
-| `Swipe` | id, userId (FK), ringId (FK), direction (enum), createdAt, updatedAt. **Unique constraint on `(userId, ringId)`** -- one swipe per ring per user |
-| `Couple` | id, code (unique 6-char), inviterId (FK), partnerId (FK nullable), status (enum), createdAt, dissolvedAt (nullable) |
-| `Match` | id, coupleId (FK), ringId (FK), createdAt. **Unique constraint on `(coupleId, ringId)`** -- prevents duplicate matches from concurrent swipes |
+**What was built:**
+- 6 Prisma models: `User`, `Ring`, `RingImage`, `Swipe`, `Couple`, `Match`
+- 5 enums: `MetalType`, `StoneType`, `RingStyle`, `SwipeDirection`, `CoupleStatus`
+- Unique constraints on `Swipe(userId, ringId)` and `Match(coupleId, ringId)`
+- 17 Zod schemas in `@ring/shared` with create/update variants
+- `prisma/seed.ts` with 3 dev rings + 6 Unsplash CDN images
+- `db:seed` script wired through `prisma.config.ts`
 
-### Enums
+### Phase 0.5 -- Cross-Cutting Foundations [DONE]
 
-- `MetalType`: YELLOW_GOLD, WHITE_GOLD, ROSE_GOLD, PLATINUM, SILVER
-- `StoneType`: DIAMOND, SAPPHIRE, EMERALD, RUBY, MOISSANITE, MORGANITE, NONE
-- `RingStyle`: SOLITAIRE, HALO, VINTAGE, PAVE, THREE_STONE, CLUSTER, ETERNITY, TENSION, CATHEDRAL, BEZEL
-- `SwipeDirection`: LIKE, NOPE, SUPER
-- `CoupleStatus`: PENDING, ACTIVE, DISSOLVED
+> Shared infrastructure for all subsequent phases.
 
-### User model additions
+**What was built:**
+- `ErrorBoundary` class component wrapping the mobile app
+- `ToastProvider` + `useToast` hook in `@ring/ui` (4 severity levels, animated)
+- Feedback colors (`error`/`success`/`warning`/`info`) in theme
+- Structured JSON logger for the API (`logger.ts`)
+- Custom analytics module with typed core events (`track()`, `identify()`, `resetAnalytics()`)
+- Smart `QueryClient` retry (skip auth errors, no mutation retries)
+- API test setup with Testcontainers (PostgreSQL 17) + table truncation
 
-Add relation fields to the existing `User` model:
+### Current state of the app
 
-- `swipes Swipe[]`
-- `invitedCouples Couple[]` (relation: inviterId)
-- `joinedCouples Couple[]` (relation: partnerId)
-- `sessionToken String? @unique` (for Phase 1 auth)
-- `preferredMetals MetalType[]` (for Phase 7 feed personalization)
-- `preferredStones StoneType[]` (for Phase 7 feed personalization)
-- `preferredStyles RingStyle[]` (for Phase 7 feed personalization)
+| Screen | Route | What you see | API connected? |
+|--------|-------|-------------|----------------|
+| Login | `/login` | Gradient pink screen, "Ring" logo, username input, "C'est parti" button | Yes -- `auth.login` |
+| Home | `/` | "Ring" title, "Swipe" button, user list from API | Yes -- `user.list` |
+| Swipe | `/swipe` | Full swipe card UI with gestures, LIKE/NOPE overlays, 3 action buttons | **No -- 5 hardcoded mock rings** |
 
-### Dev catalog
+**Key gap**: The swipe screen is the core experience but uses hardcoded data with a local `Product` type that doesn't match the DB `Ring` model. No swipes are persisted. No auth tokens.
 
-No seeder needed. Hardcode 3 rings with 2 images each using a fixed set of Unsplash CDN URLs so the dev catalog is deterministic and stable across environments. For example:
+---
 
-- **Ring 1 images**
-  - `https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&auto=format&fit=crop`
-  - `https://images.unsplash.com/photo-1522336572468-97b06e8ef143?w=800&auto=format&fit=crop`
-- **Ring 2 images**
-  - `https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=800&auto=format&fit=crop`
-  - `https://images.unsplash.com/photo-1514986888952-8cd320577b68?w=800&auto=format&fit=crop`
-- **Ring 3 images**
-  - `https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&auto=format&fit=crop`
-  - `https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=800&auto=format&fit=crop`
+## Phase 1 -- "Je swipe des vraies bagues"
 
-These images are for development/testing only. Before any production or marketing use, verify Unsplash licensing and attribution requirements for each photo ID.
-> **Data strategy**: once the app is fully built, ring data will be acquired by crawling jewelry sites. No need to invest in fake data generation now.
+> I open the app, I log in, I swipe through rings that come from the database, and my swipes are saved.
+
+### Objectif Fonctionnel
+
+The swipe screen fetches real rings from the API (seeded data) instead of hardcoded mocks. When I swipe LIKE or NOPE, the decision is persisted in the database under my user account. Login generates a session token used for all subsequent requests.
+
+### API
+
+| Procedure | Auth | Input | Output | Description |
+|-----------|------|-------|--------|-------------|
+| `auth.login` (update) | Public | `{ name }` | `User` + `sessionToken` | Generate UUID session token, store on User, set `sessionExpiresAt` to +30 days, return token |
+| `ring.list` | Public | `{ limit, offset }` | `Ring[]` with images | Paginated ring list for anonymous browsing |
+| `ring.feed` | Protected | `{ limit }` | `Ring[]` with images | Next N rings the user hasn't swiped on. Random order. |
+| `swipe.create` | Protected | `{ ringId, direction }` | `Swipe` | Upsert swipe on `(userId, ringId)`. Returns created/updated swipe. |
+
+**Auth middleware**: reads `Authorization: Bearer <token>` header, resolves user from `sessionToken`, injects `ctx.user`. Rejects expired tokens. Refreshes `sessionExpiresAt` when < 7 days remaining.
+
+### UI/UX
+
+- **Login screen**: unchanged UX, but now stores `sessionToken` from response in AsyncStorage and sends it in `Authorization` header on all requests
+- **Swipe screen**: replace hardcoded `PRODUCTS` array with `ring.feed` API call (or `ring.list` for anonymous). Display ring data using real DB fields (name, metalType, stoneType, caratWeight, style, rating, images). Remove price display. Derive avatar initials from logged-in user name.
+- On each swipe gesture completion, call `swipe.create` to persist the decision
+- Loading spinner while fetching feed
+- "Plus de bagues !" empty state when feed is exhausted
+- Error toast on network failure with retry
+
+### Criteres d'Acceptation (QA)
+
+1. **Login + token**: Open app -> enter username -> tap "C'est parti" -> you're logged in. Check API logs or DB: user has a `sessionToken` and `sessionExpiresAt` set.
+2. **Real rings in feed**: After login, tap "Swipe" -> you see a ring card with a real name from the seed data (e.g., "Classic Solitaire Diamond") and a real image. Not "Eternal Promise" (the old hardcoded mock).
+3. **No price**: Ring cards do NOT display any price.
+4. **Swipe persisted**: Swipe right (LIKE) on a ring -> check DB (Prisma Studio or API call): a `Swipe` record exists with your `userId`, the `ringId`, and direction `LIKE`.
+5. **Feed excludes swiped rings**: After swiping on all 3 seed rings, the feed is empty -> "Plus de bagues !" message appears.
+6. **Re-swipe is an update**: Somehow trigger a second swipe on the same ring (e.g., via re-seed + re-login or direct API call) -> the existing Swipe record is updated (upsert), no duplicate created.
+7. **Auth required**: Call `swipe.create` without a token -> get an UNAUTHORIZED error.
+8. **Avatar shows your initials**: The avatar circle in the swipe header shows your actual initials, not "AB".
 
 ### Tasks
 
-- [ ] Design & add Prisma schema (all models + all 5 enums + relations + unique constraints)
-- [ ] Add relation fields + sessionToken to existing User model
-- [ ] Add Zod schemas in `@ring/shared`: `RingSchema`, `RingImageSchema`, `SwipeSchema`, `CoupleSchema`, `MatchSchema` + create/update variants, plus all enum schemas
-- [ ] Create `prisma/seed.ts` with 3 dev rings + CDN image URLs (using the fixed Unsplash URLs from the Dev catalog section above)
-- [ ] Configure `prisma.seed` in `apps/api/package.json` to point to the seed script
-- [ ] Add `db:seed` script to `apps/api/package.json` that runs `bunx --bun prisma db seed`
-- [ ] Run `pnpm db:push` and `pnpm --filter @ring/api db:seed` to verify
+- [ ] Add `sessionExpiresAt DateTime?` field to User model + `db:push`
+- [ ] Update `auth.login` handler: generate UUID token, set `sessionExpiresAt` to now + 30 days, store on user, return token in response
+- [ ] Build `authMiddleware` for oRPC: read Bearer token, resolve user, inject `ctx.user`, reject expired, refresh when < 7 days remaining
+- [ ] Add `ring.list` procedure (public): paginated, include images, ordered by `createdAt`
+- [ ] Add `ring.feed` procedure (protected): exclude already-swiped rings, random order, include images
+- [ ] Add `swipe.create` procedure (protected): upsert on `(userId, ringId)`, validate ringId exists
+- [ ] Update mobile auth lib: store `sessionToken` in AsyncStorage alongside user, send `Authorization: Bearer <token>` header in oRPC link
+- [ ] Rewrite swipe screen: replace hardcoded `PRODUCTS` with `ring.feed` query, map `Ring` fields to card UI, remove price, derive avatar from user
+- [ ] Call `swipe.create` mutation on each swipe gesture completion
+- [ ] Handle loading state (spinner), error state (toast + retry), empty state ("Plus de bagues !")
+- [ ] Update shared schemas if needed (e.g., `LoginResponseSchema` with token)
+- [ ] Write API integration tests: auth.login returns token, authMiddleware rejects/accepts, ring.list, ring.feed excludes swiped, swipe.create upsert
+- [ ] Write mobile tests: auth lib stores/sends token, swipe screen renders ring data
+<!-- - [ ] Seed additional rings (10-15 total) so the feed isn't exhausted in 3 swipes during QA -->
+
+### Tests
+
+- **API**: `auth.test.ts` -- login returns sessionToken + sessionExpiresAt; `middleware.test.ts` -- valid token resolves user, expired token rejected, missing token rejected, token refresh logic; `ring.test.ts` -- list pagination, feed excludes swiped; `swipe.test.ts` -- create, upsert, auth required
+- **Mobile**: `auth.test.ts` -- token stored + sent; `swipe.test.ts` -- renders real ring data, calls swipe.create on gesture
 
 ---
 
-## Phase 0.5 -- Cross-Cutting Foundations
+## Phase 2 -- "Je vois mes favoris"
 
-> Shared infrastructure that all subsequent phases depend on.
+> I swipe LIKE on some rings, then I open a Favorites tab and see them listed. I tap one, I see its full details.
 
-### Error handling strategy
+### Objectif Fonctionnel
 
-Define a unified approach to errors before building features:
+A bottom tab bar with two tabs: Swipe and Favorites. The Favorites tab shows all rings I've liked. Tapping a ring opens a detail screen with image carousel, specs, and Like/Nope buttons.
 
-- **Network errors** (offline, timeout) -- show a retry-able toast/snackbar
-- **Auth errors** (expired/invalid token) -- redirect to login
-- **Validation errors** (Zod schema failures) -- show inline field errors
-- **DB constraint errors** (unique violations) -- map to user-friendly messages
+### API
 
-### Analytics & event tracking
+| Procedure | Auth | Input | Output | Description |
+|-----------|------|-------|--------|-------------|
+| `swipe.listLiked` | Protected | `{ limit, offset }` | `Ring[]` with images | All rings the user swiped LIKE/SUPER on, ordered by swipe date |
+| `ring.get` | Public | `{ id }` | `Ring` with images | Single ring with all details |
 
-For viral growth tracking, instrument core events from day one:
+### UI/UX
 
-- Choose analytics tool (Expo Analytics, PostHog, or simple custom events)
-- Define core events: `signup`, `swipe`, `match`, `share`, `invite_sent`, `invite_accepted`
-- Track signup conversion from anonymous mode
-- Track swipes per session and match rate
-- Track share actions (how many users share matches?)
+- **Tab navigation**: restructure `app/` to `(tabs)` group with expo-router. Two tabs: Swipe (Heart icon) and Favorites (Star icon). Login stays outside tabs.
+- **Favorites screen** (`/(tabs)/favorites`): grid/list of liked ring cards (thumbnail, name, metal type). Pull-to-refresh. Empty state: "Pas encore de favoris -- swipe pour en ajouter !"
+- **Ring detail screen** (`/ring/[id]`): image carousel (horizontal FlatList), ring name (serif), specs list (metal, stone, carat, style), star rating + review count, description, Like/Nope action buttons at bottom, back navigation.
+- **Swipe -> Favorites flow**: after swiping LIKE, the favorites list updates on next visit (React Query invalidation)
 
-### Testing strategy
+### Criteres d'Acceptation (QA)
 
-- **Phase 1+**: API integration tests for swipe logic, match detection, couple pairing
-- **Phase 9**: E2E smoke tests (Detox or Maestro) for all critical flows
-- Unit tests for utility functions and Zod schema validation
-
-### Tasks
-
-- [ ] Build error boundary component (React Error Boundary for mobile)
-- [ ] Build toast/snackbar component for user-facing errors (add to `@ring/ui`)
-- [ ] Choose + integrate analytics tool
-- [ ] Define + instrument core tracking events
-- [ ] Set up API integration test harness (vitest or similar)
-- [ ] Add error logging utility (Sentry or simple console logging for MVP)
-
----
-
-## Phase 1 -- Auth, Ring API & Swipe Backend
-
-> Secure the API and make swiping data-driven.
-
-### Auth hardening
-
-The current login is name-only with no session management. Before building any user-specific features, add token-based auth:
-
-- On `auth.login`: generate a UUID session token, store it on the User record, return it to the client
-- Client stores token in AsyncStorage alongside user data, sends it in `Authorization` header on every request
-- Add `authMiddleware` to oRPC that reads the token from headers, resolves the current user, and injects `ctx.user` into all protected procedures
-- Public procedures (ring catalog browsing) don't require auth
-- Protected procedures (swipe, couple, match) require auth
-- Add `sessionExpiresAt DateTime?` to User model. Set to 30 days from login. Validate in `authMiddleware` -- reject expired tokens. Refresh expiration only when the session is close to expiry (for example, when less than 7 days remain) to avoid a DB write on every request.
-
-### API procedures
-
-| Namespace | Procedure | Auth | Description |
-|-----------|-----------|------|-------------|
-| `ring` | `list` | Public | Paginated ring list (limit/offset) |
-| `ring` | `get` | Public | Get single ring with images |
-| `ring` | `feed` | Protected | Get next N rings the user hasn't swiped on yet. Default ordering: random. Preference-weighted ordering added in Phase 7. |
-| `swipe` | `create` | Protected | Record a swipe (LIKE / NOPE / SUPER) + check for match if coupled. Upsert on `(userId, ringId)` to handle re-swipes gracefully |
-| `swipe` | `listLiked` | Protected | Get all rings the user liked (favorites) |
-
-### Anonymous swipe mode (mobile)
-
-To maximize conversion, let new users experience the core loop before signing up:
-
-- On first launch with no auth, show the swipe screen immediately using `ring.list` (public endpoint)
-- Allow 5-10 swipes stored locally (not persisted to API)
-- After the swipe limit, show a gate: "Sign up to save your favorites and pair with your partner"
-- On signup, replay the local swipes to the API via `swipe.create`
-- On replay, check if the user already has swipes in DB (e.g., signed up on another device) -- skip duplicates, don't overwrite existing swipes
-
-### Tasks
-
-- [ ] Add `sessionToken` field to User model (if not done in Phase 0)
-- [ ] Add `sessionExpiresAt` field to User model (refresh on each authenticated request)
-- [ ] Update `auth.login` to generate + return session token
-- [ ] Update mobile auth lib to store + send token in headers
-- [ ] Build `authMiddleware` for oRPC (resolve user from token, inject `ctx.user`)
-- [ ] Add `ring.*` procedures to router (list + get as public, feed as protected)
-- [ ] Add `swipe.*` procedures to router (protected)
-- [ ] Implement anonymous swipe mode on mobile (local storage, swipe limit, signup gate)
-- [ ] On signup, replay locally stored swipes to API
-- [ ] Update the mobile swipe screen to fetch from `ring.feed` (authenticated) or `ring.list` (anonymous)
-- [ ] Handle "no more rings" state (empty feed)
-- [ ] Add basic error state + loading indicator to swipe screen
-- [ ] Write integration tests for swipe logic, match detection, and auth middleware
-
----
-
-## Phase 2 -- Ring Detail Screen
-
-> Let users tap a card to see full details.
-
-### Mobile screen: `/ring/[id]`
-
-- Image carousel (swipeable, multiple images)
-- Ring name (serif font per design system)
-- Specs list: metal type, stone type, carat weight, style
-- Star rating + review count
-- Description text
-- "Like" / "Nope" action buttons at the bottom
-- Back navigation
-
-### Tasks
-
-- [ ] Create `app/ring/[id].tsx` route
-- [ ] Add image carousel component (horizontal FlatList or `react-native-reanimated-carousel`)
-- [ ] Wire to `ring.get` API call
-- [ ] Like/Nope buttons trigger `swipe.create` and navigate back to swipe screen
-- [ ] Add loading skeleton + error state
-
----
-
-## Phase 3 -- Bottom Tab Navigation
-
-> Proper app navigation structure. Build the shell before adding screens.
-
-### Tab layout: `app/(tabs)/_layout.tsx`
-
-| Tab | Icon | Screen |
-|-----|------|--------|
-| Swipe | Heart | Swipe screen |
-| Favorites | Star | Favorites list (Phase 4) |
-| Matches | rings icon | Match list (placeholder until Phase 6 -- show "Pair with your partner to find matches!" CTA if unpaired) |
-| Profile | User circle | Profile / settings (placeholder until Phase 7) |
+1. **Tab bar visible**: After login, you see a bottom tab bar with Swipe and Favorites tabs.
+2. **Favorites shows liked rings**: Swipe LIKE on 2 rings -> go to Favorites tab -> you see those 2 rings listed with thumbnails and names.
+3. **Favorites is empty initially**: Fresh user -> Favorites tab shows "Pas encore de favoris" message.
+4. **Ring detail from favorites**: Tap a ring in Favorites -> detail screen opens with image carousel, all specs, rating, description.
+5. **Like/Nope from detail**: On ring detail, tap "Nope" -> swipe is updated, navigate back. Tap "Like" on an unliked ring -> swipe created.
+6. **Pull to refresh**: Pull down on Favorites list -> data refreshes.
+7. **NOPE'd rings don't appear**: Rings swiped NOPE are NOT in the favorites list.
 
 ### Tasks
 
 - [ ] Restructure `app/` to use `(tabs)` group with expo-router
-- [ ] Move swipe screen into tabs
-- [ ] Add tab bar with Lucide icons (add needed icons to `@ring/ui`)
+- [ ] Add tab bar with Swipe (Heart) and Favorites (Star) icons from `@ring/ui`
 - [ ] Keep login screen outside tabs (unauthenticated stack)
-- [ ] Add placeholder screens for Favorites, Matches, Profile tabs
+- [ ] Add `swipe.listLiked` procedure (protected): return rings with images where direction = LIKE or SUPER
+- [ ] Build favorites tab screen with ring card grid/list, pull-to-refresh, loading + empty states
+- [ ] Build reusable ring card thumbnail component
+- [ ] Create `app/ring/[id].tsx` detail screen with image carousel, specs, rating, description
+- [ ] Wire detail screen to `ring.get` API
+- [ ] Add Like/Nope buttons on detail screen wired to `swipe.create`
+- [ ] Invalidate favorites query after swipe mutation
+- [ ] Write integration tests for `swipe.listLiked`
+- [ ] Write mobile tests for favorites screen + detail screen
+
+### Tests
+
+- **API**: `swipe.test.ts` -- listLiked returns only LIKE/SUPER, excludes NOPE, pagination
+- **Mobile**: `favorites.test.ts` -- renders liked rings, empty state; `ring-detail.test.ts` -- renders ring data, like/nope actions
 
 ---
 
-## Phase 4 -- Favorites List
+## Phase 3 -- "Je me couple avec mon partenaire"
 
-> Show all liked rings in a dedicated screen.
+> I create an invite code, share it with my partner. They enter the code, we're paired. I can see our couple status.
 
-### Mobile screen: `/(tabs)/favorites`
+### Objectif Fonctionnel
 
-- Grid or list of liked ring cards (thumbnail, name, specs summary)
-- Tap opens ring detail screen
-- Pull-to-refresh
-- Empty state: "No favorites yet -- start swiping!"
+Partner pairing via invite code. A Profile tab is added (total: 3 tabs). From Profile, I generate a 6-char code, share it. My partner enters the code and we become a couple. Both users see the paired status.
+
+### API
+
+| Procedure | Auth | Input | Output | Description |
+|-----------|------|-------|--------|-------------|
+| `couple.create` | Protected | -- | `Couple` | Generate 6-char code, create with status PENDING |
+| `couple.join` | Protected | `{ code }` | `Couple` | Partner enters code, sets partnerId, status ACTIVE. Errors: CODE_NOT_FOUND, ALREADY_PAIRED, COUPLE_ALREADY_FULL |
+| `couple.get` | Protected | -- | `Couple?` with partner info | Get current active couple (if any) |
+| `couple.dissolve` | Protected | -- | `Couple` | Set status DISSOLVED, set dissolvedAt |
+
+### UI/UX
+
+- **Profile tab** added (3 tabs total: Swipe, Favorites, Profile)
+- **Profile screen**: avatar (initials from user name), username, couple section
+- **Unpaired state**: "Invite ton partenaire" button -> generates code -> displays it with share button (native share sheet sends code) + manual code entry field for joining
+- **Paired state**: shows partner name + "Dissoudre le couple" button
+- **Code entry**: text input to type a 6-char code + "Rejoindre" button
+- **Error handling**: toast for CODE_NOT_FOUND, ALREADY_PAIRED, COUPLE_ALREADY_FULL
+- **Logout button**: clears AsyncStorage + redirects to login
+
+### Criteres d'Acceptation (QA)
+
+1. **Profile tab exists**: Tab bar has 3 tabs: Swipe, Favorites, Profile. Profile shows your name and avatar.
+2. **Generate code**: On Profile, tap "Invite ton partenaire" -> a 6-char code appears on screen.
+3. **Share code**: Tap share button next to the code -> native share sheet opens with the code.
+4. **Partner joins**: On a second device/user, enter the code in the join field -> tap "Rejoindre" -> both users now see "Couple actif" with partner's name.
+5. **Invalid code**: Enter "XXXXXX" -> toast: code not found.
+6. **Already paired**: Try to join a code when already in a couple -> toast: already paired.
+7. **Dissolve**: Tap "Dissoudre le couple" -> confirm -> couple status becomes DISSOLVED, both users return to unpaired state.
+8. **Logout works**: Tap "Deconnexion" -> redirected to login screen. Token cleared.
 
 ### Tasks
 
-- [ ] Build favorites tab screen
-- [ ] Build ring card thumbnail component (reusable)
-- [ ] Wire to `swipe.listLiked` API
-- [ ] Add loading skeleton + error state
+- [ ] Add Profile tab to tab bar (UserCircle icon from Lucide)
+- [ ] Build profile screen with avatar, username, couple section, logout button
+- [ ] Add `couple.create` procedure: generate random 6-char alphanumeric code, create PENDING couple
+- [ ] Add `couple.join` procedure: validate code, check errors (not found, already paired, full), set partnerId + ACTIVE status
+- [ ] Add `couple.get` procedure: find active couple for current user (as inviter or partner), include partner info
+- [ ] Add `couple.dissolve` procedure: set DISSOLVED + dissolvedAt
+- [ ] Build pairing UI: unpaired (generate + share + join), paired (partner name + dissolve)
+- [ ] Implement logout flow: `clearUser()` + router.replace('/login')
+- [ ] Add share functionality (native share sheet with code)
+- [ ] Error toasts for couple.join failures
+- [ ] Write integration tests for all couple procedures
+- [ ] Write mobile tests for profile screen + couple flows
+
+### Tests
+
+- **API**: `couple.test.ts` -- create generates code, join pairs users, join errors (not found, already paired, full), get returns couple, dissolve sets status
+- **Mobile**: `profile.test.ts` -- renders user info, couple states, logout
 
 ---
 
-## Phase 5 -- Partner Pairing
+## Phase 4 -- "On a un match !"
 
-> Let two users link as a couple.
+> Both partners swipe LIKE on the same ring -> a Match is created. Both see it in a Matches tab with a celebration.
 
-### API procedures
+### Objectif Fonctionnel
 
-| Namespace | Procedure | Auth | Description |
-|-----------|-----------|------|-------------|
-| `couple` | `create` | Protected | Generate a 6-char invite code, create Couple with status PENDING |
-| `couple` | `join` | Protected | Partner enters code or opens deep link, sets partnerId, status ACTIVE |
-| `couple` | `get` | Protected | Get current couple info (if any) |
-| `couple` | `dissolve` | Protected | Break the pairing (sets status DISSOLVED) |
+When both users in a couple LIKE the same ring, a Match is automatically detected. A Matches tab shows all shared matches. A celebration modal appears right after the swipe that triggers a match.
 
-### Mobile (Profile screen pairing section)
+### API
 
-**Primary flow (lowest friction):** Tap "Invite partner" -> native share sheet sends a deep link (`ring://pair/CODE`) via iMessage/WhatsApp/etc. -> partner taps link -> auto-joins.
+| Procedure | Auth | Input | Output | Description |
+|-----------|------|-------|--------|-------------|
+| `swipe.create` (update) | Protected | `{ ringId, direction }` | `{ swipe: Swipe, match?: Match }` | On LIKE, if coupled, check partner's swipe. If both LIKE -> upsert Match. Return match if created. |
+| `match.list` | Protected | `{ limit, offset }` | `Match[]` with ring + images | All matches for the user's couple |
 
-**Secondary flow:** Show a QR code the partner scans (uses `expo-camera` or a QR library).
+### UI/UX
 
-**Fallback:** Manual 6-char code entry field.
+- **Matches tab** added (4 tabs: Swipe, Favorites, Matches, Profile)
+- **Matches screen**: list of matched rings with "Match !" badge. Tap opens ring detail. Empty state: "Pas encore de match" (if coupled) or "Couple-toi pour trouver des matchs !" (if unpaired, with CTA to Profile)
+- **Match celebration modal**: when `swipe.create` returns a match, show a full-screen modal with the ring image, "C'est un match !" text, confetti/hearts animation, and a "Voir le match" button
+- **Swipe screen update**: after each LIKE swipe, check response for match and trigger celebration if present
 
-Once paired, show partner name + "Dissolve" option.
+### Criteres d'Acceptation (QA)
 
-### Backend logic
-
-- When a swipe LIKE is recorded AND the user is in an ACTIVE couple, check if the partner also liked the same ring
-- If yes, upsert a `Match` record (unique constraint on `(coupleId, ringId)` prevents duplicates from concurrent swipes)
-- Handle `couple.join` error cases: `CODE_NOT_FOUND`, `ALREADY_PAIRED` (user is already in an active couple), `COUPLE_ALREADY_FULL` (code already has a partner)
+1. **Match detection**: User A and User B are paired. User A swipes LIKE on "Classic Solitaire Diamond". User B swipes LIKE on the same ring. -> A Match record is created in DB.
+2. **Celebration modal**: The user who triggers the match (second LIKE) sees a celebration modal with the ring image and "C'est un match !" text.
+3. **Match appears in list**: After the celebration, go to Matches tab -> the matched ring is listed with a "Match !" badge.
+4. **Both users see it**: Both User A and User B see the match in their Matches tab.
+5. **No match on NOPE**: User A likes, User B nopes -> no match.
+6. **No match if not coupled**: User swipes LIKE while unpaired -> no match detection, just a regular swipe.
+7. **No duplicate match**: Both users like the same ring -> only 1 Match record (unique constraint).
+8. **Unpaired empty state**: Unpaired user goes to Matches tab -> sees "Couple-toi..." CTA.
 
 ### Tasks
 
-- [ ] Add `couple.*` procedures to router
-- [ ] Build pairing UI in Profile screen (share-first, QR secondary, manual code fallback)
-- [ ] Add QR code generation library (`react-native-qrcode-svg`) + QR display component
-- [ ] Implement deep link handling (`ring://pair/:code`) via expo-linking
-- [ ] Update `swipe.create` to detect matches when coupled (upsert Match to handle race conditions)
-- [ ] Add share functionality (native share sheet)
-- [ ] Implement `couple.join` error handling (CODE_NOT_FOUND, ALREADY_PAIRED, COUPLE_ALREADY_FULL)
-- [ ] Add loading + error states
+- [ ] Add Matches tab to tab bar (diamond/ring icon)
+- [ ] Update `swipe.create` handler: on LIKE/SUPER, if user is in active couple, check partner's swipe on same ring. If both LIKE -> upsert Match. Return match in response.
+- [ ] Add `match.list` procedure: get matches for user's couple, include ring + images, ordered by createdAt desc
+- [ ] Build matches tab screen with ring list, "Match !" badge, empty states (coupled vs unpaired)
+- [ ] Build celebration modal component (ring image, "C'est un match !" text, animation, "Voir le match" button)
+- [ ] Update swipe screen to check `swipe.create` response for match and show celebration modal
+- [ ] Write integration tests for match detection logic (both like, one nope, not coupled, duplicate)
+- [ ] Write mobile tests for matches screen + celebration modal
+
+### Tests
+
+- **API**: `match.test.ts` -- match created when both like, no match on nope, no match if uncoupled, upsert prevents duplicate, match.list returns couple's matches
+- **Mobile**: `matches.test.ts` -- renders match list, empty states; `celebration.test.ts` -- modal shown on match
 
 ---
 
-## Phase 6 -- Match List & Sharing
+## Phase 5 -- "Je partage notre match"
 
-> Show rings both partners liked. Make matches shareable for viral growth.
+> When we get a match, I can share it on social media with a branded card. Deep links bring people into the app.
 
-### API procedures
+### Objectif Fonctionnel
 
-| Namespace | Procedure | Auth | Description |
-|-----------|-----------|------|-------------|
-| `match` | `list` | Protected | Get all matches for the user's couple |
+Match sharing as the viral growth engine. After a match, a "Partager" button generates a branded image (ring photo + couple names + Ring logo) and opens the native share sheet. Shared links deep-link back to the app.
 
-### Mobile screen: `/(tabs)/matches`
+### API
 
-- List of matched rings with "Matched!" badge
-- Tap opens ring detail
-- Empty state if no matches yet / not paired
-- Celebration animation on new match (confetti/hearts)
+No new procedures needed. The share action is client-side only (image generation + native share sheet). Deep link handling is mobile-only.
 
-### Match sharing (viral loop)
+### UI/UX
 
-When a match is found:
-- Show a celebration modal with the ring image + "You both love this one!"
-- **"Share" button** generates a shareable card (ring image + couple names + Ring branding) and opens the native share sheet
-- Targets: Instagram Stories, iMessage, WhatsApp, generic share
-- The shared link deep-links back to the app (or App Store if not installed)
-- Deep link includes attribution params: `ring://match/:matchId?referrer=:coupleId` for growth tracking
+- **Share button on celebration modal**: after "C'est un match !", a "Partager" button appears
+- **Share button on match list**: each match card has a share icon
+- **Shareable card**: generated image with ring photo, couple names ("Alice & Bob"), "Ring" branding. Built with `react-native-view-shot`.
+- **Native share sheet**: opens with the generated image + deep link URL (`ring://match/:matchId?referrer=:coupleId`)
+- **Deep link handling**: `ring://pair/:code` opens pairing flow, `ring://match/:matchId` opens match detail
 
-This is the primary organic growth mechanism. Every shared match is free advertising.
+### Criteres d'Acceptation (QA)
+
+1. **Share from celebration**: After a match celebration, tap "Partager" -> native share sheet opens with a branded image.
+2. **Share from match list**: On Matches tab, tap share icon on a match card -> share sheet opens.
+3. **Branded card content**: The shared image shows the ring photo, both partner names, and "Ring" branding.
+4. **Deep link - pair**: Open `ring://pair/ABC123` link -> app opens to pairing flow (or prompts to join code).
+5. **Deep link - match**: Open `ring://match/:id` link -> app opens to match detail.
 
 ### Tasks
 
-- [ ] Add `match.list` procedure
-- [ ] Build matches tab screen
-- [ ] Add match notification (in-app celebration modal when a match happens after swiping)
-- [ ] Celebration animation (lottie or reanimated)
-- [ ] Design shareable match card template (ring photo + couple names + Ring logo) using `react-native-view-shot`
-- [ ] Build shareable match card (ring image + text overlay)
-- [ ] Implement share flow (native share sheet with deep link back to app)
-- [ ] Add loading skeleton + error + empty states
+- [ ] Install `react-native-view-shot` for image generation
+- [ ] Build shareable match card component (ring image + couple names + branding)
+- [ ] Add share button to celebration modal
+- [ ] Add share icon to match list cards
+- [ ] Implement native share sheet flow (generate image -> share)
+- [ ] Set up deep link scheme (`ring://`) via expo-linking
+- [ ] Handle `ring://pair/:code` deep link (navigate to profile + auto-fill code)
+- [ ] Handle `ring://match/:matchId` deep link (navigate to match detail)
+- [ ] Track `share` analytics event
+- [ ] Write mobile tests for share flow + deep link handling
+
+### Tests
+
+- **Mobile**: `share.test.ts` -- share flow triggers view-shot + share sheet; `deep-link.test.ts` -- pair and match deep links navigate correctly
 
 ---
 
-## Phase 7 -- User Profile & Settings
+## Phase 6 -- "Je personnalise mon feed"
 
-> Edit profile, manage preferences, view stats.
+> I set my preferences (metal, stone, style) in my profile. The feed shows rings matching my taste first.
 
-### Mobile screen: `/(tabs)/profile`
+### Objectif Fonctionnel
 
-- Avatar (initials-based, derived from user name)
-- Username display + edit
-- Partner status (paired/unpaired + partner name)
-- Pairing actions (create code / join / dissolve) -- already built in Phase 5, surfaced here
-- Stats: rings swiped, likes, matches
-- Filters/preferences (metal type, stone type, style -- saved to user profile, used to sort feed)
-- Logout button
+Preference-based feed personalization. From the Profile screen, I select my preferred metals, stones, and styles. The swipe feed prioritizes rings that match my preferences.
 
-### API additions
+### API
 
-- Add preference fields to `User` model (preferredMetals, preferredStones, preferredStyles as arrays)
-- `user.updatePreferences` procedure
-- Update `ring.feed` with preference scoring: exact match on all 3 prefs (metal, stone, style) = score 3, 2 matches = score 2, 1 match = score 1, 0 = score 0. Within each score tier, randomize order.
+| Procedure | Auth | Input | Output | Description |
+|-----------|------|-------|--------|-------------|
+| `user.updatePreferences` | Protected | `{ preferredMetals?, preferredStones?, preferredStyles? }` | `User` | Save preference arrays to user profile |
+| `ring.feed` (update) | Protected | `{ limit }` | `Ring[]` | Preference-weighted ordering: score = count of matching prefs (0-3). Within each tier, randomize. |
+
+### UI/UX
+
+- **Profile screen update**: add "Mes preferences" section with multi-select chips for metal types, stone types, ring styles. Save button calls `user.updatePreferences`.
+- **Feed reordering**: after setting preferences, the swipe feed shows matching rings first. No visible UI change on the swipe screen itself -- the ordering just improves.
+- **Stats section** on profile: rings swiped count, likes count, match count
+
+### Criteres d'Acceptation (QA)
+
+1. **Preference UI**: On Profile, you see "Mes preferences" with selectable chips for metals, stones, styles.
+2. **Save preferences**: Select "Rose Gold" + "Diamond" + "Halo" -> tap save -> preferences are stored in DB on your User record.
+3. **Feed ordering**: After setting preferences for Rose Gold + Diamond, seed a mix of rings. The feed shows Rose Gold Diamond rings before Platinum Emerald rings.
+4. **Stats visible**: Profile shows "X bagues swipees, X favoris, X matchs" with real counts from DB.
+5. **Preferences persist**: Log out + log back in -> preferences are still set.
 
 ### Tasks
 
-- [ ] Add preference fields to User model
-- [ ] Build profile screen UI
-- [ ] Wire stats (count queries: total unique rings swiped = count of distinct `(userId, ringId)` in `Swipe`, likes count, match count. Treat re-swipes as updates (`updatedAt`) that must not increment counts.)
-- [ ] Implement preference-based feed sorting
-- [ ] Logout flow (clear AsyncStorage + session token, redirect to login)
-- [ ] Add loading + error states
+- [ ] Add `user.updatePreferences` procedure: validate and save preference arrays
+- [ ] Update `ring.feed` handler: score rings by preference match count (0-3), order by score desc then random within tier
+- [ ] Add preference multi-select UI to profile screen (chips for each enum)
+- [ ] Add user stats section to profile (swipe count, like count, match count via count queries)
+- [ ] Add `user.stats` procedure or inline counts in `user.get` response
+- [ ] Wire preference save + load on profile screen
+- [ ] Write integration tests for preference-scored feed
+- [ ] Write mobile tests for preference UI + stats
+
+### Tests
+
+- **API**: `ring.test.ts` -- feed scores by preferences, randomizes within tier; `user.test.ts` -- updatePreferences validates + persists
+- **Mobile**: `profile.test.ts` -- preference chips, stats display
 
 ---
 
-## Phase 8 -- Push Notifications
+## Phase 7 -- "Mode anonyme : essaie avant de t'inscrire"
 
-> Keep users engaged with timely notifications.
+> A new user opens the app and can swipe through 5 rings without signing up. After 5 swipes, they're prompted to create an account. On signup, their local swipes are replayed to the API.
 
-### Infrastructure
+### Objectif Fonctionnel
 
-- Expo Push Notifications (free, no external service needed)
-- Store Expo push token on User model (`expoPushToken` field)
+Anonymous try-before-signup mode to maximize conversion. No login required to start swiping. After a configurable limit (5 swipes), a signup gate appears. On signup, local swipes are replayed to the backend.
 
-### Events
+### API
 
-| Event | Recipient | Message | Priority |
-|-------|-----------|---------|----------|
-| Partner joined | Inviter | "{name} joined your couple!" | High |
-| New match found | Both partners | "It's a match! You both love {ring name}" | High |
-| New rings added | All users | "New rings just dropped -- come swipe!" | Medium |
-| Partner is swiping | Other partner | "{name} is swiping right now!" (opt-in via settings) | Low |
+`ring.list` is already public. `swipe.create` handles upsert (skip duplicates on replay).
 
-### Notification deep link mapping
+### UI/UX
 
-| Event | Deep link target |
-|-------|-----------------|
-| Partner joined | Profile tab |
-| New match found | Matches tab → matched ring detail |
-| New rings added | Swipe tab |
-| Partner is swiping | Swipe tab |
+- **First launch**: skip login, go directly to swipe screen. Fetch rings from `ring.list` (public).
+- **Local swipe storage**: swipe decisions stored in AsyncStorage (not API) until signup
+- **Swipe limit gate**: after 5 swipes, overlay: "Inscris-toi pour sauvegarder tes favoris et te coupler !" with signup button
+- **Signup flow**: navigate to login screen -> on successful login, replay local swipes via `swipe.create` calls -> clear local storage -> navigate to tabs
+- **Skip duplicates on replay**: if user already has swipes in DB (e.g., signed up on another device), upsert handles it
+
+### Criteres d'Acceptation (QA)
+
+1. **No login required**: Fresh install -> app opens directly to swipe screen (no login prompt).
+2. **Can swipe 5 rings**: Swipe through 5 rings -> swipe gestures work normally, cards advance.
+3. **Gate appears**: After 5th swipe, a gate overlay appears with signup CTA. Cannot swipe further.
+4. **Signup replays swipes**: Tap signup -> enter username -> login -> local swipes are sent to API. Check DB: all 5 swipes exist.
+5. **After signup, normal flow**: Post-signup, the app shows tab bar and continues from where you left off (feed excludes the 5 already-swiped rings).
+6. **Duplicate safety**: If a swipe already exists in DB for this user+ring, replay doesn't fail or create duplicates.
 
 ### Tasks
 
-- [ ] Add `expoPushToken` field to User model
-- [ ] Register for push notifications on mobile (permissions + token)
-- [ ] Send token to API on login/registration
-- [ ] Implement notification sending utility on API (Expo Push API)
-- [ ] Trigger "partner joined" notification in `couple.join`
-- [ ] Trigger "new match" push notification when a Match is created
-- [ ] Build admin script or cron job to trigger "new rings added" push notification
-- [ ] Trigger "partner swiping" notification when `ring.feed` is called (debounce: max 1 per hour, opt-in via user settings)
-- [ ] Handle notification taps (deep link to relevant screen)
+- [ ] Update root layout auth gate: allow unauthenticated access to swipe screen
+- [ ] Add local swipe storage utility (AsyncStorage: save/load/clear anonymous swipes)
+- [ ] Update swipe screen: detect anonymous mode, use `ring.list` instead of `ring.feed`, store swipes locally
+- [ ] Build swipe limit gate overlay component (shown after N swipes)
+- [ ] On signup, replay local swipes to API via sequential `swipe.create` calls
+- [ ] Clear local swipes after successful replay
+- [ ] Handle replay errors gracefully (skip failures, continue with remaining)
+- [ ] Write mobile tests for anonymous flow + replay logic
+
+### Tests
+
+- **Mobile**: `anonymous-swipe.test.ts` -- local storage, gate at limit, replay on signup, duplicate handling
+
+---
+
+## Phase 8 -- "Je recois des notifications"
+
+> I get a push notification when my partner joins, when we get a match, or when new rings are added.
+
+### Objectif Fonctionnel
+
+Push notifications for key events. Users opt in to notifications on first launch. The API sends notifications via Expo Push API.
+
+### API
+
+| Change | Description |
+|--------|-------------|
+| Add `expoPushToken` field to User model | Store device push token |
+| `user.registerPushToken` procedure | Protected. Save Expo push token to user profile |
+| Update `couple.join` handler | Send "Partner joined" notification to inviter |
+| Update `swipe.create` handler | On match creation, send "New match" notification to both partners |
+| Push notification utility | `apps/api/src/push.ts` -- send via Expo Push API |
+
+### UI/UX
+
+- **Permission prompt**: on first authenticated launch, request push notification permission. Register token with API.
+- **Notification taps**: tap a "partner joined" notification -> opens Profile tab. Tap "new match" -> opens Matches tab.
+
+### Criteres d'Acceptation (QA)
+
+1. **Permission requested**: After login, the app asks for notification permission (iOS prompt).
+2. **Token registered**: Accept permission -> check DB: user has an `expoPushToken`.
+3. **Partner joined notification**: User A creates a couple code. User B joins. -> User A receives a push notification "{name} a rejoint ton couple !".
+4. **Match notification**: Both partners like the same ring -> both receive "C'est un match ! Vous aimez tous les deux {ring name}".
+5. **Notification tap opens correct screen**: Tap the match notification -> app opens to Matches tab.
+
+### Tasks
+
+- [ ] Add `expoPushToken String?` field to User model + `db:push`
+- [ ] Add `user.registerPushToken` procedure
+- [ ] Build push notification utility (`apps/api/src/push.ts`) using Expo Push API
+- [ ] Request notification permission on mobile + register token
+- [ ] Trigger "partner joined" push in `couple.join` handler
+- [ ] Trigger "new match" push in `swipe.create` match detection
+- [ ] Handle notification taps with deep link routing
+- [ ] Write integration tests for push sending logic
+- [ ] Write mobile tests for permission flow + token registration
+
+### Tests
+
+- **API**: `push.test.ts` -- notification sent on couple.join, notification sent on match creation, handles missing tokens gracefully
+- **Mobile**: `notifications.test.ts` -- permission request, token registration, notification tap navigation
 
 ---
 
 ## Phase 9 -- Polish & Ship
 
-> Final touches before release.
+> Final quality pass. Every screen is polished, accessible, performant.
+
+### Objectif Fonctionnel
+
+Production-ready polish. Not a feature phase -- a quality phase. Every screen gets loading skeletons, haptic feedback, accessibility labels, and performance optimization.
+
+### UI/UX
+
+- Loading skeletons for all screens (swipe, favorites, matches, profile, ring detail)
+- Haptic feedback on swipe, like, match celebration
+- App icon & splash screen (Ring branding)
+- Onboarding overlay (1-screen, shown after first swipe: "Swipe pour decouvrir des bagues ! Sauvegarde tes favoris et couple-toi.")
+- Accessibility pass: labels, contrast, screen reader support
+- Performance: `expo-image` for caching, preload next 3 rings in feed, list virtualization
+- EAS Build setup for iOS/Android
+
+### Criteres d'Acceptation (QA)
+
+1. **Skeletons**: every screen shows a skeleton/shimmer while loading (not a blank screen or "Loading..." text).
+2. **Haptics**: feel a vibration on swipe, like tap, and match celebration.
+3. **App icon**: custom Ring icon visible on home screen (not default Expo icon).
+4. **Splash screen**: branded splash on launch.
+5. **Accessibility**: VoiceOver/TalkBack can navigate all screens and announce ring names, buttons, tabs.
+6. **Performance**: scrolling through 50+ rings in favorites is smooth (60fps).
+7. **EAS builds**: `eas build --platform ios` and `--platform android` succeed.
 
 ### Tasks
 
-- [ ] Loading skeletons for any screens still missing them
-- [ ] Haptic feedback on swipe, like, match
-- [ ] App icon & splash screen (Ring branding)
-- [ ] Onboarding flow (1-screen overlay shown after first swipe -- "Swipe to discover rings! Save favorites and pair with your partner." -- preserves instant gratification)
-- [ ] Accessibility pass (labels, contrast, screen reader)
-- [ ] Performance audit (list virtualization, image caching with `expo-image`)
-- [ ] Configure `expo-image` cache limits + preload next 3 rings in feed
-- [ ] EAS Build setup (Expo Application Services) for iOS/Android builds
-- [ ] Run E2E smoke tests (Detox or Maestro) for all critical user flows
-- [ ] Final smoke test of all flows end-to-end
+- [ ] Add loading skeletons to all screens
+- [ ] Add haptic feedback (`expo-haptics`) on swipe, like, match
+- [ ] Design + add app icon and splash screen
+- [ ] Build onboarding overlay component
+- [ ] Accessibility audit: add `accessibilityLabel`, ensure contrast ratios, test with VoiceOver
+- [ ] Replace Image with `expo-image` + configure cache + preload feed
+- [ ] Ensure FlatList virtualization on favorites + matches
+- [ ] Configure EAS Build (`eas.json`)
+- [ ] Run Maestro E2E smoke tests for critical flows
+- [ ] Final end-to-end smoke test of all flows
+
+### Tests
+
+- **E2E**: Maestro flows for login, swipe, favorite, couple, match, share, logout
 
 ---
 
 ## Phase 10 -- Admin & Post-MVP
 
-> Post-launch tooling for content management and analytics.
+> Post-launch tooling.
 
 ### Tasks
 
@@ -423,59 +545,75 @@ This is the primary organic growth mechanism. Every shared match is free adverti
 
 ---
 
+## Architecture Reference
+
+### Data model
+
+| Model | Key fields | Unique constraints |
+|-------|-----------|-------------------|
+| `User` | id, email, name, sessionToken?, sessionExpiresAt?, preferredMetals[], preferredStones[], preferredStyles[] | email, name, sessionToken |
+| `Ring` | id, name, description?, metalType, stoneType, caratWeight, style, rating, reviewCount | -- |
+| `RingImage` | id, ringId (FK), url, position | -- |
+| `Swipe` | id, userId (FK), ringId (FK), direction, timestamps | `(userId, ringId)` |
+| `Couple` | id, code (6-char), inviterId, partnerId?, status, createdAt, dissolvedAt? | code |
+| `Match` | id, coupleId (FK), ringId (FK), createdAt | `(coupleId, ringId)` |
+
+### Enums
+
+- `MetalType`: YELLOW_GOLD, WHITE_GOLD, ROSE_GOLD, PLATINUM, SILVER
+- `StoneType`: DIAMOND, SAPPHIRE, EMERALD, RUBY, MOISSANITE, MORGANITE, NONE
+- `RingStyle`: SOLITAIRE, HALO, VINTAGE, PAVE, THREE_STONE, CLUSTER, ETERNITY, TENSION, CATHEDRAL, BEZEL
+- `SwipeDirection`: LIKE, NOPE, SUPER
+- `CoupleStatus`: PENDING, ACTIVE, DISSOLVED
+
+### Error handling strategy
+
+- **Network errors** (offline, timeout) -- retry-able toast
+- **Auth errors** (expired/invalid token) -- redirect to login
+- **Validation errors** (Zod) -- inline field errors
+- **DB constraint errors** (unique violations) -- user-friendly toast messages
+
+---
+
 ## Risk Assessment
 
 | Risk | Impact | Likelihood | Mitigation |
 |------|--------|-----------|-----------|
-| Unsplash licensing issue | High (legal) | Medium | Verify terms or switch to paid stock / AI-generated |
-| Auth token security (no expiration) | Medium (account takeover) | Medium | Added `sessionExpiresAt` + refresh in Phase 1 |
-| Match race condition (duplicate matches) | Medium (data corruption) | Low | Unique constraint on `Match(coupleId, ringId)` ✅ |
-| Partner pairing confusion (bad codes) | Medium (support burden) | Medium | `couple.join` error handling added in Phase 5 |
-| Push notification spam ("partner swiping") | High (user churn) | Medium | Made opt-in via settings in Phase 8 |
-| Anonymous swipe replay bugs (data loss) | Low (minor UX issue) | Medium | Added duplicate-check on replay in Phase 1 |
-| Image loading performance | Medium (poor UX) | High | `expo-image` + preloading in Phase 9 |
-| No analytics (blind growth decisions) | High (strategic) | High | Phase 0.5 analytics instrumentation |
+| Unsplash licensing | High (legal) | Medium | Verify terms or switch to paid stock / AI-generated |
+| Auth token security | Medium | Medium | `sessionExpiresAt` + refresh in Phase 1 |
+| Match race condition | Medium | Low | Unique constraint on `Match(coupleId, ringId)` |
+| Partner pairing confusion | Medium | Medium | `couple.join` error handling in Phase 3 |
+| Push notification spam | High (churn) | Medium | Opt-in via settings in Phase 8 |
+| Anonymous swipe replay bugs | Low | Medium | Upsert handles duplicates in Phase 7 |
+| Image loading performance | Medium | High | `expo-image` + preloading in Phase 9 |
 
 ---
 
 ## Summary
 
-| Phase | What | Key deliverable |
-|-------|------|----------------|
-| **0** | Data model + dev catalog | All models, enums, constraints, 2-3 dev rings with CDN images |
-| **0.5** | Cross-cutting foundations | Error handling, analytics, test harness |
-| **1** | Auth + Ring API + swipe backend | Token auth with expiration, data-driven swiping, anonymous try-before-signup |
-| **2** | Ring detail screen | Full ring info with image carousel |
-| **3** | Tab navigation | Proper app structure with bottom tabs |
-| **4** | Favorites list | View all liked rings |
-| **5** | Partner pairing | Couple system with share-first invite flow + error handling |
-| **6** | Match list + sharing | See matches, share to social (viral loop) with attribution |
-| **7** | Profile & settings | User prefs, stats, preference-scored feed |
-| **8** | Push notifications | Match alerts, partner joined, new rings, deep link mapping |
-| **9** | Polish & ship | Skeletons, haptics, onboarding, EAS build, E2E tests |
-| **10** | Admin & post-MVP | Admin web app, ring CRUD, analytics dashboard |
+| Phase | Nom | Ce que tu peux tester |
+|-------|-----|----------------------|
+| **0** | Data Model [DONE] | `db:seed` + Prisma Studio |
+| **0.5** | Foundations [DONE] | Error boundary, toasts, analytics logging |
+| **1** | "Je swipe des vraies bagues" | Login -> swipe -> voir des vraies bagues de la DB -> swipes sauvegardes |
+| **2** | "Je vois mes favoris" | Tab bar + liste des favoris + detail bague avec carousel |
+| **3** | "Je me couple" | Creer un code -> partager -> partenaire rejoint -> statut couple visible |
+| **4** | "On a un match !" | Les deux aiment la meme bague -> match detecte + celebration |
+| **5** | "Je partage notre match" | Partager une image de match sur les reseaux + deep links |
+| **6** | "Je personnalise mon feed" | Preferences -> feed trie par gouts + stats profil |
+| **7** | "Mode anonyme" | Swiper 5 bagues sans compte -> gate -> inscription -> replay |
+| **8** | "Notifications" | Push quand partenaire rejoint / match trouve |
+| **9** | Polish & Ship | Skeletons, haptics, icone, splash, accessibilite, EAS |
+| **10** | Admin | Web app d'admin, CRUD bagues, dashboard analytics |
 
 ---
 
-### Key changes from original plan
+## Discoveries (from previous phases)
 
-1. **Auth hardening** folded into Phase 1 (simple token, `authMiddleware`, `ctx.user`)
-2. **Missing enums added**: `SwipeDirection`, `CoupleStatus`
-3. **Unique constraints** on `Swipe(userId, ringId)` and `Match(coupleId, ringId)`
-4. **User relations** explicitly defined in Phase 0
-5. **Phase 3/4 swapped**: tabs built first, then favorites plugs in
-6. **Anonymous swipe mode**: 5-10 swipes before signup gate (Phase 1)
-7. **Match sharing** as the viral growth engine (Phase 6)
-8. **Share-first pairing**: deep link > QR > manual code (Phase 5)
-9. **Push notification for matches** added (Phase 8)
-10. **Error/loading states** added per-phase, not deferred to Phase 9
-11. **Phase 0.5 added**: cross-cutting foundations (error handling, analytics, test strategy)
-12. **Session token expiration** added (30-day TTL + refresh on auth)
-13. **Preference-scored feed algorithm** defined (Phase 7)
-14. **"Partner swiping" notification** made opt-in (Phase 8)
-15. **Notification deep link mapping** documented (Phase 8)
-16. **Phase 10 added**: admin tooling + analytics dashboard (post-MVP)
-17. **Onboarding moved** to post-first-swipe overlay (preserves instant gratification)
-18. **E2E testing** added to Phase 9
-19. **`couple.join` error handling** specified (Phase 5)
-20. **Image licensing verification** added as Phase 0 task
+- **Prisma 7** uses `prisma.config.ts` with `migrations.seed` for seed commands, not `prisma.seed` in `package.json`
+- **`db:push` with schema changes** adding unique constraints requires `--accept-data-loss` flag
+- **`vi.spyOn()` + `vi.clearAllMocks()`** pattern is broken -- create spies in `beforeEach`, restore in `afterEach`
+- **Flaky ordering test**: records with same `createdAt` make `ORDER BY` non-deterministic. Add delay or secondary sort.
+- **UserSchema changes cascade**: adding fields breaks mobile test mocks -- update all mock objects
+- **Biome lint** flags `!` assertions -- use `npx @biomejs/biome check --write --unsafe` to fix
+- **`as const` on objects with empty arrays** creates `readonly []` incompatible with mutable types -- use explicit type annotation
