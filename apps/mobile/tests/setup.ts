@@ -22,6 +22,10 @@ vi.mock('expo-linear-gradient', () => ({
   LinearGradient: 'LinearGradient',
 }))
 
+vi.mock('expo-clipboard', () => ({
+  setStringAsync: vi.fn(),
+}))
+
 vi.mock('expo-router', () => ({
   router: { replace: vi.fn(), push: vi.fn() },
 }))

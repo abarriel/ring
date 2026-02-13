@@ -250,9 +250,11 @@ const createSwipe = authed.input(CreateSwipeSchema).handler(async ({ input, cont
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // no 0/O/1/I ambiguity
 
 function generateCoupleCode(): string {
+  const bytes = new Uint8Array(6)
+  crypto.getRandomValues(bytes)
   let code = ''
-  for (let i = 0; i < 6; i++) {
-    code += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]
+  for (const byte of bytes) {
+    code += CODE_CHARS[byte % CODE_CHARS.length]
   }
   return code
 }
@@ -300,45 +302,56 @@ const createCouple = authed.handler(async ({ context }) => {
 const joinCouple = authed.input(JoinCoupleSchema).handler(async ({ input, context }) => {
   const userId = context.user.id
 
-  // Find the couple by code first
-  const couple = await db.couple.findUnique({ where: { code: input.code } })
-  if (!couple) {
-    throw new ORPCError('NOT_FOUND', { message: 'Code not found' })
-  }
+  return db.$transaction(async (tx) => {
+    // Find the couple by code first
+    const couple = await tx.couple.findUnique({ where: { code: input.code } })
+    if (!couple) {
+      throw new ORPCError('NOT_FOUND', { message: 'Code not found' })
+    }
 
-  // Cannot join own couple
-  if (couple.inviterId === userId) {
-    throw new ORPCError('BAD_REQUEST', { message: 'Cannot join your own couple' })
-  }
+    // Cannot join own couple
+    if (couple.inviterId === userId) {
+      throw new ORPCError('BAD_REQUEST', { message: 'Cannot join your own couple' })
+    }
 
-  // Check if couple already has a partner
-  if (couple.partnerId) {
-    throw new ORPCError('CONFLICT', { message: 'Couple already full' })
-  }
+    // Check if couple already has a partner
+    if (couple.partnerId) {
+      throw new ORPCError('CONFLICT', { message: 'Couple already full' })
+    }
 
-  // Check if couple is still pending
-  if (couple.status !== 'PENDING') {
-    throw new ORPCError('BAD_REQUEST', { message: 'Couple is not available' })
-  }
+    // Check if couple is still pending
+    if (couple.status !== 'PENDING') {
+      throw new ORPCError('BAD_REQUEST', { message: 'Couple is not available' })
+    }
 
-  // Check if user is already in an active/pending couple
-  const existingCouple = await db.couple.findFirst({
-    where: {
-      status: { in: ['PENDING', 'ACTIVE'] },
-      OR: [{ inviterId: userId }, { partnerId: userId }],
-    },
+    // Check if user is already in an active/pending couple
+    const existingCouple = await tx.couple.findFirst({
+      where: {
+        status: { in: ['PENDING', 'ACTIVE'] },
+        OR: [{ inviterId: userId }, { partnerId: userId }],
+      },
+    })
+    if (existingCouple) {
+      throw new ORPCError('CONFLICT', { message: 'Already paired' })
+    }
+
+    // Atomically claim the couple: only succeed if still pending with no partner
+    const updateResult = await tx.couple.updateMany({
+      where: { id: couple.id, partnerId: null, status: 'PENDING' },
+      data: { partnerId: userId, status: 'ACTIVE' },
+    })
+
+    if (updateResult.count === 0) {
+      throw new ORPCError('CONFLICT', { message: 'Couple already full or not available' })
+    }
+
+    const updated = await tx.couple.findUniqueOrThrow({
+      where: { id: couple.id },
+      include: coupleInclude,
+    })
+
+    return updated
   })
-  if (existingCouple) {
-    throw new ORPCError('CONFLICT', { message: 'Already paired' })
-  }
-
-  const updated = await db.couple.update({
-    where: { id: couple.id },
-    data: { partnerId: userId, status: 'ACTIVE' },
-    include: coupleInclude,
-  })
-
-  return updated
 })
 
 const getCouple = authed.handler(async ({ context }) => {

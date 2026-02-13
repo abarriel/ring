@@ -2,6 +2,7 @@ import type { User } from '@ring/shared'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { clearUser, getUser } from '@/lib/auth'
 import { client } from '@/lib/orpc'
+import { getInitials } from '@/lib/utils'
 
 vi.mock('@/lib/orpc', () => ({
   client: {
@@ -55,15 +56,7 @@ describe('profile screen logic', () => {
     expect(user?.name).toBe('Alice')
   })
 
-  it('derives initials from user name', () => {
-    const getInitials = (name: string) =>
-      name
-        .split(/\s+/)
-        .map((w) => w[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2)
-
+  it('derives initials from user name via shared utility', () => {
     expect(getInitials('Alice')).toBe('A')
     expect(getInitials('Alice Bob')).toBe('AB')
     expect(getInitials('Jean Pierre Martin')).toBe('JP')
@@ -125,6 +118,14 @@ describe('profile screen logic', () => {
     vi.mocked(client.couple.join).mockRejectedValue(new Error('Couple already full'))
 
     await expect(client.couple.join({ code: 'ABC123' })).rejects.toThrow('Couple already full')
+  })
+
+  it('handles join error for own couple', async () => {
+    vi.mocked(client.couple.join).mockRejectedValue(new Error('Cannot join your own couple'))
+
+    await expect(client.couple.join({ code: 'ABC123' })).rejects.toThrow(
+      'Cannot join your own couple',
+    )
   })
 
   it('fetches couple status', async () => {
