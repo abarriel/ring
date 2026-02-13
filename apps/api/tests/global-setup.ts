@@ -5,7 +5,7 @@ import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testconta
 
 const URL_FILE = resolve(import.meta.dirname, '../.test-db-url')
 let container: StartedPostgreSqlContainer
-let cleanupHandlers: Array<() => void> = []
+const cleanupHandlers: Array<() => void> = []
 
 function cleanupUrlFile() {
   try {
@@ -33,17 +33,17 @@ function registerCleanupHandlers() {
   process.on('SIGINT', sigintHandler)
   process.on('SIGTERM', sigtermHandler)
 
-  cleanupHandlers = [
-    () => process.removeListener('SIGINT', sigintHandler),
-    () => process.removeListener('SIGTERM', sigtermHandler),
-  ]
+  cleanupHandlers.push(
+    () => process.off('SIGINT', sigintHandler),
+    () => process.off('SIGTERM', sigtermHandler),
+  )
 }
 
 function removeCleanupHandlers() {
-  for (const removeHandler of cleanupHandlers) {
-    removeHandler()
+  while (cleanupHandlers.length > 0) {
+    const removeHandler = cleanupHandlers.pop()
+    removeHandler?.()
   }
-  cleanupHandlers = []
 }
 
 export async function setup() {
