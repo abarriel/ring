@@ -50,7 +50,9 @@ describe('user.get', () => {
 
 describe('user.list', () => {
   it('returns users ordered by createdAt desc', async () => {
-    const a = await createTestUser('Alice', 'alice@ring.local')
+    await createTestUser('Alice', 'alice@ring.local')
+    // Small delay to guarantee distinct timestamps
+    await new Promise((r) => setTimeout(r, 50))
     const b = await createTestUser('Bob', 'bob@ring.local')
 
     const users = await call(router.user.list, { limit: 10, offset: 0 })
@@ -58,7 +60,7 @@ describe('user.list', () => {
     expect(users).toHaveLength(2)
     // Most recent first
     expect(users[0]?.id).toBe(b.id)
-    expect(users[1]?.id).toBe(a.id)
+    expect(users[0]?.createdAt.getTime()).toBeGreaterThanOrEqual(users[1]?.createdAt.getTime())
   })
 
   it('respects limit and offset', async () => {

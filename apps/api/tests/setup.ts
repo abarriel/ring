@@ -9,5 +9,8 @@ process.env.DATABASE_URL = readFileSync(URL_FILE, 'utf-8')
 const { db } = await import('../src/db.js')
 
 beforeEach(async () => {
-  await db.$executeRawUnsafe('TRUNCATE TABLE users CASCADE')
+  // Truncate all tables in dependency order (matches/swipes first, then rings/couples, then users)
+  await db.$executeRawUnsafe(`
+    TRUNCATE TABLE matches, swipes, ring_images, rings, couples, users CASCADE
+  `)
 })
