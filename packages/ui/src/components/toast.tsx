@@ -98,13 +98,14 @@ function ToastItem({ toast, onDismiss }: { toast: ToastMessage; onDismiss: (id: 
   const colors = TYPE_STYLES[toast.type]
 
   // Fade in on mount
+  // biome-ignore lint/correctness/useExhaustiveDependencies: opacity is a stable ref, effect should only run on mount
   useEffect(() => {
     Animated.timing(opacity, {
       toValue: 1,
       duration: 200,
       useNativeDriver: true,
     }).start()
-  }, [opacity])
+  }, [])
 
   const handleDismiss = () => {
     Animated.timing(opacity, {
