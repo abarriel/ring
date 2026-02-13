@@ -1,4 +1,4 @@
-import { Heart, Star, theme } from '@ring/ui'
+import { Heart, Star, theme, UserCircle } from '@ring/ui'
 import { Tabs } from 'expo-router'
 
 export default function TabLayout() {
@@ -25,6 +25,13 @@ export default function TabLayout() {
         options={{
           title: 'Favoris',
           tabBarIcon: ({ color, size }) => <Star size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profil',
+          tabBarIcon: ({ color, size }) => <UserCircle size={size} color={color} />,
         }}
       />
     </Tabs>
