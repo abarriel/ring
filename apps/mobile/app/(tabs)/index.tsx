@@ -1,5 +1,5 @@
 import type { Match, RingWithImages } from '@ring/shared'
-import { Heart, Star, theme, X } from '@ring/ui'
+import { Heart, Sparkles, Star, theme, X } from '@ring/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router as expoRouter } from 'expo-router'
@@ -24,7 +24,9 @@ import Animated, {
 } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { CelebrationModal } from '@/components/celebration-modal'
-import { getUser } from '@/lib/auth'
+import { SwipeGate } from '@/components/swipe-gate'
+import { ANONYMOUS_SWIPE_LIMIT, saveAnonymousSwipe } from '@/lib/anonymous-swipes'
+import { getToken, getUser } from '@/lib/auth'
 import { client, orpc } from '@/lib/orpc'
 import { getInitials } from '@/lib/utils'
 
@@ -37,14 +39,6 @@ function formatEnum(value: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-function formatSpec(ring: RingWithImages): string[] {
-  const specs: string[] = []
-  if (ring.caratWeight) specs.push(`${ring.caratWeight} Carat`)
-  if (ring.metalType) specs.push(formatEnum(ring.metalType))
-  if (ring.style) specs.push(formatEnum(ring.style))
-  return specs
-}
-
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function SwipeScreen() {
@@ -55,38 +49,51 @@ export default function SwipeScreen() {
   const [userInitials, setUserInitials] = useState('?')
   const [celebrationMatch, setCelebrationMatch] = useState<Match | null>(null)
   const [celebrationRing, setCelebrationRing] = useState<RingWithImages | null>(null)
+  const [isAnonymous, setIsAnonymous] = useState(true)
+  const [_anonymousSwipeCount, setAnonymousSwipeCount] = useState(0)
+  const [showGate, setShowGate] = useState(false)
   const queryClient = useQueryClient()
 
-  // Fetch user initials from storage
+  // Detect auth state on mount
   useEffect(() => {
+    getToken().then((token) => {
+      setIsAnonymous(!token)
+    })
     getUser().then((user) => {
       if (user?.name) setUserInitials(getInitials(user.name))
     })
   }, [])
 
-  // Fetch ring feed from API
-  const feedQuery = useQuery(orpc.ring.feed.queryOptions({ input: { limit: 50 } }))
-  const rings: RingWithImages[] = (feedQuery.data as RingWithImages[] | undefined) ?? []
+  // Anonymous mode: fetch public ring list
+  const listQuery = useQuery({
+    ...orpc.ring.list.queryOptions({ input: { limit: 50, offset: 0 } }),
+    enabled: isAnonymous,
+  })
 
-  // Swipe mutation
+  // Authenticated mode: fetch personalized feed
+  const feedQuery = useQuery({
+    ...orpc.ring.feed.queryOptions({ input: { limit: 50 } }),
+    enabled: !isAnonymous,
+  })
+
+  const activeQuery = isAnonymous ? listQuery : feedQuery
+  const rings: RingWithImages[] = (activeQuery.data as RingWithImages[] | undefined) ?? []
+
+  // Swipe mutation (only used in authenticated mode)
   const swipeMutation = useMutation({
     mutationFn: (input: { ringId: string; direction: 'LIKE' | 'NOPE' | 'SUPER' }) =>
       client.swipe.create(input),
     onSuccess: (data) => {
-      // Invalidate feed so next fetch excludes swiped rings
       queryClient.invalidateQueries({
         queryKey: orpc.ring.feed.queryOptions({ input: { limit: 50 } }).queryKey,
       })
-      // Invalidate favorites so liked rings appear on the Favorites tab
       queryClient.invalidateQueries({
         queryKey: orpc.swipe.listLiked.queryOptions({ input: { limit: 50, offset: 0 } }).queryKey,
       })
-      // Invalidate matches list when a match is detected
       if (data.match) {
         queryClient.invalidateQueries({
           queryKey: orpc.match.list.queryOptions({ input: { limit: 50, offset: 0 } }).queryKey,
         })
-        // Find the ring that was matched and show celebration
         const matchedRing = rings.find((r) => r.id === data.match?.ringId) ?? null
         setCelebrationMatch(data.match)
         setCelebrationRing(matchedRing)
@@ -102,11 +109,20 @@ export default function SwipeScreen() {
 
   const persistSwipe = useCallback(
     (direction: 'LIKE' | 'NOPE' | 'SUPER') => {
-      if (currentRing) {
+      if (!currentRing) return
+      if (isAnonymous) {
+        // Store locally for anonymous users
+        saveAnonymousSwipe({ ringId: currentRing.id, direction }).then((swipes) => {
+          setAnonymousSwipeCount(swipes.length)
+          if (swipes.length >= ANONYMOUS_SWIPE_LIMIT) {
+            setShowGate(true)
+          }
+        })
+      } else {
         swipeMutation.mutate({ ringId: currentRing.id, direction })
       }
     },
-    [currentRing, swipeMutation],
+    [currentRing, isAnonymous, swipeMutation],
   )
 
   const advanceCard = useCallback(
@@ -189,9 +205,9 @@ export default function SwipeScreen() {
   }, [translateX, translateY, isAnimating, screenWidth, advanceCard])
   const handleLike = useCallback(() => swipeOff('right'), [swipeOff])
 
-  const isFinished = !feedQuery.isLoading && currentIndex >= rings.length
-  const isLoading = feedQuery.isLoading
-  const isError = feedQuery.isError
+  const isFinished = !activeQuery.isLoading && currentIndex >= rings.length
+  const isLoading = activeQuery.isLoading
+  const isError = activeQuery.isError
 
   return (
     <LinearGradient colors={['#fff1f2', '#fce7f3']} style={styles.gradient}>
@@ -199,9 +215,15 @@ export default function SwipeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerLogo}>Ring</Text>
-          <Pressable style={styles.avatar} onPress={() => expoRouter.push('/profile')}>
-            <Text style={styles.avatarText}>{userInitials}</Text>
-          </Pressable>
+          {isAnonymous ? (
+            <Pressable style={styles.loginBtn} onPress={() => expoRouter.push('/login')}>
+              <Text style={styles.loginBtnText}>S'inscrire</Text>
+            </Pressable>
+          ) : (
+            <Pressable style={styles.avatar} onPress={() => expoRouter.push('/profile')}>
+              <Text style={styles.avatarText}>{userInitials}</Text>
+            </Pressable>
+          )}
         </View>
 
         {/* Card area */}
@@ -215,14 +237,20 @@ export default function SwipeScreen() {
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>Oups !</Text>
               <Text style={styles.emptySubtitle}>Impossible de charger les bagues.</Text>
-              <Pressable style={styles.retryBtn} onPress={() => feedQuery.refetch()}>
+              <Pressable style={styles.retryBtn} onPress={() => activeQuery.refetch()}>
                 <Text style={styles.retryText}>Reessayer</Text>
               </Pressable>
             </View>
           ) : isFinished ? (
             <View style={styles.emptyState}>
+              <View style={styles.emptyIcon}>
+                <Sparkles size={48} color={theme.colors.foreground.muted} />
+              </View>
               <Text style={styles.emptyTitle}>Plus de bagues !</Text>
-              <Text style={styles.emptySubtitle}>Reviens plus tard pour en voir d'autres.</Text>
+              <Text style={styles.emptySubtitle}>Tu as vu toutes les bagues disponibles.</Text>
+              <Pressable style={styles.retryBtn} onPress={() => expoRouter.push('/matches')}>
+                <Text style={styles.retryText}>Voir tes matchs</Text>
+              </Pressable>
             </View>
           ) : currentRing ? (
             <GestureDetector gesture={panGesture}>
@@ -246,37 +274,32 @@ export default function SwipeScreen() {
                 <View style={styles.productInfo}>
                   <Text style={styles.productName}>{currentRing.name}</Text>
 
-                  {/* Specs */}
-                  <View style={styles.specsRow}>
-                    {formatSpec(currentRing).map((spec, i) => (
-                      <View key={spec} style={styles.specItem}>
-                        {i > 0 && <View style={styles.specDot} />}
-                        <Text style={styles.specText}>{spec}</Text>
-                      </View>
-                    ))}
+                  {/* Key-value specs */}
+                  <View style={styles.specsTable}>
+                    <View style={styles.specRow}>
+                      <Text style={styles.specLabel}>Style</Text>
+                      <Text style={styles.specValue}>{formatEnum(currentRing.style)}</Text>
+                    </View>
+                    <View style={styles.specRow}>
+                      <Text style={styles.specLabel}>Metal</Text>
+                      <Text style={styles.specValue}>{formatEnum(currentRing.metalType)}</Text>
+                    </View>
+                    <View style={styles.specRow}>
+                      <Text style={styles.specLabel}>Pierre</Text>
+                      <Text style={styles.specValue}>{formatEnum(currentRing.stoneType)}</Text>
+                    </View>
+                    <View style={styles.specRow}>
+                      <Text style={styles.specLabel}>Carat</Text>
+                      <Text style={styles.specValue}>{currentRing.caratWeight} ct</Text>
+                    </View>
                   </View>
 
-                  {/* Stars */}
-                  <View style={styles.starsRow}>
-                    <View style={styles.stars}>
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <Text
-                          key={`star-${n}`}
-                          style={[
-                            styles.starIcon,
-                            n <= Math.round(currentRing.rating)
-                              ? styles.starFilled
-                              : styles.starEmpty,
-                          ]}
-                        >
-                          *
-                        </Text>
-                      ))}
-                    </View>
-                    <Text style={styles.reviewCount}>
-                      ({currentRing.reviewCount.toLocaleString('en-US')} reviews)
+                  {/* Description */}
+                  {currentRing.description && (
+                    <Text style={styles.productDescription} numberOfLines={2}>
+                      {currentRing.description}
                     </Text>
-                  </View>
+                  )}
                 </View>
               </Animated.View>
             </GestureDetector>
@@ -311,6 +334,9 @@ export default function SwipeScreen() {
 
         {/* Bottom safe area spacing */}
         <View style={{ height: insets.bottom + 8 }} />
+
+        {/* Anonymous swipe gate */}
+        {showGate && <SwipeGate />}
       </View>
 
       {/* Match celebration modal */}
@@ -366,6 +392,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: theme.colors.ui.avatarText,
+  },
+  loginBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.ring.pink500,
+  },
+  loginBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#ffffff',
   },
 
   // Card area
@@ -447,50 +484,31 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 
-  // Specs
-  specsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  // Specs table (key-value rows)
+  specsTable: {
+    gap: 6,
     marginBottom: 12,
   },
-  specItem: {
+  specRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 6,
   },
-  specDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: theme.colors.ui.dot,
-  },
-  specText: {
-    fontSize: 14,
-    color: theme.colors.foreground.secondary,
-  },
-
-  // Stars
-  starsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  stars: {
-    flexDirection: 'row',
-    gap: 2,
-  },
-  starIcon: {
-    fontSize: 16,
-  },
-  starFilled: {
-    color: theme.colors.accent.stars,
-  },
-  starEmpty: {
-    color: theme.colors.ui.border,
-  },
-  reviewCount: {
+  specLabel: {
     fontSize: 13,
     color: theme.colors.foreground.muted,
+  },
+  specValue: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: theme.colors.foreground.DEFAULT,
+  },
+
+  // Description
+  productDescription: {
+    fontSize: 13,
+    color: theme.colors.foreground.secondary,
+    lineHeight: 18,
   },
 
   // Actions
@@ -538,6 +556,15 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  emptyIcon: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: theme.colors.background.imageZone,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
   },
   emptyTitle: {
     fontSize: 22,

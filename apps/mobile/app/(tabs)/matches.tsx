@@ -1,6 +1,7 @@
 import type { RingWithImages } from '@ring/shared'
-import { Gem, theme, Users } from '@ring/ui'
+import { ExternalLink, Gem, Heart, Sparkles, theme } from '@ring/ui'
 import { useQuery } from '@tanstack/react-query'
+import { LinearGradient } from 'expo-linear-gradient'
 import { router as expoRouter } from 'expo-router'
 import {
   ActivityIndicator,
@@ -14,6 +15,16 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { orpc } from '@/lib/orpc'
+import { useAuthGuard } from '@/lib/use-auth-guard'
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatEnum(value: string): string {
+  return value
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,46 +43,81 @@ function MatchCard({ match }: { match: MatchWithRing }) {
   const imageUrl = ring.images[0]?.url
 
   return (
-    <Pressable style={styles.card} onPress={() => expoRouter.push(`/ring/${ring.id}`)}>
-      <View style={styles.cardImage}>
+    <View style={styles.card}>
+      {/* Image */}
+      <View style={styles.cardImageWrapper}>
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.thumbnail} />
+          <Image source={{ uri: imageUrl }} style={styles.cardImage} />
         ) : (
-          <View style={styles.thumbnailPlaceholder}>
-            <Gem size={24} color={theme.colors.foreground.muted} />
+          <View style={styles.cardImagePlaceholder}>
+            <Gem size={32} color={theme.colors.foreground.muted} />
           </View>
         )}
-        {/* Match badge */}
-        <View style={styles.matchBadge}>
-          <Text style={styles.matchBadgeText}>Match !</Text>
-        </View>
+        <LinearGradient
+          colors={[theme.colors.ring.rose400, theme.colors.ring.pink500]}
+          style={styles.matchBadge}
+        >
+          <Sparkles size={12} color="#ffffff" />
+          <Text style={styles.matchBadgeText}>Match</Text>
+        </LinearGradient>
       </View>
+
+      {/* Info */}
       <View style={styles.cardInfo}>
-        <Text style={styles.cardName} numberOfLines={1}>
-          {ring.name}
-        </Text>
-        <Text style={styles.cardMetal} numberOfLines={1}>
-          {ring.metalType
-            .replace(/_/g, ' ')
-            .toLowerCase()
-            .replace(/\b\w/g, (c) => c.toUpperCase())}
-        </Text>
+        <Text style={styles.cardName}>{ring.name}</Text>
+
+        <View style={styles.specsTable}>
+          <View style={styles.specRow}>
+            <Text style={styles.specLabel}>Style</Text>
+            <Text style={styles.specValue}>{formatEnum(ring.style)}</Text>
+          </View>
+          <View style={styles.specRow}>
+            <Text style={styles.specLabel}>Metal</Text>
+            <Text style={styles.specValue}>{formatEnum(ring.metalType)}</Text>
+          </View>
+          <View style={styles.specRow}>
+            <Text style={styles.specLabel}>Pierre</Text>
+            <Text style={styles.specValue}>
+              {formatEnum(ring.stoneType)} - {ring.caratWeight} ct
+            </Text>
+          </View>
+        </View>
+
+        {ring.description && (
+          <Text style={styles.cardDescription} numberOfLines={2}>
+            {ring.description}
+          </Text>
+        )}
+
+        <Pressable style={styles.detailsBtn} onPress={() => expoRouter.push(`/ring/${ring.id}`)}>
+          <LinearGradient
+            colors={[theme.colors.ring.rose400, theme.colors.ring.pink500]}
+            style={styles.detailsBtnGradient}
+          >
+            <Text style={styles.detailsBtnText}>Voir les details</Text>
+            <ExternalLink size={16} color="#ffffff" />
+          </LinearGradient>
+        </Pressable>
       </View>
-    </Pressable>
+    </View>
   )
 }
 
 // ── Screen ───────────────────────────────────────────────────────────────────
 
 export default function MatchesScreen() {
+  const isAuthed = useAuthGuard()
   const insets = useSafeAreaInsets()
 
-  const coupleQuery = useQuery(orpc.couple.get.queryOptions({ input: undefined }))
+  const coupleQuery = useQuery({
+    ...orpc.couple.get.queryOptions({ input: undefined }),
+    enabled: isAuthed,
+  })
   const couple = coupleQuery.data
 
   const matchesQuery = useQuery({
     ...orpc.match.list.queryOptions({ input: { limit: 50, offset: 0 } }),
-    enabled: couple?.status === 'ACTIVE',
+    enabled: isAuthed && couple?.status === 'ACTIVE',
   })
   const matches = (matchesQuery.data as MatchWithRing[] | undefined) ?? []
 
@@ -81,10 +127,25 @@ export default function MatchesScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Matchs</Text>
-      </View>
+      {/* Gradient header */}
+      <LinearGradient colors={['#fce7f3', '#ffffff']} style={styles.header}>
+        <View style={styles.headerRow}>
+          <LinearGradient
+            colors={[theme.colors.ring.rose400, theme.colors.ring.pink500]}
+            style={styles.headerIcon}
+          >
+            <Sparkles size={20} color="#ffffff" />
+          </LinearGradient>
+          <View>
+            <Text style={styles.headerTitle}>Tes matchs</Text>
+            {isCoupled && matches.length > 0 && (
+              <Text style={styles.headerSubtitle}>
+                {matches.length} bague{matches.length !== 1 ? 's' : ''} que vous aimez tous les deux
+              </Text>
+            )}
+          </View>
+        </View>
+      </LinearGradient>
 
       {isLoading ? (
         <View style={styles.emptyState}>
@@ -106,16 +167,19 @@ export default function MatchesScreen() {
         </View>
       ) : !isCoupled ? (
         <View style={styles.emptyState}>
-          <Users size={48} color={theme.colors.foreground.muted} />
-          <Text style={styles.emptyTitle}>Couple-toi pour trouver des matchs !</Text>
-          <Text style={styles.emptySubtitle}>Va dans ton profil pour inviter ton partenaire.</Text>
-          <Pressable style={styles.ctaBtn} onPress={() => expoRouter.push('/profile')}>
-            <Text style={styles.ctaText}>Aller au profil</Text>
-          </Pressable>
+          <View style={styles.emptyIcon}>
+            <Heart size={48} color={theme.colors.ring.pink500} />
+          </View>
+          <Text style={styles.emptyTitle}>Pas encore de matchs</Text>
+          <Text style={styles.emptySubtitle}>
+            Commence a parcourir les bagues et matcher avec ton partenaire
+          </Text>
         </View>
       ) : matches.length === 0 ? (
         <View style={styles.emptyState}>
-          <Gem size={48} color={theme.colors.foreground.muted} />
+          <View style={styles.emptyIcon}>
+            <Gem size={48} color={theme.colors.foreground.muted} />
+          </View>
           <Text style={styles.emptyTitle}>Pas encore de match</Text>
           <Text style={styles.emptySubtitle}>
             Swipez tous les deux pour trouver vos coups de coeur !
@@ -126,9 +190,8 @@ export default function MatchesScreen() {
           data={matches}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <MatchCard match={item} />}
-          numColumns={2}
-          columnWrapperStyle={styles.row}
           contentContainerStyle={styles.list}
+          ItemSeparatorComponent={() => <View style={styles.listSpacer} />}
           refreshControl={
             <RefreshControl
               refreshing={matchesQuery.isRefetching}
@@ -149,81 +212,143 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background.surface,
   },
+
+  // Header
   header: {
     paddingHorizontal: theme.spacing.page,
-    paddingVertical: 12,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.ui.border,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: theme.colors.foreground.DEFAULT,
+  },
+  headerSubtitle: {
+    fontSize: 13,
+    color: theme.colors.foreground.secondary,
+    marginTop: 2,
   },
 
   // List
   list: {
-    paddingHorizontal: theme.spacing.page,
-    paddingBottom: 24,
+    padding: theme.spacing.page,
   },
-  row: {
-    gap: 12,
-    marginBottom: 12,
+  listSpacer: {
+    height: 16,
   },
 
   // Card
   card: {
-    flex: 1,
     backgroundColor: theme.colors.background.card,
-    borderRadius: theme.borderRadius.lg,
+    borderRadius: theme.borderRadius.xl,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: theme.colors.ui.border,
+  },
+  cardImageWrapper: {
+    height: 192,
+    backgroundColor: theme.colors.background.imageZone,
   },
   cardImage: {
-    aspectRatio: 1,
-    backgroundColor: theme.colors.background.imageZone,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  thumbnail: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
   },
-  thumbnailPlaceholder: {
+  cardImagePlaceholder: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   matchBadge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: theme.colors.ring.pink500,
-    paddingHorizontal: 8,
+    top: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: theme.borderRadius.sm,
+    borderRadius: 20,
   },
   matchBadgeText: {
-    fontSize: 11,
-    fontWeight: 'bold',
+    fontSize: 12,
+    fontWeight: '600',
     color: '#ffffff',
   },
   cardInfo: {
-    padding: 10,
+    padding: 16,
   },
   cardName: {
-    fontSize: 13,
-    fontWeight: '600',
-    fontFamily: 'Georgia',
+    fontSize: 18,
+    fontWeight: 'bold',
     color: theme.colors.foreground.DEFAULT,
-    marginBottom: 2,
+    marginBottom: 12,
   },
-  cardMetal: {
-    fontSize: 11,
+
+  // Specs
+  specsTable: {
+    gap: 4,
+    marginBottom: 12,
+  },
+  specRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  specLabel: {
+    fontSize: 13,
+    color: theme.colors.foreground.muted,
+  },
+  specValue: {
+    fontSize: 13,
+    fontWeight: '500',
     color: theme.colors.foreground.secondary,
+  },
+
+  // Description
+  cardDescription: {
+    fontSize: 13,
+    color: theme.colors.foreground.secondary,
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+
+  // Details button
+  detailsBtn: {
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
+  detailsBtnGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 24,
+  },
+  detailsBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#ffffff',
   },
 
   // Empty / error states
@@ -233,39 +358,38 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: theme.spacing.page,
   },
+  emptyIcon: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: '#fce7f3',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: theme.colors.foreground.DEFAULT,
-    marginTop: 12,
+    marginTop: 4,
     textAlign: 'center',
   },
   emptySubtitle: {
     fontSize: 14,
-    color: theme.colors.foreground.muted,
-    marginTop: 4,
+    color: theme.colors.foreground.secondary,
+    marginTop: 8,
     textAlign: 'center',
+    maxWidth: 280,
+    lineHeight: 20,
   },
   retryBtn: {
     marginTop: 16,
     paddingHorizontal: 24,
     paddingVertical: 10,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: 24,
     backgroundColor: theme.colors.ring.pink500,
   },
   retryText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#ffffff',
-  },
-  ctaBtn: {
-    marginTop: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.ring.pink500,
-  },
-  ctaText: {
     fontSize: 14,
     fontWeight: '600',
     color: '#ffffff',
