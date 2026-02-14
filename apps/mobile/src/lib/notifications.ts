@@ -22,8 +22,8 @@ Notifications.setNotificationHandler({
  * Returns the push token string or null if unavailable.
  */
 export async function registerForPushNotifications(): Promise<string | null> {
-  // Push notifications only work on physical devices
-  if (!Device.isDevice) return null
+  // Push notifications are not supported on web or non-physical devices
+  if (Platform.OS === 'web' || !Device.isDevice) return null
 
   const { status: existingStatus } = await Notifications.getPermissionsAsync()
   let finalStatus = existingStatus
