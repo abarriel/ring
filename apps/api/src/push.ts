@@ -55,7 +55,7 @@ export async function notifyPartnerJoined(
   await sendPushNotifications([
     {
       token: inviterPushToken,
-      title: 'Couple forme !',
+      title: 'Couple formé !',
       body: `${partnerName} a rejoint ton couple !`,
       data: { screen: 'profile' },
     },

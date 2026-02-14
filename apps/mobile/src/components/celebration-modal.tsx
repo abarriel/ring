@@ -18,7 +18,7 @@ export function CelebrationModal({ visible, ring, onClose, onViewMatch }: Celebr
   const imageUrl = ring?.images[0]?.url
 
   useEffect(() => {
-    if (visible) hapticSuccess()
+    if (visible) hapticSuccess().catch(() => {})
   }, [visible])
 
   return (
