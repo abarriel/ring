@@ -37,6 +37,13 @@ export default function ProfileScreen() {
     getUser().then(setUser)
   }, [])
 
+  // ── Liked count query ─────────────────────────────────────────────────
+  const likedQuery = useQuery({
+    ...orpc.swipe.listLiked.queryOptions({ input: { limit: 1, offset: 0 } }),
+    enabled: isAuthed,
+    select: (data) => (data as unknown[]).length,
+  })
+
   // ── Couple query ──────────────────────────────────────────────────────
   const coupleQueryOptions = orpc.couple.get.queryOptions({ input: undefined })
   const coupleQuery = useQuery({
@@ -251,7 +258,9 @@ export default function ProfileScreen() {
           <View style={styles.statCard} accessibilityLabel="Bagues likees">
             <View style={styles.statRow}>
               <Heart size={16} color={theme.colors.ring.pink500} fill={theme.colors.ring.pink500} />
-              <Text style={styles.statValue}>-</Text>
+              <Text style={styles.statValue}>
+                {likedQuery.isLoading ? '-' : (likedQuery.data ?? 0)}
+              </Text>
             </View>
             <Text style={styles.statLabel}>Bagues likees</Text>
           </View>
@@ -416,6 +425,7 @@ export default function ProfileScreen() {
         {/* Preferences button */}
         <Pressable
           style={styles.menuBtn}
+          onPress={() => toast.show({ type: 'info', title: 'Bientot disponible !' })}
           accessibilityLabel="Preferences de bagues"
           accessibilityRole="button"
         >

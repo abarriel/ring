@@ -1,14 +1,17 @@
 import type { RingWithImages } from '@ring/shared'
-import { ChevronLeft, Heart, theme, X } from '@ring/ui'
+import { ChevronLeft, Heart, Star, theme, X } from '@ring/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Image } from 'expo-image'
 import { router, useLocalSearchParams, useNavigation } from 'expo-router'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Dimensions, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { RingDetailSkeleton } from '@/components/skeleton'
-import { hapticLight, hapticMedium } from '@/lib/haptics'
+import { saveAnonymousSwipe } from '@/lib/anonymous-swipes'
+import { getToken } from '@/lib/auth'
+import { hapticHeavy, hapticLight, hapticMedium } from '@/lib/haptics'
 import { client, orpc } from '@/lib/orpc'
+import { formatEnum } from '@/lib/utils'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const IMAGE_HEIGHT = SCREEN_WIDTH * 0.85
@@ -20,6 +23,11 @@ export default function RingDetailScreen() {
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const flatListRef = useRef<FlatList>(null)
   const navigation = useNavigation()
+  const [isAnonymous, setIsAnonymous] = useState(true)
+
+  useEffect(() => {
+    getToken().then((token) => setIsAnonymous(!token))
+  }, [])
 
   const goBack = useCallback(() => {
     if (navigation.canGoBack()) {
@@ -46,17 +54,33 @@ export default function RingDetailScreen() {
     },
   })
 
+  const handleSwipe = useCallback(
+    (direction: 'LIKE' | 'NOPE' | 'SUPER') => {
+      if (!ring) return
+      if (isAnonymous) {
+        saveAnonymousSwipe({ ringId: ring.id, direction })
+        goBack()
+      } else {
+        swipeMutation.mutate({ ringId: ring.id, direction })
+      }
+    },
+    [ring, isAnonymous, swipeMutation, goBack],
+  )
+
   const handleNope = useCallback(() => {
-    if (!ring) return
     hapticLight()
-    swipeMutation.mutate({ ringId: ring.id, direction: 'NOPE' })
-  }, [ring, swipeMutation])
+    handleSwipe('NOPE')
+  }, [handleSwipe])
+
+  const handleSuper = useCallback(() => {
+    hapticHeavy()
+    handleSwipe('SUPER')
+  }, [handleSwipe])
 
   const handleLike = useCallback(() => {
-    if (!ring) return
     hapticMedium()
-    swipeMutation.mutate({ ringId: ring.id, direction: 'LIKE' })
-  }, [ring, swipeMutation])
+    handleSwipe('LIKE')
+  }, [handleSwipe])
 
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: Array<{ index: number | null }> }) => {
@@ -176,12 +200,12 @@ export default function RingDetailScreen() {
                     n <= Math.round(ring.rating) ? styles.starFilled : styles.starEmpty,
                   ]}
                 >
-                  *
+                  {'\u2605'}
                 </Text>
               ))}
             </View>
             <Text style={styles.reviewCount}>
-              ({ring.reviewCount.toLocaleString('en-US')} reviews)
+              ({ring.reviewCount.toLocaleString('fr-FR')} avis)
             </Text>
           </View>
 
@@ -219,6 +243,17 @@ export default function RingDetailScreen() {
         </Pressable>
 
         <Pressable
+          style={[styles.actionBtn, styles.superBtn]}
+          onPress={handleSuper}
+          disabled={swipeMutation.isPending}
+          accessibilityLabel="Super like"
+          accessibilityRole="button"
+        >
+          <Star size={20} color={theme.colors.action.super.icon} strokeWidth={2.5} />
+          <Text style={styles.superBtnText}>Super</Text>
+        </Pressable>
+
+        <Pressable
           style={[styles.actionBtn, styles.likeBtn]}
           onPress={handleLike}
           disabled={swipeMutation.isPending}
@@ -234,13 +269,6 @@ export default function RingDetailScreen() {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatEnum(value: string): string {
-  return value
-    .replace(/_/g, ' ')
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-}
 
 function buildSpecs(ring: RingWithImages) {
   const specs: { label: string; value: string }[] = []
@@ -378,6 +406,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 20,
     gap: 12,
+    ...theme.shadows.sm,
   },
   specRow: {
     flexDirection: 'row',
@@ -438,6 +467,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: theme.colors.action.nope.icon,
+  },
+  superBtn: {
+    borderColor: theme.colors.action.super.border,
+    backgroundColor: theme.colors.action.super.bg,
+  },
+  superBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.action.super.icon,
   },
   likeBtn: {
     borderColor: theme.colors.action.like.border,

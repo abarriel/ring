@@ -4,16 +4,21 @@ import { Platform } from 'react-native'
 import { getToken } from '@/lib/auth'
 import { client } from '@/lib/orpc'
 
-// Configure how notifications appear when app is in foreground
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-})
+let notificationHandlerInitialized = false
+
+function ensureNotificationHandler() {
+  if (notificationHandlerInitialized) return
+  notificationHandlerInitialized = true
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  })
+}
 
 /**
  * Request push notification permissions and register the Expo push token
@@ -22,6 +27,7 @@ Notifications.setNotificationHandler({
  * Returns the push token string or null if unavailable.
  */
 export async function registerForPushNotifications(): Promise<string | null> {
+  ensureNotificationHandler()
   // Push notifications are not supported on web or non-physical devices
   if (Platform.OS === 'web' || !Device.isDevice) return null
 

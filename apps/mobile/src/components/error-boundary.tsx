@@ -39,12 +39,12 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <View style={styles.container}>
           <Text style={styles.emoji}>!</Text>
-          <Text style={styles.title}>Something went wrong</Text>
+          <Text style={styles.title}>Une erreur est survenue</Text>
           <Text style={styles.message}>
-            {this.state.error?.message ?? 'An unexpected error occurred'}
+            {this.state.error?.message ?? 'Une erreur inattendue est survenue'}
           </Text>
           <Pressable style={styles.button} onPress={this.handleReset}>
-            <Text style={styles.buttonText}>Try again</Text>
+            <Text style={styles.buttonText}>Reessayer</Text>
           </Pressable>
         </View>
       )

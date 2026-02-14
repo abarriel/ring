@@ -282,12 +282,17 @@ const createSwipe = authed.input(CreateSwipeSchema).handler(async ({ input, cont
             update: {},
           })
 
-          // Send push notifications to both partners about the new match
+          // Send push notifications to both partners about the new match (best-effort)
           const [currentUser, partner] = await Promise.all([
             db.user.findUnique({ where: { id: userId }, select: { pushToken: true } }),
             db.user.findUnique({ where: { id: partnerId }, select: { pushToken: true } }),
           ])
-          notifyNewMatch([currentUser?.pushToken ?? null, partner?.pushToken ?? null], ring.name)
+          notifyNewMatch(
+            [currentUser?.pushToken ?? null, partner?.pushToken ?? null],
+            ring.name,
+          ).catch(() => {
+            // Push notification failure should not affect the swipe response
+          })
         }
       }
     }
@@ -390,7 +395,7 @@ const createCouple = authed.handler(async ({ context }) => {
 const joinCouple = authed.input(JoinCoupleSchema).handler(async ({ input, context }) => {
   const userId = context.user.id
 
-  return db.$transaction(async (tx) => {
+  const result = await db.$transaction(async (tx) => {
     // Find the couple by code first
     const couple = await tx.couple.findUnique({ where: { code: input.code } })
     if (!couple) {
@@ -438,22 +443,31 @@ const joinCouple = authed.input(JoinCoupleSchema).handler(async ({ input, contex
       include: coupleInclude,
     })
 
-    // Notify the inviter that their partner joined (fire-and-forget, outside tx)
-    const inviter = await tx.user.findUnique({
+    // Read data needed for notification before returning from transaction
+    const inviterData = await tx.user.findUnique({
       where: { id: couple.inviterId },
       select: { pushToken: true },
     })
-    const joiner = await tx.user.findUnique({
+    const joinerData = await tx.user.findUnique({
       where: { id: userId },
       select: { name: true },
     })
-    if (inviter?.pushToken && joiner?.name) {
-      // Schedule after transaction commits
-      setTimeout(() => notifyPartnerJoined(inviter.pushToken, joiner.name), 0)
-    }
 
-    return updated
+    return {
+      updated,
+      inviterPushToken: inviterData?.pushToken ?? null,
+      joinerName: joinerData?.name ?? null,
+    }
   })
+
+  // Send notification outside the transaction (after commit)
+  if (result.inviterPushToken && result.joinerName) {
+    notifyPartnerJoined(result.inviterPushToken, result.joinerName).catch(() => {
+      // Push notification failure should not affect the join response
+    })
+  }
+
+  return result.updated
 })
 
 const getCouple = authed.handler(async ({ context }) => {

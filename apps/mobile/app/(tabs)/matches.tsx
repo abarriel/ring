@@ -11,15 +11,7 @@ import { MatchesListSkeleton } from '@/components/skeleton'
 import { hapticLight } from '@/lib/haptics'
 import { orpc } from '@/lib/orpc'
 import { useAuthGuard } from '@/lib/use-auth-guard'
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatEnum(value: string): string {
-  return value
-    .replace(/_/g, ' ')
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-}
+import { formatEnum } from '@/lib/utils'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -78,21 +70,31 @@ function MatchCard({ match }: { match: MatchWithRing }) {
       <View style={styles.cardInfo}>
         <Text style={styles.cardName}>{ring.name}</Text>
 
-        <View style={styles.specsTable}>
-          <View style={styles.specRow}>
-            <Text style={styles.specLabel}>Style</Text>
-            <Text style={styles.specValue}>{formatEnum(ring.style)}</Text>
+        {/* Inline specs with dot separators */}
+        <View style={styles.specsInline}>
+          <Text style={styles.specText}>{ring.caratWeight} ct</Text>
+          <View style={styles.specDot} />
+          <Text style={styles.specText}>{formatEnum(ring.metalType)}</Text>
+          <View style={styles.specDot} />
+          <Text style={styles.specText}>{formatEnum(ring.style)}</Text>
+        </View>
+
+        {/* Star rating */}
+        <View style={styles.starsRow}>
+          <View style={styles.stars}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <Text
+                key={`star-${n}`}
+                style={[
+                  styles.starIcon,
+                  n <= Math.round(ring.rating) ? styles.starFilled : styles.starEmpty,
+                ]}
+              >
+                {'\u2605'}
+              </Text>
+            ))}
           </View>
-          <View style={styles.specRow}>
-            <Text style={styles.specLabel}>Metal</Text>
-            <Text style={styles.specValue}>{formatEnum(ring.metalType)}</Text>
-          </View>
-          <View style={styles.specRow}>
-            <Text style={styles.specLabel}>Pierre</Text>
-            <Text style={styles.specValue}>
-              {formatEnum(ring.stoneType)} - {ring.caratWeight} ct
-            </Text>
-          </View>
+          <Text style={styles.reviewCount}>({ring.reviewCount.toLocaleString('fr-FR')} avis)</Text>
         </View>
 
         {ring.description && (
@@ -289,11 +291,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background.card,
     borderRadius: theme.borderRadius.xl,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 4,
+    ...theme.shadows.md,
     borderWidth: 1,
     borderColor: theme.colors.ui.border,
   },
@@ -336,24 +334,47 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  // Specs
-  specsTable: {
-    gap: 4,
+  // Inline specs with dot separators
+  specsInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  specText: {
+    fontSize: 13,
+    color: theme.colors.foreground.secondary,
+  },
+  specDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: theme.colors.ui.dot,
+  },
+
+  // Star rating
+  starsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     marginBottom: 12,
   },
-  specRow: {
+  stars: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    gap: 2,
   },
-  specLabel: {
-    fontSize: 13,
+  starIcon: {
+    fontSize: 14,
+  },
+  starFilled: {
+    color: theme.colors.accent.stars,
+  },
+  starEmpty: {
+    color: theme.colors.ui.border,
+  },
+  reviewCount: {
+    fontSize: 12,
     color: theme.colors.foreground.muted,
-  },
-  specValue: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: theme.colors.foreground.secondary,
   },
 
   // Description

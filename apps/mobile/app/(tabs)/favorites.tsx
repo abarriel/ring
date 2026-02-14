@@ -10,6 +10,7 @@ import { FavoritesGridSkeleton } from '@/components/skeleton'
 import { hapticLight } from '@/lib/haptics'
 import { orpc } from '@/lib/orpc'
 import { useAuthGuard } from '@/lib/use-auth-guard'
+import { formatEnum } from '@/lib/utils'
 
 const CARD_HEIGHT = 220 // aspect-ratio image (~160) + info (~60)
 
@@ -49,13 +50,19 @@ function RingCard({ ring }: { ring: RingWithImages }) {
           {ring.name}
         </Text>
         <Text style={styles.cardMetal} numberOfLines={1}>
-          {ring.metalType
-            .replace(/_/g, ' ')
-            .toLowerCase()
-            .replace(/\b\w/g, (c) => c.toUpperCase())}
+          {formatEnum(ring.metalType)}
         </Text>
         <View style={styles.cardRating}>
-          <Text style={styles.cardStars}>{'*'.repeat(Math.round(ring.rating))}</Text>
+          <Text style={styles.cardStars}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <Text
+                key={`s-${n}`}
+                style={n <= Math.round(ring.rating) ? styles.starFilled : styles.starEmpty}
+              >
+                {'\u2605'}
+              </Text>
+            ))}
+          </Text>
           <Text style={styles.cardReviews}>({ring.reviewCount})</Text>
         </View>
       </View>
@@ -76,14 +83,8 @@ export default function FavoritesScreen() {
   const isLoading = favoritesQuery.isLoading
   const isError = favoritesQuery.isError
 
-  const getItemLayout = useCallback(
-    (_data: ArrayLike<RingWithImages> | null | undefined, index: number) => ({
-      length: CARD_HEIGHT,
-      offset: CARD_HEIGHT * Math.floor(index / 2),
-      index,
-    }),
-    [],
-  )
+  // Note: getItemLayout removed — inaccurate for 2-column FlatList with variable row heights.
+  // FlatList virtualization settings (windowSize, maxToRenderPerBatch) are sufficient.
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -123,7 +124,6 @@ export default function FavoritesScreen() {
           numColumns={2}
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.list}
-          getItemLayout={getItemLayout}
           windowSize={5}
           maxToRenderPerBatch={10}
           initialNumToRender={8}
@@ -172,11 +172,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background.card,
     borderRadius: theme.borderRadius.lg,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    ...theme.shadows.sm,
   },
   cardImage: {
     aspectRatio: 1,
@@ -215,7 +211,12 @@ const styles = StyleSheet.create({
   },
   cardStars: {
     fontSize: 10,
+  },
+  starFilled: {
     color: theme.colors.accent.stars,
+  },
+  starEmpty: {
+    color: theme.colors.ui.border,
   },
   cardReviews: {
     fontSize: 10,

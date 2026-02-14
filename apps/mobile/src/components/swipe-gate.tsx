@@ -1,11 +1,21 @@
-import { theme } from '@ring/ui'
+import { theme, X } from '@ring/ui'
 import { router as expoRouter } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 
-export function SwipeGate() {
+export function SwipeGate({ onDismiss }: { onDismiss?: () => void }) {
   return (
     <View style={styles.overlay} accessibilityLabel="Limite de swipes atteinte">
       <View style={styles.card}>
+        {onDismiss && (
+          <Pressable
+            style={styles.closeBtn}
+            onPress={onDismiss}
+            accessibilityLabel="Fermer"
+            accessibilityRole="button"
+          >
+            <X size={20} color={theme.colors.foreground.muted} />
+          </Pressable>
+        )}
         <Text style={styles.title} accessibilityRole="header">
           Tu aimes ce que tu vois ?
         </Text>
@@ -20,6 +30,16 @@ export function SwipeGate() {
         >
           <Text style={styles.ctaText}>S'inscrire</Text>
         </Pressable>
+        {onDismiss && (
+          <Pressable
+            style={styles.laterBtn}
+            onPress={onDismiss}
+            accessibilityLabel="Plus tard"
+            accessibilityRole="button"
+          >
+            <Text style={styles.laterText}>Plus tard</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   )
@@ -67,5 +87,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#ffffff',
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    padding: 8,
+  },
+  laterBtn: {
+    marginTop: 12,
+    paddingVertical: 8,
+  },
+  laterText: {
+    fontSize: 14,
+    color: theme.colors.foreground.muted,
   },
 })

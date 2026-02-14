@@ -1,4 +1,4 @@
-import { ArrowRight, Heart, theme } from '@ring/ui'
+import { ArrowRight, ChevronLeft, Heart, theme } from '@ring/ui'
 import { useMutation } from '@tanstack/react-query'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
@@ -53,11 +53,22 @@ export default function LoginScreen() {
   const [partnerCode, setPartnerCode] = useState('')
 
   const loginMutation = useMutation({
-    mutationFn: (input: { name: string }) => client.auth.login(input),
+    mutationFn: (input: { name: string; partnerCode?: string }) => client.auth.login(input),
     onSuccess: async (result) => {
       await saveUser(result.user)
       await saveToken(result.sessionToken)
       await replayAnonymousSwipes()
+
+      // Auto-join couple if partner code was provided
+      const code = partnerCode.trim().toUpperCase()
+      if (code.length === 6) {
+        try {
+          await client.couple.join({ code })
+        } catch {
+          // Silently fail — user can join later from profile
+        }
+      }
+
       // Register for push notifications after login (best-effort, non-blocking)
       registerForPushNotifications()
       router.replace('/')
@@ -66,6 +77,11 @@ export default function LoginScreen() {
 
   const handleStart = () => {
     setStep('details')
+  }
+
+  const handleBack = () => {
+    setStep('welcome')
+    loginMutation.reset()
   }
 
   const handleSubmit = () => {
@@ -141,14 +157,24 @@ export default function LoginScreen() {
           ]}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header */}
+          {/* Back + Header */}
+          <Pressable
+            style={styles.backBtn}
+            onPress={handleBack}
+            accessibilityLabel="Retour"
+            accessibilityRole="button"
+          >
+            <ChevronLeft size={24} color={theme.colors.foreground.DEFAULT} />
+            <Text style={styles.backBtnText}>Retour</Text>
+          </Pressable>
+
           <View style={styles.detailsHeader}>
             <Text style={styles.detailsTitle}>Faisons connaissance</Text>
             <Text style={styles.detailsSubtitle}>Parle-nous un peu de toi</Text>
           </View>
 
-          {/* Form */}
-          <View style={styles.formContainer}>
+          {/* Form card (matching mockup white card container) */}
+          <View style={styles.formCard}>
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>Ton pseudo</Text>
               <TextInput
@@ -180,6 +206,15 @@ export default function LoginScreen() {
               </Text>
             </View>
           </View>
+
+          {/* Error message */}
+          {loginMutation.isError && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>
+                {loginMutation.error?.message ?? 'Erreur de connexion. Reessaye.'}
+              </Text>
+            </View>
+          )}
 
           {/* Submit */}
           <LinearGradient
@@ -321,11 +356,14 @@ const styles = StyleSheet.create({
     color: theme.colors.foreground.secondary,
   },
 
-  // Form
-  formContainer: {
-    flex: 1,
+  // Form card
+  formCard: {
+    backgroundColor: theme.colors.background.card,
+    borderRadius: theme.borderRadius.lg,
+    padding: 20,
     gap: 24,
     marginBottom: 32,
+    ...theme.shadows.lg,
   },
   fieldGroup: {
     gap: 8,
@@ -348,5 +386,32 @@ const styles = StyleSheet.create({
   fieldHint: {
     fontSize: 12,
     color: theme.colors.foreground.muted,
+  },
+
+  // Back button
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 16,
+  },
+  backBtnText: {
+    fontSize: 15,
+    color: theme.colors.foreground.DEFAULT,
+  },
+
+  // Error
+  errorContainer: {
+    backgroundColor: theme.colors.feedback.error.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.feedback.error.border,
+    borderRadius: theme.borderRadius.md,
+    padding: 12,
+    marginBottom: 16,
+  },
+  errorText: {
+    fontSize: 14,
+    color: theme.colors.feedback.error.text,
+    textAlign: 'center',
   },
 })
