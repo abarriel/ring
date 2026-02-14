@@ -6,9 +6,9 @@ import { testContext } from './setup.js'
 
 // Mock the push module to intercept notification calls without hitting Expo's servers
 vi.mock('../src/push.js', () => ({
-  sendPushNotifications: vi.fn(),
-  notifyPartnerJoined: vi.fn(),
-  notifyNewMatch: vi.fn(),
+  sendPushNotifications: vi.fn().mockResolvedValue(undefined),
+  notifyPartnerJoined: vi.fn().mockResolvedValue(undefined),
+  notifyNewMatch: vi.fn().mockResolvedValue(undefined),
 }))
 
 // Import the mocked functions for assertions

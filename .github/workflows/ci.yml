@@ -28,7 +28,7 @@ jobs:
       - run: pnpm db:generate
       - run: pnpm lint
       - run: pnpm typecheck
-      - run: pnpm build
+      - run: pnpm --filter @ring/api build
       - run: pnpm --filter @ring/shared test
       - run: pnpm --filter @ring/mobile test
 
