@@ -34,7 +34,7 @@ function MatchCard({ match }: { match: MatchWithRing }) {
   const imageUrl = ring.images[0]?.url
 
   const handleDetails = useCallback(() => {
-    hapticLight()
+    hapticLight().catch(() => {})
     expoRouter.push(`/ring/${ring.id}`)
   }, [ring.id])
 

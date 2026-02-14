@@ -133,7 +133,7 @@ export default function SwipeScreen() {
     setCurrentIndex((prev) => prev - 1)
     setCanUndo(false)
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
-    hapticLight()
+    hapticLight().catch(() => {})
   }, [currentIndex])
 
   const swipeOff = useCallback(
@@ -195,13 +195,13 @@ export default function SwipeScreen() {
   }))
 
   const handleNope = useCallback(() => {
-    hapticLight()
+    hapticLight().catch(() => {})
     swipeOff('left')
   }, [swipeOff])
 
   const handleSuper = useCallback(() => {
     if (isAnimating.value) return
-    hapticHeavy()
+    hapticHeavy().catch(() => {})
     isAnimating.value = true
     translateX.value = withTiming(0, { duration: 100 })
     translateY.value = withTiming(-screenWidth * 1.5, { duration: 300 }, () => {
@@ -210,7 +210,7 @@ export default function SwipeScreen() {
   }, [translateX, translateY, isAnimating, screenWidth, advanceCard])
 
   const handleLike = useCallback(() => {
-    hapticMedium()
+    hapticMedium().catch(() => {})
     swipeOff('right')
   }, [swipeOff])
 

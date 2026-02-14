@@ -57,7 +57,7 @@ export default function ProfileScreen() {
   const createCoupleMutation = useMutation({
     mutationFn: () => client.couple.create(undefined),
     onSuccess: async (data) => {
-      hapticSuccess()
+      await hapticSuccess()
       queryClient.invalidateQueries({ queryKey: coupleQueryKey })
       // Auto-copy the invitation code to clipboard
       if (data?.code) {
@@ -86,8 +86,8 @@ export default function ProfileScreen() {
   // ── Join couple mutation ──────────────────────────────────────────────
   const joinCoupleMutation = useMutation({
     mutationFn: (code: string) => client.couple.join({ code }),
-    onSuccess: () => {
-      hapticSuccess()
+    onSuccess: async () => {
+      await hapticSuccess()
       queryClient.invalidateQueries({ queryKey: coupleQueryKey })
       setJoinCode('')
       toast.show({ type: 'success', title: t('profile.toast.coupleFormed') })
