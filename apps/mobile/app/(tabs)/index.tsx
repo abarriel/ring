@@ -1,10 +1,10 @@
 import type { Match, RingWithImages } from '@ring/shared'
-import { Heart, Sparkles, Star, theme, X } from '@ring/ui'
+import { Heart, RotateCcw, Sparkles, Star, theme, X } from '@ring/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router as expoRouter } from 'expo-router'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, {
@@ -36,10 +36,19 @@ export default function SwipeScreen() {
   const [celebrationMatch, setCelebrationMatch] = useState<Match | null>(null)
   const [celebrationRing, setCelebrationRing] = useState<RingWithImages | null>(null)
   const [showGate, setShowGate] = useState(false)
+  const [canUndo, setCanUndo] = useState(false)
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const queryClient = useQueryClient()
 
   const isAnonymous = !isAuthenticated
   const userInitials = authUser?.name ? getInitials(authUser.name) : '?'
+
+  // Clear undo timer on unmount
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
+    }
+  }, [])
 
   // Anonymous mode: fetch public ring list
   const listQuery = useQuery({
@@ -108,9 +117,22 @@ export default function SwipeScreen() {
       translateX.value = 0
       translateY.value = 0
       isAnimating.value = false
+
+      // Show undo button for 3 seconds
+      setCanUndo(true)
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
+      undoTimerRef.current = setTimeout(() => setCanUndo(false), 3000)
     },
     [translateX, translateY, isAnimating, persistSwipe],
   )
+
+  const handleUndo = useCallback(() => {
+    if (currentIndex <= 0) return
+    setCurrentIndex((prev) => prev - 1)
+    setCanUndo(false)
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
+    hapticLight()
+  }, [currentIndex])
 
   const swipeOff = useCallback(
     (direction: 'left' | 'right') => {
@@ -199,9 +221,19 @@ export default function SwipeScreen() {
       <View style={[styles.container, { paddingTop: insets.top }]}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerLogo} accessibilityRole="header">
-            Ring
-          </Text>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerLogo} accessibilityRole="header">
+              Ring
+            </Text>
+            {!isLoading && !isError && rings.length > 0 && !isFinished && (
+              <Text
+                style={styles.cardCounter}
+                accessibilityLabel={`Bague ${currentIndex + 1} sur ${rings.length}`}
+              >
+                {currentIndex + 1}/{rings.length}
+              </Text>
+            )}
+          </View>
           {isAnonymous ? (
             <Pressable
               style={styles.loginBtn}
@@ -333,6 +365,17 @@ export default function SwipeScreen() {
         {/* Action buttons */}
         {!isFinished && !isLoading && !isError && (
           <View style={styles.actions}>
+            {canUndo && currentIndex > 0 && (
+              <Pressable
+                style={[styles.actionBtn, styles.actionBtnSmall, styles.undoBtn]}
+                onPress={handleUndo}
+                accessibilityLabel="Annuler le dernier swipe"
+                accessibilityRole="button"
+              >
+                <RotateCcw size={18} color={theme.colors.foreground.muted} strokeWidth={2.5} />
+              </Pressable>
+            )}
+
             <Pressable
               style={[styles.actionBtn, styles.actionBtnLarge, styles.nopeBtn]}
               onPress={handleNope}
@@ -405,10 +448,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.page,
     paddingVertical: 8,
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   headerLogo: {
     fontSize: 20,
     fontWeight: 'bold',
     color: theme.colors.ring.pink500,
+  },
+  cardCounter: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: theme.colors.foreground.muted,
   },
   avatar: {
     width: 32,
@@ -493,6 +546,11 @@ const styles = StyleSheet.create({
   productImage: {
     width: '65%',
     height: '80%',
+    // Drop shadow matching mockup: drop-shadow(0 8px 24px rgba(0,0,0,0.12))
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
   },
 
   // Ring info
@@ -576,6 +634,9 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
+  },
+  undoBtn: {
+    borderColor: theme.colors.ui.border,
   },
   nopeBtn: {
     borderColor: theme.colors.action.nope.border,

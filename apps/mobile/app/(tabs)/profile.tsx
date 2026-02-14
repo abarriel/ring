@@ -1,4 +1,4 @@
-import { Check, Copy, Heart, LogOut, Settings, Share2, theme, useToast } from '@ring/ui'
+import { Copy, Heart, LogOut, Settings, Share2, Sparkles, theme, useToast } from '@ring/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import * as Clipboard from 'expo-clipboard'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -27,11 +27,17 @@ export default function ProfileScreen() {
   const toast = useToast()
   const queryClient = useQueryClient()
   const [joinCode, setJoinCode] = useState('')
-  const [copied, setCopied] = useState(false)
 
   // ── Liked count query ─────────────────────────────────────────────────
   const likedQuery = useQuery({
     ...orpc.swipe.listLiked.queryOptions({ input: { limit: 1, offset: 0 } }),
+    enabled: isAuthed,
+    select: (data) => (data as unknown[]).length,
+  })
+
+  // ── Matches count query ────────────────────────────────────────────────
+  const matchesQuery = useQuery({
+    ...orpc.match.list.queryOptions({ input: { limit: 1, offset: 0 } }),
     enabled: isAuthed,
     select: (data) => (data as unknown[]).length,
   })
@@ -48,9 +54,14 @@ export default function ProfileScreen() {
   // ── Create couple mutation ────────────────────────────────────────────
   const createCoupleMutation = useMutation({
     mutationFn: () => client.couple.create(undefined),
-    onSuccess: () => {
+    onSuccess: async (data) => {
       hapticSuccess()
       queryClient.invalidateQueries({ queryKey: coupleQueryKey })
+      // Auto-copy the invitation code to clipboard
+      if (data?.code) {
+        await Clipboard.setStringAsync(data.code)
+        toast.show({ type: 'success', title: 'Code copie !', message: data.code })
+      }
     },
     onError: (error: Error) => {
       if (error.message.includes('Already in a couple')) {
@@ -165,14 +176,6 @@ export default function ProfileScreen() {
     }
   }
 
-  const handleCopyUserId = async () => {
-    if (!user) return
-    await Clipboard.setStringAsync(user.id)
-    setCopied(true)
-    toast.show({ type: 'success', title: 'Copie !' })
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   const handleCopyCode = async (code: string) => {
     await Clipboard.setStringAsync(code)
     toast.show({ type: 'success', title: 'Copie !' })
@@ -206,8 +209,6 @@ export default function ProfileScreen() {
   const initials = getInitials(user.name)
   const isPaired = couple?.status === 'ACTIVE' && couple.partner !== null
   const isPending = couple?.status === 'PENDING'
-  const isPartnerConnected = isPaired || isPending
-
   const partnerName =
     isPaired && couple
       ? couple.inviter.id === user.id
@@ -235,7 +236,9 @@ export default function ProfileScreen() {
             <Text style={styles.userName} accessibilityRole="header">
               {user.name}
             </Text>
-            <Text style={styles.userSubtitle}>Ring Explorer</Text>
+            <Text style={styles.userSubtitle}>
+              {isPaired && partnerName ? `En couple avec ${partnerName}` : 'Ring Explorer'}
+            </Text>
           </View>
         </View>
 
@@ -250,47 +253,20 @@ export default function ProfileScreen() {
             </View>
             <Text style={styles.statLabel}>Bagues likees</Text>
           </View>
-          <View
-            style={styles.statCard}
-            accessibilityLabel={`Partenaire ${isPartnerConnected ? 'connecte' : 'non connecte'}`}
-          >
-            <Text style={styles.statValue}>{isPartnerConnected ? '\u2713' : '\u2014'}</Text>
-            <Text style={styles.statLabel}>
-              Partenaire {isPartnerConnected ? 'connecte' : 'non connecte'}
-            </Text>
+          <View style={styles.statCard} accessibilityLabel="Matchs">
+            <View style={styles.statRow}>
+              <Sparkles size={16} color={theme.colors.ring.pink500} />
+              <Text style={styles.statValue}>
+                {matchesQuery.isLoading ? '-' : (matchesQuery.data ?? 0)}
+              </Text>
+            </View>
+            <Text style={styles.statLabel}>Matchs</Text>
           </View>
         </View>
       </LinearGradient>
 
       {/* ── Body cards ── */}
       <View style={styles.body}>
-        {/* User ID card */}
-        <View style={styles.card} accessibilityLabel="Ton identifiant utilisateur">
-          <Text style={styles.cardUpperLabel}>TON ID UTILISATEUR</Text>
-          <View style={styles.idRow}>
-            <TextInput
-              style={styles.idInput}
-              value={user.id}
-              editable={false}
-              selectTextOnFocus
-              accessibilityLabel="Identifiant utilisateur"
-            />
-            <Pressable
-              style={styles.idCopyBtn}
-              onPress={handleCopyUserId}
-              accessibilityLabel="Copier l'identifiant"
-              accessibilityRole="button"
-            >
-              {copied ? (
-                <Check size={16} color={theme.colors.foreground.secondary} />
-              ) : (
-                <Copy size={16} color={theme.colors.foreground.secondary} />
-              )}
-            </Pressable>
-          </View>
-          <Text style={styles.cardHint}>Partage ce code avec ton partenaire</Text>
-        </View>
-
         {/* Partner code display (when paired) */}
         {isPaired && couple && (
           <View style={styles.partnerCodeCard} accessibilityLabel={`Partenaire: ${partnerName}`}>
@@ -547,35 +523,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.colors.foreground.muted,
     marginTop: 8,
-  },
-
-  // User ID row
-  idRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  idInput: {
-    flex: 1,
-    height: 40,
-    borderWidth: 1,
-    borderColor: theme.colors.ui.border,
-    borderRadius: theme.borderRadius.md,
-    paddingHorizontal: 12,
-    fontSize: 12,
-    fontFamily: 'Courier',
-    color: theme.colors.foreground.DEFAULT,
-    backgroundColor: theme.colors.background.surface,
-  },
-  idCopyBtn: {
-    width: 40,
-    height: 40,
-    borderWidth: 1,
-    borderColor: theme.colors.ui.border,
-    borderRadius: theme.borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.background.card,
   },
 
   // Partner code card

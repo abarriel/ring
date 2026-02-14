@@ -111,6 +111,7 @@ vi.mock('@ring/ui', () => ({
   Home: 'Home',
   Info: 'Info',
   LogOut: 'LogOut',
+  RotateCcw: 'RotateCcw',
   Settings: 'Settings',
   Share2: 'Share2',
   Sparkles: 'Sparkles',
