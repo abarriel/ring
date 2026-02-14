@@ -6,7 +6,6 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { router as expoRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import {
-  ActivityIndicator,
   Alert,
   Platform,
   Pressable,
@@ -18,7 +17,9 @@ import {
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { ProfileSkeleton } from '@/components/skeleton'
 import { clearUser, getUser } from '@/lib/auth'
+import { hapticSuccess } from '@/lib/haptics'
 import { client, orpc } from '@/lib/orpc'
 import { useAuthGuard } from '@/lib/use-auth-guard'
 import { getInitials } from '@/lib/utils'
@@ -49,6 +50,7 @@ export default function ProfileScreen() {
   const createCoupleMutation = useMutation({
     mutationFn: () => client.couple.create(undefined),
     onSuccess: () => {
+      hapticSuccess()
       queryClient.invalidateQueries({ queryKey: coupleQueryKey })
     },
     onError: (error: Error) => {
@@ -73,6 +75,7 @@ export default function ProfileScreen() {
   const joinCoupleMutation = useMutation({
     mutationFn: (code: string) => client.couple.join({ code }),
     onSuccess: () => {
+      hapticSuccess()
       queryClient.invalidateQueries({ queryKey: coupleQueryKey })
       setJoinCode('')
       toast.show({ type: 'success', title: 'Couple forme !' })
@@ -199,7 +202,13 @@ export default function ProfileScreen() {
     ])
   }
 
-  if (!user) return null
+  if (!user) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <ProfileSkeleton />
+      </View>
+    )
+  }
 
   const initials = getInitials(user.name)
   const isPaired = couple?.status === 'ACTIVE' && couple.partner !== null
@@ -225,24 +234,31 @@ export default function ProfileScreen() {
             colors={[theme.colors.ring.rose400, theme.colors.ring.pink500]}
             style={styles.avatar}
           >
-            <Text style={styles.avatarText}>{initials}</Text>
+            <Text style={styles.avatarText} accessibilityLabel={`Avatar de ${user.name}`}>
+              {initials}
+            </Text>
           </LinearGradient>
           <View>
-            <Text style={styles.userName}>{user.name}</Text>
+            <Text style={styles.userName} accessibilityRole="header">
+              {user.name}
+            </Text>
             <Text style={styles.userSubtitle}>Ring Explorer</Text>
           </View>
         </View>
 
         {/* Stats grid */}
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
+        <View style={styles.statsGrid} accessibilityLabel="Statistiques">
+          <View style={styles.statCard} accessibilityLabel="Bagues likees">
             <View style={styles.statRow}>
               <Heart size={16} color={theme.colors.ring.pink500} fill={theme.colors.ring.pink500} />
               <Text style={styles.statValue}>-</Text>
             </View>
             <Text style={styles.statLabel}>Bagues likees</Text>
           </View>
-          <View style={styles.statCard}>
+          <View
+            style={styles.statCard}
+            accessibilityLabel={`Partenaire ${isPartnerConnected ? 'connecte' : 'non connecte'}`}
+          >
             <Text style={styles.statValue}>{isPartnerConnected ? '\u2713' : '\u2014'}</Text>
             <Text style={styles.statLabel}>
               Partenaire {isPartnerConnected ? 'connecte' : 'non connecte'}
@@ -254,11 +270,22 @@ export default function ProfileScreen() {
       {/* ── Body cards ── */}
       <View style={styles.body}>
         {/* User ID card */}
-        <View style={styles.card}>
+        <View style={styles.card} accessibilityLabel="Ton identifiant utilisateur">
           <Text style={styles.cardUpperLabel}>TON ID UTILISATEUR</Text>
           <View style={styles.idRow}>
-            <TextInput style={styles.idInput} value={user.id} editable={false} selectTextOnFocus />
-            <Pressable style={styles.idCopyBtn} onPress={handleCopyUserId}>
+            <TextInput
+              style={styles.idInput}
+              value={user.id}
+              editable={false}
+              selectTextOnFocus
+              accessibilityLabel="Identifiant utilisateur"
+            />
+            <Pressable
+              style={styles.idCopyBtn}
+              onPress={handleCopyUserId}
+              accessibilityLabel="Copier l'identifiant"
+              accessibilityRole="button"
+            >
               {copied ? (
                 <Check size={16} color={theme.colors.foreground.secondary} />
               ) : (
@@ -271,7 +298,7 @@ export default function ProfileScreen() {
 
         {/* Partner code display (when paired) */}
         {isPaired && couple && (
-          <View style={styles.partnerCodeCard}>
+          <View style={styles.partnerCodeCard} accessibilityLabel={`Partenaire: ${partnerName}`}>
             <Text style={styles.partnerCodeLabel}>PARTENAIRE</Text>
             <Text style={styles.partnerCodeValue}>{partnerName}</Text>
           </View>
@@ -279,12 +306,18 @@ export default function ProfileScreen() {
 
         {/* Couple section */}
         {coupleQuery.isLoading ? (
-          <ActivityIndicator size="small" color={theme.colors.ring.pink500} style={styles.loader} />
+          <View style={styles.loader} accessibilityLabel="Chargement du couple">
+            <View style={{ opacity: 0.5 }}>
+              <Text style={styles.cardUpperLabel}>COUPLE</Text>
+            </View>
+          </View>
         ) : isPaired ? (
           <Pressable
             style={styles.dissolveBtn}
             onPress={handleDissolve}
             disabled={dissolveCoupleMutation.isPending}
+            accessibilityLabel="Dissoudre le couple"
+            accessibilityRole="button"
           >
             <Text style={styles.dissolveBtnText}>
               {dissolveCoupleMutation.isPending ? 'Dissolution...' : 'Dissoudre le couple'}
@@ -294,11 +327,26 @@ export default function ProfileScreen() {
           <View style={styles.card}>
             <Text style={styles.cardUpperLabel}>TON CODE D'INVITATION</Text>
             <View style={styles.codeRow}>
-              <Text style={styles.codeText}>{couple.code}</Text>
-              <Pressable style={styles.iconBtn} onPress={() => handleShareCode(couple.code)}>
+              <Text
+                style={styles.codeText}
+                accessibilityLabel={`Code d'invitation: ${couple.code}`}
+              >
+                {couple.code}
+              </Text>
+              <Pressable
+                style={styles.iconBtn}
+                onPress={() => handleShareCode(couple.code)}
+                accessibilityLabel="Partager le code"
+                accessibilityRole="button"
+              >
                 <Share2 size={20} color={theme.colors.ring.pink500} />
               </Pressable>
-              <Pressable style={styles.iconBtn} onPress={() => handleCopyCode(couple.code)}>
+              <Pressable
+                style={styles.iconBtn}
+                onPress={() => handleCopyCode(couple.code)}
+                accessibilityLabel="Copier le code"
+                accessibilityRole="button"
+              >
                 <Copy size={20} color={theme.colors.foreground.secondary} />
               </Pressable>
             </View>
@@ -310,6 +358,8 @@ export default function ProfileScreen() {
               style={styles.dissolveBtn}
               onPress={handleDissolve}
               disabled={dissolveCoupleMutation.isPending}
+              accessibilityLabel="Annuler l'invitation"
+              accessibilityRole="button"
             >
               <Text style={styles.dissolveBtnText}>
                 {dissolveCoupleMutation.isPending ? 'Annulation...' : "Annuler l'invitation"}
@@ -322,6 +372,8 @@ export default function ProfileScreen() {
               style={styles.inviteBtn}
               onPress={handleCreateCouple}
               disabled={createCoupleMutation.isPending}
+              accessibilityLabel="Invite ton partenaire"
+              accessibilityRole="button"
             >
               <Text style={styles.inviteBtnText}>
                 {createCoupleMutation.isPending ? 'Creation...' : 'Invite ton partenaire'}
@@ -340,6 +392,7 @@ export default function ProfileScreen() {
                 onChangeText={(text) => setJoinCode(text.toUpperCase())}
                 autoCapitalize="characters"
                 maxLength={6}
+                accessibilityLabel="Code d'invitation du partenaire"
               />
               <Pressable
                 style={[
@@ -349,6 +402,8 @@ export default function ProfileScreen() {
                 ]}
                 onPress={handleJoinCouple}
                 disabled={joinCode.trim().length !== 6 || joinCoupleMutation.isPending}
+                accessibilityLabel="Rejoindre le couple"
+                accessibilityRole="button"
               >
                 <Text style={styles.joinBtnText}>
                   {joinCoupleMutation.isPending ? '...' : 'Rejoindre'}
@@ -359,7 +414,11 @@ export default function ProfileScreen() {
         )}
 
         {/* Preferences button */}
-        <Pressable style={styles.menuBtn}>
+        <Pressable
+          style={styles.menuBtn}
+          accessibilityLabel="Preferences de bagues"
+          accessibilityRole="button"
+        >
           <Settings size={20} color={theme.colors.foreground.secondary} />
           <View style={styles.menuBtnContent}>
             <Text style={styles.menuBtnTitle}>Preferences</Text>
@@ -368,7 +427,12 @@ export default function ProfileScreen() {
         </Pressable>
 
         {/* Logout button */}
-        <Pressable style={styles.menuBtnDanger} onPress={handleLogout}>
+        <Pressable
+          style={styles.menuBtnDanger}
+          onPress={handleLogout}
+          accessibilityLabel="Se deconnecter"
+          accessibilityRole="button"
+        >
           <LogOut size={20} color={theme.colors.feedback.error.text} />
           <View style={styles.menuBtnContent}>
             <Text style={styles.menuBtnTitleDanger}>Deconnexion</Text>

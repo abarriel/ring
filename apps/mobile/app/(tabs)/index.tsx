@@ -1,18 +1,11 @@
 import type { Match, RingWithImages } from '@ring/shared'
 import { Heart, Sparkles, Star, theme, X } from '@ring/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router as expoRouter } from 'expo-router'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from 'react-native'
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, {
   interpolate,
@@ -24,9 +17,11 @@ import Animated, {
 } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { CelebrationModal } from '@/components/celebration-modal'
+import { SwipeCardSkeleton } from '@/components/skeleton'
 import { SwipeGate } from '@/components/swipe-gate'
 import { ANONYMOUS_SWIPE_LIMIT, saveAnonymousSwipe } from '@/lib/anonymous-swipes'
 import { getToken, getUser } from '@/lib/auth'
+import { hapticHeavy, hapticLight, hapticMedium } from '@/lib/haptics'
 import { client, orpc } from '@/lib/orpc'
 import { getInitials } from '@/lib/utils'
 
@@ -194,16 +189,25 @@ export default function SwipeScreen() {
     opacity: interpolate(translateX.value, [0, -swipeThreshold], [0, 1]),
   }))
 
-  const handleNope = useCallback(() => swipeOff('left'), [swipeOff])
+  const handleNope = useCallback(() => {
+    hapticLight()
+    swipeOff('left')
+  }, [swipeOff])
+
   const handleSuper = useCallback(() => {
     if (isAnimating.value) return
+    hapticHeavy()
     isAnimating.value = true
     translateX.value = withTiming(0, { duration: 100 })
     translateY.value = withTiming(-screenWidth * 1.5, { duration: 300 }, () => {
       runOnJS(advanceCard)('SUPER')
     })
   }, [translateX, translateY, isAnimating, screenWidth, advanceCard])
-  const handleLike = useCallback(() => swipeOff('right'), [swipeOff])
+
+  const handleLike = useCallback(() => {
+    hapticMedium()
+    swipeOff('right')
+  }, [swipeOff])
 
   const isFinished = !activeQuery.isLoading && currentIndex >= rings.length
   const isLoading = activeQuery.isLoading
@@ -214,13 +218,25 @@ export default function SwipeScreen() {
       <View style={[styles.container, { paddingTop: insets.top }]}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerLogo}>Ring</Text>
+          <Text style={styles.headerLogo} accessibilityRole="header">
+            Ring
+          </Text>
           {isAnonymous ? (
-            <Pressable style={styles.loginBtn} onPress={() => expoRouter.push('/login')}>
+            <Pressable
+              style={styles.loginBtn}
+              onPress={() => expoRouter.push('/login')}
+              accessibilityLabel="S'inscrire"
+              accessibilityRole="button"
+            >
               <Text style={styles.loginBtnText}>S'inscrire</Text>
             </Pressable>
           ) : (
-            <Pressable style={styles.avatar} onPress={() => expoRouter.push('/profile')}>
+            <Pressable
+              style={styles.avatar}
+              onPress={() => expoRouter.push('/profile')}
+              accessibilityLabel="Voir le profil"
+              accessibilityRole="button"
+            >
               <Text style={styles.avatarText}>{userInitials}</Text>
             </Pressable>
           )}
@@ -229,15 +245,17 @@ export default function SwipeScreen() {
         {/* Card area */}
         <View style={styles.cardArea}>
           {isLoading ? (
-            <View style={styles.emptyState}>
-              <ActivityIndicator size="large" color={theme.colors.ring.pink500} />
-              <Text style={styles.emptySubtitle}>Chargement des bagues...</Text>
-            </View>
+            <SwipeCardSkeleton />
           ) : isError ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>Oups !</Text>
               <Text style={styles.emptySubtitle}>Impossible de charger les bagues.</Text>
-              <Pressable style={styles.retryBtn} onPress={() => activeQuery.refetch()}>
+              <Pressable
+                style={styles.retryBtn}
+                onPress={() => activeQuery.refetch()}
+                accessibilityLabel="Reessayer le chargement"
+                accessibilityRole="button"
+              >
                 <Text style={styles.retryText}>Reessayer</Text>
               </Pressable>
             </View>
@@ -248,13 +266,22 @@ export default function SwipeScreen() {
               </View>
               <Text style={styles.emptyTitle}>Plus de bagues !</Text>
               <Text style={styles.emptySubtitle}>Tu as vu toutes les bagues disponibles.</Text>
-              <Pressable style={styles.retryBtn} onPress={() => expoRouter.push('/matches')}>
+              <Pressable
+                style={styles.retryBtn}
+                onPress={() => expoRouter.push('/matches')}
+                accessibilityLabel="Voir tes matchs"
+                accessibilityRole="button"
+              >
                 <Text style={styles.retryText}>Voir tes matchs</Text>
               </Pressable>
             </View>
           ) : currentRing ? (
             <GestureDetector gesture={panGesture}>
-              <Animated.View style={[styles.card, cardAnimatedStyle]}>
+              <Animated.View
+                style={[styles.card, cardAnimatedStyle]}
+                accessibilityLabel={`Bague ${currentRing.name}`}
+                accessibilityHint="Swipe a gauche pour passer, a droite pour liker"
+              >
                 {/* LIKE overlay */}
                 <Animated.View style={[styles.overlayLabel, styles.likeLabel, likeOverlayStyle]}>
                   <Text style={styles.likeLabelText}>LIKE</Text>
@@ -267,7 +294,13 @@ export default function SwipeScreen() {
 
                 {/* Image zone */}
                 <View style={styles.imageZone}>
-                  <Image source={{ uri: currentRing.images[0]?.url }} style={styles.productImage} />
+                  <Image
+                    source={{ uri: currentRing.images[0]?.url }}
+                    style={styles.productImage}
+                    contentFit="contain"
+                    transition={200}
+                    accessibilityLabel={`Photo de ${currentRing.name}`}
+                  />
                 </View>
 
                 {/* Ring info */}
@@ -275,7 +308,7 @@ export default function SwipeScreen() {
                   <Text style={styles.productName}>{currentRing.name}</Text>
 
                   {/* Key-value specs */}
-                  <View style={styles.specsTable}>
+                  <View style={styles.specsTable} accessibilityLabel="Specifications de la bague">
                     <View style={styles.specRow}>
                       <Text style={styles.specLabel}>Style</Text>
                       <Text style={styles.specValue}>{formatEnum(currentRing.style)}</Text>
@@ -312,6 +345,8 @@ export default function SwipeScreen() {
             <Pressable
               style={[styles.actionBtn, styles.actionBtnLarge, styles.nopeBtn]}
               onPress={handleNope}
+              accessibilityLabel="Passer cette bague"
+              accessibilityRole="button"
             >
               <X size={28} color={theme.colors.action.nope.icon} strokeWidth={2.5} />
             </Pressable>
@@ -319,6 +354,8 @@ export default function SwipeScreen() {
             <Pressable
               style={[styles.actionBtn, styles.actionBtnSmall, styles.superBtn]}
               onPress={handleSuper}
+              accessibilityLabel="Super like"
+              accessibilityRole="button"
             >
               <Star size={20} color={theme.colors.action.super.icon} strokeWidth={2.5} />
             </Pressable>
@@ -326,6 +363,8 @@ export default function SwipeScreen() {
             <Pressable
               style={[styles.actionBtn, styles.actionBtnLarge, styles.likeBtn]}
               onPress={handleLike}
+              accessibilityLabel="Liker cette bague"
+              accessibilityRole="button"
             >
               <Heart size={28} color={theme.colors.action.like.icon} strokeWidth={2.5} />
             </Pressable>
@@ -467,7 +506,6 @@ const styles = StyleSheet.create({
   productImage: {
     width: '65%',
     height: '80%',
-    resizeMode: 'contain',
   },
 
   // Ring info

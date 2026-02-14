@@ -53,6 +53,7 @@ export const UserSchema = z.object({
   name: z.string().min(1).max(100),
   sessionToken: z.string().nullable(),
   sessionExpiresAt: z.date().nullable(),
+  pushToken: z.string().nullable(),
   preferredMetals: z.array(MetalTypeSchema),
   preferredStones: z.array(StoneTypeSchema),
   preferredStyles: z.array(RingStyleSchema),
@@ -191,3 +192,11 @@ export const SwipeCreateResponseSchema = z.object({
   swipe: SwipeSchema,
   match: MatchSchema.nullable(),
 })
+
+// ── Push notification schemas ───────────────────────────────────────────────
+
+export const RegisterPushTokenSchema = z.object({
+  token: z.string().startsWith('ExponentPushToken['),
+})
+
+export type RegisterPushToken = z.infer<typeof RegisterPushTokenSchema>

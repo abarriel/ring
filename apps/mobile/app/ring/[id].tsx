@@ -1,20 +1,13 @@
 import type { RingWithImages } from '@ring/shared'
 import { ChevronLeft, Heart, theme, X } from '@ring/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Image } from 'expo-image'
 import { router, useLocalSearchParams, useNavigation } from 'expo-router'
 import { useCallback, useRef, useState } from 'react'
-import {
-  ActivityIndicator,
-  Dimensions,
-  FlatList,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
+import { Dimensions, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { RingDetailSkeleton } from '@/components/skeleton'
+import { hapticLight, hapticMedium } from '@/lib/haptics'
 import { client, orpc } from '@/lib/orpc'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
@@ -55,11 +48,13 @@ export default function RingDetailScreen() {
 
   const handleNope = useCallback(() => {
     if (!ring) return
+    hapticLight()
     swipeMutation.mutate({ ringId: ring.id, direction: 'NOPE' })
   }, [ring, swipeMutation])
 
   const handleLike = useCallback(() => {
     if (!ring) return
+    hapticMedium()
     swipeMutation.mutate({ ringId: ring.id, direction: 'LIKE' })
   }, [ring, swipeMutation])
 
@@ -72,10 +67,19 @@ export default function RingDetailScreen() {
     [],
   )
 
+  const getItemLayout = useCallback(
+    (_data: unknown, index: number) => ({
+      length: SCREEN_WIDTH,
+      offset: SCREEN_WIDTH * index,
+      index,
+    }),
+    [],
+  )
+
   if (ringQuery.isLoading) {
     return (
-      <View style={[styles.centered, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color={theme.colors.ring.pink500} />
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <RingDetailSkeleton />
       </View>
     )
   }
@@ -84,7 +88,12 @@ export default function RingDetailScreen() {
     return (
       <View style={[styles.centered, { paddingTop: insets.top }]}>
         <Text style={styles.errorTitle}>Bague introuvable</Text>
-        <Pressable style={styles.backBtn} onPress={goBack}>
+        <Pressable
+          style={styles.backBtn}
+          onPress={goBack}
+          accessibilityLabel="Retour"
+          accessibilityRole="button"
+        >
           <Text style={styles.backBtnText}>Retour</Text>
         </Pressable>
       </View>
@@ -96,7 +105,12 @@ export default function RingDetailScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Back button */}
-      <Pressable style={styles.headerBack} onPress={goBack}>
+      <Pressable
+        style={styles.headerBack}
+        onPress={goBack}
+        accessibilityLabel="Retour"
+        accessibilityRole="button"
+      >
         <ChevronLeft size={24} color={theme.colors.foreground.DEFAULT} />
       </Pressable>
 
@@ -112,15 +126,26 @@ export default function RingDetailScreen() {
             showsHorizontalScrollIndicator={false}
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={{ viewAreaCoveragePercentThreshold: 50 }}
+            getItemLayout={getItemLayout}
+            initialNumToRender={1}
             renderItem={({ item }) => (
               <View style={styles.imageSlide}>
-                <Image source={{ uri: item.url }} style={styles.carouselImage} />
+                <Image
+                  source={{ uri: item.url }}
+                  style={styles.carouselImage}
+                  contentFit="contain"
+                  transition={200}
+                  accessibilityLabel={`Photo de ${ring.name}`}
+                />
               </View>
             )}
           />
           {/* Pagination dots */}
           {ring.images.length > 1 && (
-            <View style={styles.dots}>
+            <View
+              style={styles.dots}
+              accessibilityLabel={`Image ${activeImageIndex + 1} sur ${ring.images.length}`}
+            >
               {ring.images.map((img, i) => (
                 <View
                   key={img.id}
@@ -133,10 +158,15 @@ export default function RingDetailScreen() {
 
         {/* Ring info */}
         <View style={styles.infoSection}>
-          <Text style={styles.ringName}>{ring.name}</Text>
+          <Text style={styles.ringName} accessibilityRole="header">
+            {ring.name}
+          </Text>
 
           {/* Rating */}
-          <View style={styles.ratingRow}>
+          <View
+            style={styles.ratingRow}
+            accessibilityLabel={`Note: ${Math.round(ring.rating)} sur 5, ${ring.reviewCount} avis`}
+          >
             <View style={styles.stars}>
               {[1, 2, 3, 4, 5].map((n) => (
                 <Text
@@ -156,7 +186,7 @@ export default function RingDetailScreen() {
           </View>
 
           {/* Specs */}
-          <View style={styles.specsContainer}>
+          <View style={styles.specsContainer} accessibilityLabel="Specifications">
             {specs.map((spec) => (
               <View key={spec.label} style={styles.specRow}>
                 <Text style={styles.specLabel}>{spec.label}</Text>
@@ -181,6 +211,8 @@ export default function RingDetailScreen() {
           style={[styles.actionBtn, styles.nopeBtn]}
           onPress={handleNope}
           disabled={swipeMutation.isPending}
+          accessibilityLabel="Passer cette bague"
+          accessibilityRole="button"
         >
           <X size={24} color={theme.colors.action.nope.icon} strokeWidth={2.5} />
           <Text style={styles.nopeBtnText}>Nope</Text>
@@ -190,6 +222,8 @@ export default function RingDetailScreen() {
           style={[styles.actionBtn, styles.likeBtn]}
           onPress={handleLike}
           disabled={swipeMutation.isPending}
+          accessibilityLabel="Liker cette bague"
+          accessibilityRole="button"
         >
           <Heart size={24} color={theme.colors.action.like.icon} strokeWidth={2.5} />
           <Text style={styles.likeBtnText}>Like</Text>
@@ -282,7 +316,6 @@ const styles = StyleSheet.create({
   carouselImage: {
     width: '70%',
     height: '85%',
-    resizeMode: 'contain',
   },
   dots: {
     flexDirection: 'row',

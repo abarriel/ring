@@ -16,6 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { clearAnonymousSwipes, getAnonymousSwipes } from '@/lib/anonymous-swipes'
 import { saveToken, saveUser } from '@/lib/auth'
+import { registerForPushNotifications } from '@/lib/notifications'
 import { client } from '@/lib/orpc'
 
 async function replayAnonymousSwipes() {
@@ -57,6 +58,8 @@ export default function LoginScreen() {
       await saveUser(result.user)
       await saveToken(result.sessionToken)
       await replayAnonymousSwipes()
+      // Register for push notifications after login (best-effort, non-blocking)
+      registerForPushNotifications()
       router.replace('/')
     },
   })
@@ -110,7 +113,12 @@ export default function LoginScreen() {
             colors={[theme.colors.ring.rose400, theme.colors.ring.pink500]}
             style={styles.ctaGradient}
           >
-            <Pressable style={styles.ctaBtn} onPress={handleStart}>
+            <Pressable
+              style={styles.ctaBtn}
+              onPress={handleStart}
+              accessibilityLabel="C'est parti"
+              accessibilityRole="button"
+            >
               <Text style={styles.ctaBtnText}>C'est parti</Text>
               <ArrowRight size={20} color="#ffffff" />
             </Pressable>
@@ -151,6 +159,7 @@ export default function LoginScreen() {
                 onChangeText={setName}
                 autoCapitalize="none"
                 autoCorrect={false}
+                accessibilityLabel="Ton pseudo"
               />
             </View>
 
@@ -164,6 +173,7 @@ export default function LoginScreen() {
                 onChangeText={(text) => setPartnerCode(text.toUpperCase())}
                 autoCapitalize="characters"
                 maxLength={6}
+                accessibilityLabel="Code partenaire"
               />
               <Text style={styles.fieldHint}>
                 Partage ton code avec ton partenaire pour matcher sur les memes bagues
@@ -180,6 +190,8 @@ export default function LoginScreen() {
               style={[styles.ctaBtn, disabled && styles.ctaBtnDisabled]}
               onPress={handleSubmit}
               disabled={disabled}
+              accessibilityLabel="Continuer"
+              accessibilityRole="button"
             >
               <Text style={styles.ctaBtnText}>
                 {loginMutation.isPending ? 'Connexion...' : 'Continuer'}

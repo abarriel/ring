@@ -1,6 +1,9 @@
 import type { RingWithImages } from '@ring/shared'
 import { Gem, theme } from '@ring/ui'
-import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Image } from 'expo-image'
+import { useEffect } from 'react'
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native'
+import { hapticSuccess } from '@/lib/haptics'
 
 type CelebrationModalProps = {
   visible: boolean
@@ -12,14 +15,23 @@ type CelebrationModalProps = {
 export function CelebrationModal({ visible, ring, onClose, onViewMatch }: CelebrationModalProps) {
   const imageUrl = ring?.images[0]?.url
 
+  useEffect(() => {
+    if (visible) hapticSuccess()
+  }, [visible])
+
   return (
     <Modal visible={visible} animationType="fade" transparent statusBarTranslucent>
-      <View style={styles.overlay}>
+      <View style={styles.overlay} accessibilityLabel="Match celebre">
         <View style={styles.content}>
           {/* Ring image */}
           <View style={styles.imageContainer}>
             {imageUrl ? (
-              <Image source={{ uri: imageUrl }} style={styles.ringImage} />
+              <Image
+                source={{ uri: imageUrl }}
+                style={styles.ringImage}
+                contentFit="contain"
+                accessibilityLabel={`Photo de ${ring?.name ?? 'la bague'}`}
+              />
             ) : (
               <View style={styles.imagePlaceholder}>
                 <Gem size={48} color={theme.colors.ring.pink500} />
@@ -28,18 +40,30 @@ export function CelebrationModal({ visible, ring, onClose, onViewMatch }: Celebr
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>C'est un match !</Text>
+          <Text style={styles.title} accessibilityRole="header">
+            C'est un match !
+          </Text>
           <Text style={styles.subtitle}>Vous aimez tous les deux cette bague</Text>
 
           {/* Ring name */}
           {ring && <Text style={styles.ringName}>{ring.name}</Text>}
 
           {/* Actions */}
-          <Pressable style={styles.viewBtn} onPress={onViewMatch}>
+          <Pressable
+            style={styles.viewBtn}
+            onPress={onViewMatch}
+            accessibilityLabel="Voir le match"
+            accessibilityRole="button"
+          >
             <Text style={styles.viewBtnText}>Voir le match</Text>
           </Pressable>
 
-          <Pressable style={styles.closeBtn} onPress={onClose}>
+          <Pressable
+            style={styles.closeBtn}
+            onPress={onClose}
+            accessibilityLabel="Continuer a swiper"
+            accessibilityRole="button"
+          >
             <Text style={styles.closeBtnText}>Continuer</Text>
           </Pressable>
         </View>
@@ -77,7 +101,6 @@ const styles = StyleSheet.create({
   ringImage: {
     width: '80%',
     height: '80%',
-    resizeMode: 'contain',
   },
   imagePlaceholder: {
     flex: 1,

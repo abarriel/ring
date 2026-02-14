@@ -1,29 +1,43 @@
 import type { RingWithImages } from '@ring/shared'
 import { Heart, theme } from '@ring/ui'
 import { useQuery } from '@tanstack/react-query'
+import { Image } from 'expo-image'
 import { router } from 'expo-router'
-import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
+import { useCallback } from 'react'
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { FavoritesGridSkeleton } from '@/components/skeleton'
+import { hapticLight } from '@/lib/haptics'
 import { orpc } from '@/lib/orpc'
 import { useAuthGuard } from '@/lib/use-auth-guard'
+
+const CARD_HEIGHT = 220 // aspect-ratio image (~160) + info (~60)
 
 function RingCard({ ring }: { ring: RingWithImages }) {
   const imageUrl = ring.images[0]?.url
 
+  const handlePress = useCallback(() => {
+    hapticLight()
+    router.push(`/ring/${ring.id}`)
+  }, [ring.id])
+
   return (
-    <Pressable style={styles.card} onPress={() => router.push(`/ring/${ring.id}`)}>
+    <Pressable
+      style={styles.card}
+      onPress={handlePress}
+      accessibilityLabel={`Bague ${ring.name}, ${ring.metalType.replace(/_/g, ' ').toLowerCase()}`}
+      accessibilityRole="button"
+      accessibilityHint="Appuie pour voir les details"
+    >
       <View style={styles.cardImage}>
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.thumbnail} />
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.thumbnail}
+            contentFit="cover"
+            transition={200}
+            accessibilityLabel={`Photo de ${ring.name}`}
+          />
         ) : (
           <View style={styles.thumbnailPlaceholder}>
             <Heart size={24} color={theme.colors.foreground.muted} />
@@ -62,22 +76,36 @@ export default function FavoritesScreen() {
   const isLoading = favoritesQuery.isLoading
   const isError = favoritesQuery.isError
 
+  const getItemLayout = useCallback(
+    (_data: ArrayLike<RingWithImages> | null | undefined, index: number) => ({
+      length: CARD_HEIGHT,
+      offset: CARD_HEIGHT * Math.floor(index / 2),
+      index,
+    }),
+    [],
+  )
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Favoris</Text>
+        <Text style={styles.headerTitle} accessibilityRole="header">
+          Favoris
+        </Text>
       </View>
 
       {isLoading ? (
-        <View style={styles.emptyState}>
-          <ActivityIndicator size="large" color={theme.colors.ring.pink500} />
-        </View>
+        <FavoritesGridSkeleton />
       ) : isError ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyTitle}>Oups !</Text>
           <Text style={styles.emptySubtitle}>Impossible de charger les favoris.</Text>
-          <Pressable style={styles.retryBtn} onPress={() => favoritesQuery.refetch()}>
+          <Pressable
+            style={styles.retryBtn}
+            onPress={() => favoritesQuery.refetch()}
+            accessibilityLabel="Reessayer le chargement"
+            accessibilityRole="button"
+          >
             <Text style={styles.retryText}>Reessayer</Text>
           </Pressable>
         </View>
@@ -95,6 +123,11 @@ export default function FavoritesScreen() {
           numColumns={2}
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.list}
+          getItemLayout={getItemLayout}
+          windowSize={5}
+          maxToRenderPerBatch={10}
+          initialNumToRender={8}
+          removeClippedSubviews
           refreshControl={
             <RefreshControl
               refreshing={favoritesQuery.isRefetching}
@@ -154,7 +187,6 @@ const styles = StyleSheet.create({
   thumbnail: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
   thumbnailPlaceholder: {
     flex: 1,

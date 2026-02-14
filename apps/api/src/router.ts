@@ -4,11 +4,13 @@ import {
   CreateUserSchema,
   JoinCoupleSchema,
   LoginSchema,
+  RegisterPushTokenSchema,
   type UpdateUser,
   UpdateUserSchema,
 } from '@ring/shared'
 import { z } from 'zod'
 import { db } from './db.js'
+import { notifyNewMatch, notifyPartnerJoined } from './push.js'
 
 // ── Auth helpers ────────────────────────────────────────────────────────────
 
@@ -130,6 +132,16 @@ const deleteUser = base.input(z.object({ id: z.string().uuid() })).handler(async
   await db.user.delete({ where: { id: input.id } })
   return { success: true }
 })
+
+const registerPushToken = authed
+  .input(RegisterPushTokenSchema)
+  .handler(async ({ input, context }) => {
+    const user = await db.user.update({
+      where: { id: context.user.id },
+      data: { pushToken: input.token },
+    })
+    return { success: true, pushToken: user.pushToken }
+  })
 
 // ── Ring procedures ─────────────────────────────────────────────────────────
 
@@ -269,6 +281,13 @@ const createSwipe = authed.input(CreateSwipeSchema).handler(async ({ input, cont
             create: { coupleId: couple.id, ringId: input.ringId },
             update: {},
           })
+
+          // Send push notifications to both partners about the new match
+          const [currentUser, partner] = await Promise.all([
+            db.user.findUnique({ where: { id: userId }, select: { pushToken: true } }),
+            db.user.findUnique({ where: { id: partnerId }, select: { pushToken: true } }),
+          ])
+          notifyNewMatch([currentUser?.pushToken ?? null, partner?.pushToken ?? null], ring.name)
         }
       }
     }
@@ -419,6 +438,20 @@ const joinCouple = authed.input(JoinCoupleSchema).handler(async ({ input, contex
       include: coupleInclude,
     })
 
+    // Notify the inviter that their partner joined (fire-and-forget, outside tx)
+    const inviter = await tx.user.findUnique({
+      where: { id: couple.inviterId },
+      select: { pushToken: true },
+    })
+    const joiner = await tx.user.findUnique({
+      where: { id: userId },
+      select: { name: true },
+    })
+    if (inviter?.pushToken && joiner?.name) {
+      // Schedule after transaction commits
+      setTimeout(() => notifyPartnerJoined(inviter.pushToken, joiner.name), 0)
+    }
+
     return updated
   })
 })
@@ -471,6 +504,7 @@ export const router = {
     create: createUser,
     update: updateUser,
     delete: deleteUser,
+    registerPushToken,
   },
   ring: {
     list: listRings,

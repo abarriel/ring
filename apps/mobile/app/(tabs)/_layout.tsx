@@ -18,6 +18,7 @@ export default function TabLayout() {
         options={{
           title: 'Browse',
           tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
+          tabBarAccessibilityLabel: 'Parcourir les bagues',
         }}
       />
       <Tabs.Screen
@@ -25,6 +26,7 @@ export default function TabLayout() {
         options={{
           title: 'Matchs',
           tabBarIcon: ({ color, size }) => <Sparkles size={size} color={color} />,
+          tabBarAccessibilityLabel: 'Voir les matchs',
         }}
       />
       <Tabs.Screen
@@ -32,6 +34,7 @@ export default function TabLayout() {
         options={{
           title: 'Profil',
           tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
+          tabBarAccessibilityLabel: 'Voir le profil',
         }}
       />
       {/* Hidden from tab bar but kept as a route */}

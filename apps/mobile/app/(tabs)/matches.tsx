@@ -1,19 +1,14 @@
 import type { RingWithImages } from '@ring/shared'
 import { ExternalLink, Gem, Heart, Sparkles, theme } from '@ring/ui'
 import { useQuery } from '@tanstack/react-query'
+import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router as expoRouter } from 'expo-router'
-import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
+import { useCallback } from 'react'
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { MatchesListSkeleton } from '@/components/skeleton'
+import { hapticLight } from '@/lib/haptics'
 import { orpc } from '@/lib/orpc'
 import { useAuthGuard } from '@/lib/use-auth-guard'
 
@@ -38,16 +33,33 @@ type MatchWithRing = {
 
 // ── Match Card ───────────────────────────────────────────────────────────────
 
+const MATCH_CARD_HEIGHT = 192 + 200 // image + info area approx
+
 function MatchCard({ match }: { match: MatchWithRing }) {
   const { ring } = match
   const imageUrl = ring.images[0]?.url
 
+  const handleDetails = useCallback(() => {
+    hapticLight()
+    expoRouter.push(`/ring/${ring.id}`)
+  }, [ring.id])
+
   return (
-    <View style={styles.card}>
+    <View
+      style={styles.card}
+      accessibilityLabel={`Match: ${ring.name}`}
+      accessibilityRole="summary"
+    >
       {/* Image */}
       <View style={styles.cardImageWrapper}>
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.cardImage} />
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.cardImage}
+            contentFit="cover"
+            transition={200}
+            accessibilityLabel={`Photo de ${ring.name}`}
+          />
         ) : (
           <View style={styles.cardImagePlaceholder}>
             <Gem size={32} color={theme.colors.foreground.muted} />
@@ -89,7 +101,12 @@ function MatchCard({ match }: { match: MatchWithRing }) {
           </Text>
         )}
 
-        <Pressable style={styles.detailsBtn} onPress={() => expoRouter.push(`/ring/${ring.id}`)}>
+        <Pressable
+          style={styles.detailsBtn}
+          onPress={handleDetails}
+          accessibilityLabel={`Voir les details de ${ring.name}`}
+          accessibilityRole="button"
+        >
           <LinearGradient
             colors={[theme.colors.ring.rose400, theme.colors.ring.pink500]}
             style={styles.detailsBtnGradient}
@@ -125,6 +142,15 @@ export default function MatchesScreen() {
   const isError = coupleQuery.isError || matchesQuery.isError
   const isCoupled = couple?.status === 'ACTIVE'
 
+  const getItemLayout = useCallback(
+    (_data: ArrayLike<MatchWithRing> | null | undefined, index: number) => ({
+      length: MATCH_CARD_HEIGHT,
+      offset: MATCH_CARD_HEIGHT * index + 16 * index,
+      index,
+    }),
+    [],
+  )
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Gradient header */}
@@ -137,7 +163,9 @@ export default function MatchesScreen() {
             <Sparkles size={20} color="#ffffff" />
           </LinearGradient>
           <View>
-            <Text style={styles.headerTitle}>Tes matchs</Text>
+            <Text style={styles.headerTitle} accessibilityRole="header">
+              Tes matchs
+            </Text>
             {isCoupled && matches.length > 0 && (
               <Text style={styles.headerSubtitle}>
                 {matches.length} bague{matches.length !== 1 ? 's' : ''} que vous aimez tous les deux
@@ -148,9 +176,7 @@ export default function MatchesScreen() {
       </LinearGradient>
 
       {isLoading ? (
-        <View style={styles.emptyState}>
-          <ActivityIndicator size="large" color={theme.colors.ring.pink500} />
-        </View>
+        <MatchesListSkeleton />
       ) : isError ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyTitle}>Oups !</Text>
@@ -161,6 +187,8 @@ export default function MatchesScreen() {
               coupleQuery.refetch()
               matchesQuery.refetch()
             }}
+            accessibilityLabel="Reessayer le chargement"
+            accessibilityRole="button"
           >
             <Text style={styles.retryText}>Reessayer</Text>
           </Pressable>
@@ -192,6 +220,11 @@ export default function MatchesScreen() {
           renderItem={({ item }) => <MatchCard match={item} />}
           contentContainerStyle={styles.list}
           ItemSeparatorComponent={() => <View style={styles.listSpacer} />}
+          getItemLayout={getItemLayout}
+          windowSize={5}
+          maxToRenderPerBatch={6}
+          initialNumToRender={4}
+          removeClippedSubviews
           refreshControl={
             <RefreshControl
               refreshing={matchesQuery.isRefetching}
@@ -271,7 +304,6 @@ const styles = StyleSheet.create({
   cardImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
   cardImagePlaceholder: {
     flex: 1,

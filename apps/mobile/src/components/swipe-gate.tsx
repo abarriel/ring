@@ -4,13 +4,20 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 
 export function SwipeGate() {
   return (
-    <View style={styles.overlay}>
+    <View style={styles.overlay} accessibilityLabel="Limite de swipes atteinte">
       <View style={styles.card}>
-        <Text style={styles.title}>Tu aimes ce que tu vois ?</Text>
+        <Text style={styles.title} accessibilityRole="header">
+          Tu aimes ce que tu vois ?
+        </Text>
         <Text style={styles.subtitle}>
           Inscris-toi pour sauvegarder tes favoris et te coupler !
         </Text>
-        <Pressable style={styles.ctaBtn} onPress={() => expoRouter.push('/login')}>
+        <Pressable
+          style={styles.ctaBtn}
+          onPress={() => expoRouter.push('/login')}
+          accessibilityLabel="S'inscrire"
+          accessibilityRole="button"
+        >
           <Text style={styles.ctaText}>S'inscrire</Text>
         </Pressable>
       </View>

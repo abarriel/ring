@@ -32,6 +32,36 @@ vi.mock('expo-router', () => ({
   router: { replace: vi.fn(), push: vi.fn() },
 }))
 
+vi.mock('expo-image', () => ({
+  Image: 'ExpoImage',
+}))
+
+vi.mock('expo-haptics', () => ({
+  impactAsync: vi.fn(),
+  notificationAsync: vi.fn(),
+  ImpactFeedbackStyle: { Light: 'Light', Medium: 'Medium', Heavy: 'Heavy' },
+  NotificationFeedbackType: { Success: 'Success' },
+}))
+
+vi.mock('expo-splash-screen', () => ({
+  preventAutoHideAsync: vi.fn(),
+  hideAsync: vi.fn(),
+}))
+
+vi.mock('expo-notifications', () => ({
+  setNotificationHandler: vi.fn(),
+  getPermissionsAsync: vi.fn().mockResolvedValue({ status: 'granted' }),
+  requestPermissionsAsync: vi.fn().mockResolvedValue({ status: 'granted' }),
+  getExpoPushTokenAsync: vi.fn().mockResolvedValue({ data: 'ExponentPushToken[mock]' }),
+  setNotificationChannelAsync: vi.fn(),
+  addNotificationResponseReceivedListener: vi.fn().mockReturnValue({ remove: vi.fn() }),
+  AndroidImportance: { MAX: 5 },
+}))
+
+vi.mock('expo-device', () => ({
+  isDevice: true,
+}))
+
 vi.mock('@react-native-async-storage/async-storage', () => ({
   default: {
     setItem: vi.fn(),
@@ -71,17 +101,24 @@ vi.mock('@ring/ui', () => ({
   },
   ToastProvider: ({ children }: { children: unknown }) => children,
   useToast: () => ({ show: vi.fn(), dismiss: vi.fn() }),
+  ArrowRight: 'ArrowRight',
+  Check: 'Check',
+  ChevronLeft: 'ChevronLeft',
   Copy: 'Copy',
+  ExternalLink: 'ExternalLink',
   Gem: 'Gem',
   Heart: 'Heart',
+  Home: 'Home',
   Info: 'Info',
   LogOut: 'LogOut',
+  Settings: 'Settings',
   Share2: 'Share2',
+  Sparkles: 'Sparkles',
   Star: 'Star',
+  User: 'User',
   UserCircle: 'UserCircle',
   Users: 'Users',
   X: 'X',
-  ChevronLeft: 'ChevronLeft',
   AlertTriangle: 'AlertTriangle',
   CheckCircle: 'CheckCircle',
   XCircle: 'XCircle',

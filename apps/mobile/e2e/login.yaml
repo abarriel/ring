@@ -1,8 +1,10 @@
-appId: com.ring.mobile
+appId: com.ring.app
 ---
 - launchApp
-- assertVisible: "Pseudo"
-- tapOn: "ton_pseudo"
-- inputText: "TestUser"
-- tapOn: "C'est parti"
 - assertVisible: "Ring"
+- assertVisible: "C'est parti"
+- tapOn: "C'est parti"
+- assertVisible: "Ton pseudo"
+- tapOn: "Entre ton pseudo"
+- inputText: "TestUser"
+- tapOn: "Continuer"
