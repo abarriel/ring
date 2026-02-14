@@ -8,9 +8,9 @@ import { useCallback } from 'react'
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { MatchesListSkeleton } from '@/components/skeleton'
+import { useAuth } from '@/lib/auth-context'
 import { hapticLight } from '@/lib/haptics'
 import { orpc } from '@/lib/orpc'
-import { useAuthGuard } from '@/lib/use-auth-guard'
 import { formatEnum } from '@/lib/utils'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -125,7 +125,7 @@ function MatchCard({ match }: { match: MatchWithRing }) {
 // ── Screen ───────────────────────────────────────────────────────────────────
 
 export default function MatchesScreen() {
-  const isAuthed = useAuthGuard()
+  const { isAuthenticated: isAuthed } = useAuth()
   const insets = useSafeAreaInsets()
 
   const coupleQuery = useQuery({

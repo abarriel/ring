@@ -1,10 +1,8 @@
-import type { User } from '@ring/shared'
 import { Check, Copy, Heart, LogOut, Settings, Share2, theme, useToast } from '@ring/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import * as Clipboard from 'expo-clipboard'
 import { LinearGradient } from 'expo-linear-gradient'
-import { router as expoRouter } from 'expo-router'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Alert,
   Platform,
@@ -18,24 +16,18 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ProfileSkeleton } from '@/components/skeleton'
-import { clearUser, getUser } from '@/lib/auth'
+import { useAuth } from '@/lib/auth-context'
 import { hapticSuccess } from '@/lib/haptics'
 import { client, orpc } from '@/lib/orpc'
-import { useAuthGuard } from '@/lib/use-auth-guard'
 import { getInitials } from '@/lib/utils'
 
 export default function ProfileScreen() {
-  const isAuthed = useAuthGuard()
+  const { isAuthenticated: isAuthed, user, logout } = useAuth()
   const insets = useSafeAreaInsets()
   const toast = useToast()
   const queryClient = useQueryClient()
-  const [user, setUser] = useState<User | null>(null)
   const [joinCode, setJoinCode] = useState('')
   const [copied, setCopied] = useState(false)
-
-  useEffect(() => {
-    getUser().then(setUser)
-  }, [])
 
   // ── Liked count query ─────────────────────────────────────────────────
   const likedQuery = useQuery({
@@ -189,9 +181,7 @@ export default function ProfileScreen() {
   const handleLogout = async () => {
     if (Platform.OS === 'web') {
       if (window.confirm('Es-tu sur de vouloir te deconnecter ?')) {
-        await clearUser()
-        queryClient.clear()
-        expoRouter.replace('/login')
+        await logout()
       }
       return
     }
@@ -200,11 +190,7 @@ export default function ProfileScreen() {
       {
         text: 'Deconnecter',
         style: 'destructive',
-        onPress: async () => {
-          await clearUser()
-          queryClient.clear()
-          expoRouter.replace('/login')
-        },
+        onPress: () => logout(),
       },
     ])
   }

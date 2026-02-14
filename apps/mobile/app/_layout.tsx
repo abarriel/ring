@@ -6,7 +6,7 @@ import { StatusBar } from 'expo-status-bar'
 import { useEffect } from 'react'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { ErrorBoundary } from '@/components/error-boundary'
-import { getToken } from '@/lib/auth'
+import { AuthProvider, useAuth } from '@/lib/auth-context'
 import {
   addNotificationResponseListener,
   getNotificationScreen,
@@ -16,31 +16,15 @@ import { queryClient } from '@/lib/query-client'
 
 SplashScreen.preventAutoHideAsync()
 
-export default function RootLayout() {
+function AppContent() {
+  const { isReady, isAuthenticated } = useAuth()
+
+  // Register for push notifications when authenticated
   useEffect(() => {
-    // Hide splash screen after a short delay to allow first render
-    const timer = setTimeout(() => {
-      SplashScreen.hideAsync()
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [])
-
-  // Register for push notifications after login
-  useEffect(() => {
-    let cancelled = false
-
-    async function setup() {
-      const token = await getToken()
-      if (token && !cancelled) {
-        registerForPushNotifications()
-      }
+    if (isAuthenticated) {
+      registerForPushNotifications()
     }
-    setup()
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  }, [isAuthenticated])
 
   // Handle notification taps -> navigate to the correct screen
   useEffect(() => {
@@ -54,20 +38,30 @@ export default function RootLayout() {
     })
   }, [])
 
+  // Don't render routes until auth state is resolved
+  if (!isReady) return null
+
+  return (
+    <>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="ring/[id]" options={{ headerShown: false, presentation: 'card' }} />
+      </Stack>
+      <StatusBar style="auto" />
+    </>
+  )
+}
+
+export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <ToastProvider>
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="login" options={{ headerShown: false }} />
-              <Stack.Screen
-                name="ring/[id]"
-                options={{ headerShown: false, presentation: 'card' }}
-              />
-            </Stack>
-            <StatusBar style="auto" />
+            <AuthProvider>
+              <AppContent />
+            </AuthProvider>
           </ToastProvider>
         </QueryClientProvider>
       </ErrorBoundary>

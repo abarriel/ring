@@ -3,7 +3,7 @@ import { Heart, Sparkles, Star, theme, X } from '@ring/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
-import { router as expoRouter, useFocusEffect } from 'expo-router'
+import { router as expoRouter } from 'expo-router'
 import { useCallback, useMemo, useState } from 'react'
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
@@ -20,7 +20,7 @@ import { CelebrationModal } from '@/components/celebration-modal'
 import { SwipeCardSkeleton } from '@/components/skeleton'
 import { SwipeGate } from '@/components/swipe-gate'
 import { ANONYMOUS_SWIPE_LIMIT, saveAnonymousSwipe } from '@/lib/anonymous-swipes'
-import { getToken, getUser } from '@/lib/auth'
+import { useAuth } from '@/lib/auth-context'
 import { hapticHeavy, hapticLight, hapticMedium } from '@/lib/haptics'
 import { client, orpc } from '@/lib/orpc'
 import { formatEnum, getInitials } from '@/lib/utils'
@@ -30,26 +30,16 @@ import { formatEnum, getInitials } from '@/lib/utils'
 export default function SwipeScreen() {
   const insets = useSafeAreaInsets()
   const { width: screenWidth } = useWindowDimensions()
+  const { isAuthenticated, user: authUser } = useAuth()
   const swipeThreshold = screenWidth * 0.35
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [userInitials, setUserInitials] = useState('?')
   const [celebrationMatch, setCelebrationMatch] = useState<Match | null>(null)
   const [celebrationRing, setCelebrationRing] = useState<RingWithImages | null>(null)
-  const [isAnonymous, setIsAnonymous] = useState(true)
   const [showGate, setShowGate] = useState(false)
   const queryClient = useQueryClient()
 
-  // Re-check auth state every time the tab is focused (handles login/logout)
-  useFocusEffect(
-    useCallback(() => {
-      getToken().then((token) => {
-        setIsAnonymous(!token)
-      })
-      getUser().then((user) => {
-        if (user?.name) setUserInitials(getInitials(user.name))
-      })
-    }, []),
-  )
+  const isAnonymous = !isAuthenticated
+  const userInitials = authUser?.name ? getInitials(authUser.name) : '?'
 
   // Anonymous mode: fetch public ring list
   const listQuery = useQuery({

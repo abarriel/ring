@@ -1,4 +1,4 @@
-import { Home, Sparkles, theme, User } from '@ring/ui'
+import { Heart, Home, Sparkles, theme, User } from '@ring/ui'
 import { Tabs } from 'expo-router'
 
 export default function TabLayout() {
@@ -22,6 +22,14 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="favorites"
+        options={{
+          title: 'Favoris',
+          tabBarIcon: ({ color, size }) => <Heart size={size} color={color} />,
+          tabBarAccessibilityLabel: 'Voir les favoris',
+        }}
+      />
+      <Tabs.Screen
         name="matches"
         options={{
           title: 'Matchs',
@@ -35,13 +43,6 @@ export default function TabLayout() {
           title: 'Profil',
           tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
           tabBarAccessibilityLabel: 'Voir le profil',
-        }}
-      />
-      {/* Hidden from tab bar but kept as a route */}
-      <Tabs.Screen
-        name="favorites"
-        options={{
-          href: null,
         }}
       />
     </Tabs>

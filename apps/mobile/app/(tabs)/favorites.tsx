@@ -7,12 +7,12 @@ import { useCallback } from 'react'
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { FavoritesGridSkeleton } from '@/components/skeleton'
+import { useAuth } from '@/lib/auth-context'
 import { hapticLight } from '@/lib/haptics'
 import { orpc } from '@/lib/orpc'
-import { useAuthGuard } from '@/lib/use-auth-guard'
 import { formatEnum } from '@/lib/utils'
 
-const CARD_HEIGHT = 220 // aspect-ratio image (~160) + info (~60)
+const _CARD_HEIGHT = 220 // aspect-ratio image (~160) + info (~60)
 
 function RingCard({ ring }: { ring: RingWithImages }) {
   const imageUrl = ring.images[0]?.url
@@ -71,7 +71,7 @@ function RingCard({ ring }: { ring: RingWithImages }) {
 }
 
 export default function FavoritesScreen() {
-  const isAuthed = useAuthGuard()
+  const { isAuthenticated: isAuthed } = useAuth()
   const insets = useSafeAreaInsets()
 
   const favoritesQuery = useQuery({

@@ -15,7 +15,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { clearAnonymousSwipes, getAnonymousSwipes } from '@/lib/anonymous-swipes'
-import { saveToken, saveUser } from '@/lib/auth'
+import { useAuth } from '@/lib/auth-context'
 import { registerForPushNotifications } from '@/lib/notifications'
 import { client } from '@/lib/orpc'
 
@@ -48,6 +48,7 @@ const STEPS = [
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets()
+  const { login } = useAuth()
   const [step, setStep] = useState<'welcome' | 'details'>('welcome')
   const [name, setName] = useState('')
   const [partnerCode, setPartnerCode] = useState('')
@@ -55,8 +56,7 @@ export default function LoginScreen() {
   const loginMutation = useMutation({
     mutationFn: (input: { name: string; partnerCode?: string }) => client.auth.login(input),
     onSuccess: async (result) => {
-      await saveUser(result.user)
-      await saveToken(result.sessionToken)
+      await login(result.user, result.sessionToken)
       await replayAnonymousSwipes()
 
       // Auto-join couple if partner code was provided

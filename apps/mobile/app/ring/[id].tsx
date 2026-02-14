@@ -3,12 +3,12 @@ import { ChevronLeft, Heart, Star, theme, X } from '@ring/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Image } from 'expo-image'
 import { router, useLocalSearchParams, useNavigation } from 'expo-router'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { Dimensions, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { RingDetailSkeleton } from '@/components/skeleton'
 import { saveAnonymousSwipe } from '@/lib/anonymous-swipes'
-import { getToken } from '@/lib/auth'
+import { useAuth } from '@/lib/auth-context'
 import { hapticHeavy, hapticLight, hapticMedium } from '@/lib/haptics'
 import { client, orpc } from '@/lib/orpc'
 import { formatEnum } from '@/lib/utils'
@@ -23,11 +23,8 @@ export default function RingDetailScreen() {
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const flatListRef = useRef<FlatList>(null)
   const navigation = useNavigation()
-  const [isAnonymous, setIsAnonymous] = useState(true)
-
-  useEffect(() => {
-    getToken().then((token) => setIsAnonymous(!token))
-  }, [])
+  const { isAuthenticated } = useAuth()
+  const isAnonymous = !isAuthenticated
 
   const goBack = useCallback(() => {
     if (navigation.canGoBack()) {
