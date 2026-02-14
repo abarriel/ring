@@ -1,32 +1,33 @@
 import type { RingWithImages } from '@ring/shared'
-import { ChevronLeft, Heart, theme, X } from '@ring/ui'
+import { ChevronLeft, Heart, Star, theme, X } from '@ring/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Image } from 'expo-image'
 import { router, useLocalSearchParams, useNavigation } from 'expo-router'
+import type { TFunction } from 'i18next'
 import { useCallback, useRef, useState } from 'react'
-import {
-  ActivityIndicator,
-  Dimensions,
-  FlatList,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
+import { useTranslation } from 'react-i18next'
+import { Dimensions, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { RingDetailSkeleton } from '@/components/skeleton'
+import { saveAnonymousSwipe } from '@/lib/anonymous-swipes'
+import { useAuth } from '@/lib/auth-context'
+import { hapticHeavy, hapticLight, hapticMedium } from '@/lib/haptics'
 import { client, orpc } from '@/lib/orpc'
+import { formatEnum } from '@/lib/utils'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const IMAGE_HEIGHT = SCREEN_WIDTH * 0.85
 
 export default function RingDetailScreen() {
+  const { t } = useTranslation()
   const { id } = useLocalSearchParams<{ id: string }>()
   const insets = useSafeAreaInsets()
   const queryClient = useQueryClient()
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const flatListRef = useRef<FlatList>(null)
   const navigation = useNavigation()
+  const { isAuthenticated } = useAuth()
+  const isAnonymous = !isAuthenticated
 
   const goBack = useCallback(() => {
     if (navigation.canGoBack()) {
@@ -53,15 +54,33 @@ export default function RingDetailScreen() {
     },
   })
 
+  const handleSwipe = useCallback(
+    (direction: 'LIKE' | 'NOPE' | 'SUPER') => {
+      if (!ring) return
+      if (isAnonymous) {
+        saveAnonymousSwipe({ ringId: ring.id, direction })
+        goBack()
+      } else {
+        swipeMutation.mutate({ ringId: ring.id, direction })
+      }
+    },
+    [ring, isAnonymous, swipeMutation, goBack],
+  )
+
   const handleNope = useCallback(() => {
-    if (!ring) return
-    swipeMutation.mutate({ ringId: ring.id, direction: 'NOPE' })
-  }, [ring, swipeMutation])
+    hapticLight()
+    handleSwipe('NOPE')
+  }, [handleSwipe])
+
+  const handleSuper = useCallback(() => {
+    hapticHeavy()
+    handleSwipe('SUPER')
+  }, [handleSwipe])
 
   const handleLike = useCallback(() => {
-    if (!ring) return
-    swipeMutation.mutate({ ringId: ring.id, direction: 'LIKE' })
-  }, [ring, swipeMutation])
+    hapticMedium()
+    handleSwipe('LIKE')
+  }, [handleSwipe])
 
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: Array<{ index: number | null }> }) => {
@@ -72,10 +91,19 @@ export default function RingDetailScreen() {
     [],
   )
 
+  const getItemLayout = useCallback(
+    (_data: unknown, index: number) => ({
+      length: SCREEN_WIDTH,
+      offset: SCREEN_WIDTH * index,
+      index,
+    }),
+    [],
+  )
+
   if (ringQuery.isLoading) {
     return (
-      <View style={[styles.centered, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color={theme.colors.ring.pink500} />
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <RingDetailSkeleton />
       </View>
     )
   }
@@ -83,20 +111,30 @@ export default function RingDetailScreen() {
   if (ringQuery.isError || !ring) {
     return (
       <View style={[styles.centered, { paddingTop: insets.top }]}>
-        <Text style={styles.errorTitle}>Bague introuvable</Text>
-        <Pressable style={styles.backBtn} onPress={goBack}>
-          <Text style={styles.backBtnText}>Retour</Text>
+        <Text style={styles.errorTitle}>{t('ringDetail.error.notFound')}</Text>
+        <Pressable
+          style={styles.backBtn}
+          onPress={goBack}
+          accessibilityLabel={t('common.back')}
+          accessibilityRole="button"
+        >
+          <Text style={styles.backBtnText}>{t('common.back')}</Text>
         </Pressable>
       </View>
     )
   }
 
-  const specs = buildSpecs(ring)
+  const specs = buildSpecs(ring, t)
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Back button */}
-      <Pressable style={styles.headerBack} onPress={goBack}>
+      <Pressable
+        style={styles.headerBack}
+        onPress={goBack}
+        accessibilityLabel={t('common.back')}
+        accessibilityRole="button"
+      >
         <ChevronLeft size={24} color={theme.colors.foreground.DEFAULT} />
       </Pressable>
 
@@ -112,15 +150,29 @@ export default function RingDetailScreen() {
             showsHorizontalScrollIndicator={false}
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={{ viewAreaCoveragePercentThreshold: 50 }}
+            getItemLayout={getItemLayout}
+            initialNumToRender={1}
             renderItem={({ item }) => (
               <View style={styles.imageSlide}>
-                <Image source={{ uri: item.url }} style={styles.carouselImage} />
+                <Image
+                  source={{ uri: item.url }}
+                  style={styles.carouselImage}
+                  contentFit="contain"
+                  transition={200}
+                  accessibilityLabel={t('common.ringPhotoA11y', { name: ring.name })}
+                />
               </View>
             )}
           />
           {/* Pagination dots */}
           {ring.images.length > 1 && (
-            <View style={styles.dots}>
+            <View
+              style={styles.dots}
+              accessibilityLabel={t('ringDetail.carousel.paginationA11y', {
+                n: activeImageIndex + 1,
+                total: ring.images.length,
+              })}
+            >
               {ring.images.map((img, i) => (
                 <View
                   key={img.id}
@@ -133,10 +185,18 @@ export default function RingDetailScreen() {
 
         {/* Ring info */}
         <View style={styles.infoSection}>
-          <Text style={styles.ringName}>{ring.name}</Text>
+          <Text style={styles.ringName} accessibilityRole="header">
+            {ring.name}
+          </Text>
 
           {/* Rating */}
-          <View style={styles.ratingRow}>
+          <View
+            style={styles.ratingRow}
+            accessibilityLabel={t('common.ratingA11y', {
+              rating: Math.round(ring.rating),
+              count: ring.reviewCount,
+            })}
+          >
             <View style={styles.stars}>
               {[1, 2, 3, 4, 5].map((n) => (
                 <Text
@@ -146,17 +206,17 @@ export default function RingDetailScreen() {
                     n <= Math.round(ring.rating) ? styles.starFilled : styles.starEmpty,
                   ]}
                 >
-                  *
+                  {'\u2605'}
                 </Text>
               ))}
             </View>
             <Text style={styles.reviewCount}>
-              ({ring.reviewCount.toLocaleString('en-US')} reviews)
+              ({ring.reviewCount.toLocaleString('fr-FR')} {t('common.reviews')})
             </Text>
           </View>
 
           {/* Specs */}
-          <View style={styles.specsContainer}>
+          <View style={styles.specsContainer} accessibilityLabel={t('ringDetail.specsA11y')}>
             {specs.map((spec) => (
               <View key={spec.label} style={styles.specRow}>
                 <Text style={styles.specLabel}>{spec.label}</Text>
@@ -168,7 +228,7 @@ export default function RingDetailScreen() {
           {/* Description */}
           {ring.description && (
             <View style={styles.descriptionContainer}>
-              <Text style={styles.descriptionTitle}>Description</Text>
+              <Text style={styles.descriptionTitle}>{t('ringDetail.descriptionTitle')}</Text>
               <Text style={styles.descriptionText}>{ring.description}</Text>
             </View>
           )}
@@ -181,18 +241,33 @@ export default function RingDetailScreen() {
           style={[styles.actionBtn, styles.nopeBtn]}
           onPress={handleNope}
           disabled={swipeMutation.isPending}
+          accessibilityLabel={t('swipe.actions.nopeA11y')}
+          accessibilityRole="button"
         >
           <X size={24} color={theme.colors.action.nope.icon} strokeWidth={2.5} />
-          <Text style={styles.nopeBtnText}>Nope</Text>
+          <Text style={styles.nopeBtnText}>{t('ringDetail.actions.nope')}</Text>
+        </Pressable>
+
+        <Pressable
+          style={[styles.actionBtn, styles.superBtn]}
+          onPress={handleSuper}
+          disabled={swipeMutation.isPending}
+          accessibilityLabel={t('swipe.actions.superA11y')}
+          accessibilityRole="button"
+        >
+          <Star size={20} color={theme.colors.action.super.icon} strokeWidth={2.5} />
+          <Text style={styles.superBtnText}>{t('ringDetail.actions.super')}</Text>
         </Pressable>
 
         <Pressable
           style={[styles.actionBtn, styles.likeBtn]}
           onPress={handleLike}
           disabled={swipeMutation.isPending}
+          accessibilityLabel={t('swipe.actions.likeA11y')}
+          accessibilityRole="button"
         >
           <Heart size={24} color={theme.colors.action.like.icon} strokeWidth={2.5} />
-          <Text style={styles.likeBtnText}>Like</Text>
+          <Text style={styles.likeBtnText}>{t('ringDetail.actions.like')}</Text>
         </Pressable>
       </View>
     </View>
@@ -201,19 +276,13 @@ export default function RingDetailScreen() {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatEnum(value: string): string {
-  return value
-    .replace(/_/g, ' ')
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-}
-
-function buildSpecs(ring: RingWithImages) {
+function buildSpecs(ring: RingWithImages, t: TFunction) {
   const specs: { label: string; value: string }[] = []
-  specs.push({ label: 'Metal', value: formatEnum(ring.metalType) })
-  specs.push({ label: 'Pierre', value: formatEnum(ring.stoneType) })
-  if (ring.caratWeight) specs.push({ label: 'Carats', value: `${ring.caratWeight}` })
-  specs.push({ label: 'Style', value: formatEnum(ring.style) })
+  specs.push({ label: t('ringDetail.spec.metal'), value: formatEnum(ring.metalType) })
+  specs.push({ label: t('ringDetail.spec.stone'), value: formatEnum(ring.stoneType) })
+  if (ring.caratWeight)
+    specs.push({ label: t('ringDetail.spec.carats'), value: `${ring.caratWeight}` })
+  specs.push({ label: t('ringDetail.spec.style'), value: formatEnum(ring.style) })
   return specs
 }
 
@@ -282,7 +351,6 @@ const styles = StyleSheet.create({
   carouselImage: {
     width: '70%',
     height: '85%',
-    resizeMode: 'contain',
   },
   dots: {
     flexDirection: 'row',
@@ -345,6 +413,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 20,
     gap: 12,
+    ...theme.shadows.sm,
   },
   specRow: {
     flexDirection: 'row',
@@ -405,6 +474,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: theme.colors.action.nope.icon,
+  },
+  superBtn: {
+    borderColor: theme.colors.action.super.border,
+    backgroundColor: theme.colors.action.super.bg,
+  },
+  superBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.action.super.icon,
   },
   likeBtn: {
     borderColor: theme.colors.action.like.border,

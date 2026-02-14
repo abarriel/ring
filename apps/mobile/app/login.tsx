@@ -1,8 +1,10 @@
-import { ArrowRight, Heart, theme } from '@ring/ui'
+import { ArrowRight, ChevronLeft, Heart, theme } from '@ring/ui'
 import { useMutation } from '@tanstack/react-query'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
+import type { TFunction } from 'i18next'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   KeyboardAvoidingView,
   Platform,
@@ -15,7 +17,8 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { clearAnonymousSwipes, getAnonymousSwipes } from '@/lib/anonymous-swipes'
-import { saveToken, saveUser } from '@/lib/auth'
+import { useAuth } from '@/lib/auth-context'
+import { registerForPushNotifications } from '@/lib/notifications'
 import { client } from '@/lib/orpc'
 
 async function replayAnonymousSwipes() {
@@ -30,39 +33,61 @@ async function replayAnonymousSwipes() {
   await clearAnonymousSwipes()
 }
 
-const STEPS = [
-  {
-    title: 'Parcours les bagues',
-    subtitle: 'Swipe parmi une selection de bagues',
-  },
-  {
-    title: 'Like tes favoris',
-    subtitle: 'Sauvegarde les bagues qui te plaisent',
-  },
-  {
-    title: 'Trouve des matchs',
-    subtitle: 'Decouvre quand vous aimez la meme bague',
-  },
-]
+function getSteps(t: TFunction) {
+  return [
+    {
+      title: t('login.onboarding.step1.title'),
+      subtitle: t('login.onboarding.step1.subtitle'),
+    },
+    {
+      title: t('login.onboarding.step2.title'),
+      subtitle: t('login.onboarding.step2.subtitle'),
+    },
+    {
+      title: t('login.onboarding.step3.title'),
+      subtitle: t('login.onboarding.step3.subtitle'),
+    },
+  ]
+}
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets()
+  const { login } = useAuth()
+  const { t } = useTranslation()
+  const steps = getSteps(t)
   const [step, setStep] = useState<'welcome' | 'details'>('welcome')
   const [name, setName] = useState('')
   const [partnerCode, setPartnerCode] = useState('')
 
   const loginMutation = useMutation({
-    mutationFn: (input: { name: string }) => client.auth.login(input),
+    mutationFn: (input: { name: string; partnerCode?: string }) => client.auth.login(input),
     onSuccess: async (result) => {
-      await saveUser(result.user)
-      await saveToken(result.sessionToken)
+      await login(result.user, result.sessionToken)
       await replayAnonymousSwipes()
+
+      // Auto-join couple if partner code was provided
+      const code = partnerCode.trim().toUpperCase()
+      if (code.length === 6) {
+        try {
+          await client.couple.join({ code })
+        } catch {
+          // Silently fail — user can join later from profile
+        }
+      }
+
+      // Register for push notifications after login (best-effort, non-blocking)
+      registerForPushNotifications()
       router.replace('/')
     },
   })
 
   const handleStart = () => {
     setStep('details')
+  }
+
+  const handleBack = () => {
+    setStep('welcome')
+    loginMutation.reset()
   }
 
   const handleSubmit = () => {
@@ -85,14 +110,12 @@ export default function LoginScreen() {
             <Heart size={48} color="#ffffff" fill="#ffffff" />
           </LinearGradient>
 
-          <Text style={styles.title}>Ring</Text>
-          <Text style={styles.subtitle}>
-            Swipe parmi de superbes bagues et trouve le match parfait avec ton partenaire
-          </Text>
+          <Text style={styles.title}>{t('common.appName')}</Text>
+          <Text style={styles.subtitle}>{t('login.welcome.subtitle')}</Text>
 
           {/* Feature steps */}
           <View style={styles.stepsContainer}>
-            {STEPS.map((s, i) => (
+            {steps.map((s, i) => (
               <View key={s.title} style={styles.stepRow}>
                 <LinearGradient colors={['#fce7f3', '#fce7f3']} style={styles.stepBadge}>
                   <Text style={styles.stepNumber}>{i + 1}</Text>
@@ -110,8 +133,13 @@ export default function LoginScreen() {
             colors={[theme.colors.ring.rose400, theme.colors.ring.pink500]}
             style={styles.ctaGradient}
           >
-            <Pressable style={styles.ctaBtn} onPress={handleStart}>
-              <Text style={styles.ctaBtnText}>C'est parti</Text>
+            <Pressable
+              style={styles.ctaBtn}
+              onPress={handleStart}
+              accessibilityLabel={t('login.welcome.cta')}
+              accessibilityRole="button"
+            >
+              <Text style={styles.ctaBtnText}>{t('login.welcome.cta')}</Text>
               <ArrowRight size={20} color="#ffffff" />
             </Pressable>
           </LinearGradient>
@@ -133,43 +161,62 @@ export default function LoginScreen() {
           ]}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header */}
+          {/* Back + Header */}
+          <Pressable
+            style={styles.backBtn}
+            onPress={handleBack}
+            accessibilityLabel={t('common.back')}
+            accessibilityRole="button"
+          >
+            <ChevronLeft size={24} color={theme.colors.foreground.DEFAULT} />
+            <Text style={styles.backBtnText}>{t('common.back')}</Text>
+          </Pressable>
+
           <View style={styles.detailsHeader}>
-            <Text style={styles.detailsTitle}>Faisons connaissance</Text>
-            <Text style={styles.detailsSubtitle}>Parle-nous un peu de toi</Text>
+            <Text style={styles.detailsTitle}>{t('login.details.title')}</Text>
+            <Text style={styles.detailsSubtitle}>{t('login.details.subtitle')}</Text>
           </View>
 
-          {/* Form */}
-          <View style={styles.formContainer}>
+          {/* Form card (matching mockup white card container) */}
+          <View style={styles.formCard}>
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Ton pseudo</Text>
+              <Text style={styles.label}>{t('login.details.nameLabel')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Entre ton pseudo"
+                placeholder={t('login.details.namePlaceholder')}
                 placeholderTextColor={theme.colors.foreground.muted}
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="none"
                 autoCorrect={false}
+                accessibilityLabel={t('login.details.nameLabel')}
               />
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Code partenaire (optionnel)</Text>
+              <Text style={styles.label}>{t('login.details.partnerCodeLabel')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Entre le code de ton partenaire"
+                placeholder={t('login.details.partnerCodePlaceholder')}
                 placeholderTextColor={theme.colors.foreground.muted}
                 value={partnerCode}
                 onChangeText={(text) => setPartnerCode(text.toUpperCase())}
                 autoCapitalize="characters"
                 maxLength={6}
+                accessibilityLabel={t('login.details.partnerCodeA11y')}
               />
-              <Text style={styles.fieldHint}>
-                Partage ton code avec ton partenaire pour matcher sur les memes bagues
-              </Text>
+              <Text style={styles.fieldHint}>{t('login.details.partnerCodeHint')}</Text>
             </View>
           </View>
+
+          {/* Error message */}
+          {loginMutation.isError && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>
+                {loginMutation.error?.message ?? t('login.details.errorFallback')}
+              </Text>
+            </View>
+          )}
 
           {/* Submit */}
           <LinearGradient
@@ -180,9 +227,13 @@ export default function LoginScreen() {
               style={[styles.ctaBtn, disabled && styles.ctaBtnDisabled]}
               onPress={handleSubmit}
               disabled={disabled}
+              accessibilityLabel={t('login.details.submit')}
+              accessibilityRole="button"
             >
               <Text style={styles.ctaBtnText}>
-                {loginMutation.isPending ? 'Connexion...' : 'Continuer'}
+                {loginMutation.isPending
+                  ? t('login.details.submitting')
+                  : t('login.details.submit')}
               </Text>
               <ArrowRight size={20} color="#ffffff" />
             </Pressable>
@@ -309,11 +360,14 @@ const styles = StyleSheet.create({
     color: theme.colors.foreground.secondary,
   },
 
-  // Form
-  formContainer: {
-    flex: 1,
+  // Form card
+  formCard: {
+    backgroundColor: theme.colors.background.card,
+    borderRadius: theme.borderRadius.lg,
+    padding: 20,
     gap: 24,
     marginBottom: 32,
+    ...theme.shadows.lg,
   },
   fieldGroup: {
     gap: 8,
@@ -336,5 +390,32 @@ const styles = StyleSheet.create({
   fieldHint: {
     fontSize: 12,
     color: theme.colors.foreground.muted,
+  },
+
+  // Back button
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 16,
+  },
+  backBtnText: {
+    fontSize: 15,
+    color: theme.colors.foreground.DEFAULT,
+  },
+
+  // Error
+  errorContainer: {
+    backgroundColor: theme.colors.feedback.error.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.feedback.error.border,
+    borderRadius: theme.borderRadius.md,
+    padding: 12,
+    marginBottom: 16,
+  },
+  errorText: {
+    fontSize: 14,
+    color: theme.colors.feedback.error.text,
+    textAlign: 'center',
   },
 })

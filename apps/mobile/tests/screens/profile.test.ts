@@ -36,6 +36,7 @@ const mockUser: User = {
   name: 'Alice',
   sessionToken: 'token-123',
   sessionExpiresAt: new Date(),
+  pushToken: null,
   preferredMetals: [],
   preferredStones: [],
   preferredStyles: [],

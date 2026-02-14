@@ -12,6 +12,7 @@ import {
   MatchSchema,
   MatchWithRingSchema,
   MetalTypeSchema,
+  RegisterPushTokenSchema,
   RingImageSchema,
   RingSchema,
   RingStyleSchema,
@@ -116,6 +117,7 @@ describe('UserSchema', () => {
     name: 'Alice',
     sessionToken: null,
     sessionExpiresAt: null,
+    pushToken: null,
     preferredMetals: [],
     preferredStones: [],
     preferredStyles: [],
@@ -255,6 +257,7 @@ describe('LoginResponseSchema', () => {
     name: 'Alice',
     sessionToken: 'test-token-123',
     sessionExpiresAt: new Date(),
+    pushToken: null,
     preferredMetals: [],
     preferredStones: [],
     preferredStyles: [],
@@ -736,5 +739,27 @@ describe('SwipeCreateResponseSchema', () => {
         match: { id: 'bad' },
       }).success,
     ).toBe(false)
+  })
+})
+
+// ── Push notification schemas ───────────────────────────────────────────────
+
+describe('RegisterPushTokenSchema', () => {
+  it('accepts a valid Expo push token', () => {
+    expect(RegisterPushTokenSchema.safeParse({ token: 'ExponentPushToken[abc123]' }).success).toBe(
+      true,
+    )
+  })
+
+  it('rejects token not starting with ExponentPushToken[', () => {
+    expect(RegisterPushTokenSchema.safeParse({ token: 'invalid-token' }).success).toBe(false)
+  })
+
+  it('rejects empty token', () => {
+    expect(RegisterPushTokenSchema.safeParse({ token: '' }).success).toBe(false)
+  })
+
+  it('rejects missing token', () => {
+    expect(RegisterPushTokenSchema.safeParse({}).success).toBe(false)
   })
 })

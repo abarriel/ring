@@ -1,29 +1,49 @@
 import type { RingWithImages } from '@ring/shared'
 import { Heart, theme } from '@ring/ui'
 import { useQuery } from '@tanstack/react-query'
+import { Image } from 'expo-image'
 import { router } from 'expo-router'
-import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
+import { useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { FavoritesGridSkeleton } from '@/components/skeleton'
+import { useAuth } from '@/lib/auth-context'
+import { hapticLight } from '@/lib/haptics'
 import { orpc } from '@/lib/orpc'
-import { useAuthGuard } from '@/lib/use-auth-guard'
+import { formatEnum } from '@/lib/utils'
+
+const _CARD_HEIGHT = 220 // aspect-ratio image (~160) + info (~60)
 
 function RingCard({ ring }: { ring: RingWithImages }) {
+  const { t } = useTranslation()
   const imageUrl = ring.images[0]?.url
 
+  const handlePress = useCallback(() => {
+    hapticLight()
+    router.push(`/ring/${ring.id}`)
+  }, [ring.id])
+
   return (
-    <Pressable style={styles.card} onPress={() => router.push(`/ring/${ring.id}`)}>
+    <Pressable
+      style={styles.card}
+      onPress={handlePress}
+      accessibilityLabel={t('favorites.card.ringA11y', {
+        name: ring.name,
+        metalType: ring.metalType.replace(/_/g, ' ').toLowerCase(),
+      })}
+      accessibilityRole="button"
+      accessibilityHint={t('favorites.card.hint')}
+    >
       <View style={styles.cardImage}>
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.thumbnail} />
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.thumbnail}
+            contentFit="cover"
+            transition={200}
+            accessibilityLabel={t('common.ringPhotoA11y', { name: ring.name })}
+          />
         ) : (
           <View style={styles.thumbnailPlaceholder}>
             <Heart size={24} color={theme.colors.foreground.muted} />
@@ -35,13 +55,19 @@ function RingCard({ ring }: { ring: RingWithImages }) {
           {ring.name}
         </Text>
         <Text style={styles.cardMetal} numberOfLines={1}>
-          {ring.metalType
-            .replace(/_/g, ' ')
-            .toLowerCase()
-            .replace(/\b\w/g, (c) => c.toUpperCase())}
+          {formatEnum(ring.metalType)}
         </Text>
         <View style={styles.cardRating}>
-          <Text style={styles.cardStars}>{'*'.repeat(Math.round(ring.rating))}</Text>
+          <Text style={styles.cardStars}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <Text
+                key={`s-${n}`}
+                style={n <= Math.round(ring.rating) ? styles.starFilled : styles.starEmpty}
+              >
+                {'\u2605'}
+              </Text>
+            ))}
+          </Text>
           <Text style={styles.cardReviews}>({ring.reviewCount})</Text>
         </View>
       </View>
@@ -50,7 +76,8 @@ function RingCard({ ring }: { ring: RingWithImages }) {
 }
 
 export default function FavoritesScreen() {
-  const isAuthed = useAuthGuard()
+  const { t } = useTranslation()
+  const { isAuthenticated: isAuthed } = useAuth()
   const insets = useSafeAreaInsets()
 
   const favoritesQuery = useQuery({
@@ -62,30 +89,38 @@ export default function FavoritesScreen() {
   const isLoading = favoritesQuery.isLoading
   const isError = favoritesQuery.isError
 
+  // Note: getItemLayout removed — inaccurate for 2-column FlatList with variable row heights.
+  // FlatList virtualization settings (windowSize, maxToRenderPerBatch) are sufficient.
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Favoris</Text>
+        <Text style={styles.headerTitle} accessibilityRole="header">
+          {t('favorites.header.title')}
+        </Text>
       </View>
 
       {isLoading ? (
-        <View style={styles.emptyState}>
-          <ActivityIndicator size="large" color={theme.colors.ring.pink500} />
-        </View>
+        <FavoritesGridSkeleton />
       ) : isError ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>Oups !</Text>
-          <Text style={styles.emptySubtitle}>Impossible de charger les favoris.</Text>
-          <Pressable style={styles.retryBtn} onPress={() => favoritesQuery.refetch()}>
-            <Text style={styles.retryText}>Reessayer</Text>
+          <Text style={styles.emptyTitle}>{t('common.error.title')}</Text>
+          <Text style={styles.emptySubtitle}>{t('favorites.error.loadFavorites')}</Text>
+          <Pressable
+            style={styles.retryBtn}
+            onPress={() => favoritesQuery.refetch()}
+            accessibilityLabel={t('common.error.retryA11y')}
+            accessibilityRole="button"
+          >
+            <Text style={styles.retryText}>{t('common.error.retry')}</Text>
           </Pressable>
         </View>
       ) : rings.length === 0 ? (
         <View style={styles.emptyState}>
           <Heart size={48} color={theme.colors.foreground.muted} />
-          <Text style={styles.emptyTitle}>Pas encore de favoris</Text>
-          <Text style={styles.emptySubtitle}>Swipe pour en ajouter !</Text>
+          <Text style={styles.emptyTitle}>{t('favorites.empty.title')}</Text>
+          <Text style={styles.emptySubtitle}>{t('favorites.empty.subtitle')}</Text>
         </View>
       ) : (
         <FlatList
@@ -95,6 +130,10 @@ export default function FavoritesScreen() {
           numColumns={2}
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.list}
+          windowSize={5}
+          maxToRenderPerBatch={10}
+          initialNumToRender={8}
+          removeClippedSubviews
           refreshControl={
             <RefreshControl
               refreshing={favoritesQuery.isRefetching}
@@ -139,11 +178,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background.card,
     borderRadius: theme.borderRadius.lg,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    ...theme.shadows.sm,
   },
   cardImage: {
     aspectRatio: 1,
@@ -154,7 +189,6 @@ const styles = StyleSheet.create({
   thumbnail: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
   thumbnailPlaceholder: {
     flex: 1,
@@ -183,7 +217,12 @@ const styles = StyleSheet.create({
   },
   cardStars: {
     fontSize: 10,
+  },
+  starFilled: {
     color: theme.colors.accent.stars,
+  },
+  starEmpty: {
+    color: theme.colors.ui.border,
   },
   cardReviews: {
     fontSize: 10,

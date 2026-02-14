@@ -9,6 +9,7 @@ const mockUser: User = {
   name: 'Alice',
   sessionToken: null,
   sessionExpiresAt: null,
+  pushToken: null,
   preferredMetals: [],
   preferredStones: [],
   preferredStyles: [],

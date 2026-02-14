@@ -1,18 +1,12 @@
 import type { Match, RingWithImages } from '@ring/shared'
-import { Heart, Sparkles, Star, theme, X } from '@ring/ui'
+import { Heart, RotateCcw, Sparkles, Star, theme, X } from '@ring/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router as expoRouter } from 'expo-router'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from 'react-native'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, {
   interpolate,
@@ -24,44 +18,38 @@ import Animated, {
 } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { CelebrationModal } from '@/components/celebration-modal'
+import { SwipeCardSkeleton } from '@/components/skeleton'
 import { SwipeGate } from '@/components/swipe-gate'
 import { ANONYMOUS_SWIPE_LIMIT, saveAnonymousSwipe } from '@/lib/anonymous-swipes'
-import { getToken, getUser } from '@/lib/auth'
+import { useAuth } from '@/lib/auth-context'
+import { hapticHeavy, hapticLight, hapticMedium } from '@/lib/haptics'
 import { client, orpc } from '@/lib/orpc'
-import { getInitials } from '@/lib/utils'
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatEnum(value: string): string {
-  return value
-    .replace(/_/g, ' ')
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-}
+import { formatEnum, getInitials } from '@/lib/utils'
 
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function SwipeScreen() {
   const insets = useSafeAreaInsets()
   const { width: screenWidth } = useWindowDimensions()
+  const { isAuthenticated, user: authUser } = useAuth()
+  const { t } = useTranslation()
   const swipeThreshold = screenWidth * 0.35
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [userInitials, setUserInitials] = useState('?')
   const [celebrationMatch, setCelebrationMatch] = useState<Match | null>(null)
   const [celebrationRing, setCelebrationRing] = useState<RingWithImages | null>(null)
-  const [isAnonymous, setIsAnonymous] = useState(true)
-  const [_anonymousSwipeCount, setAnonymousSwipeCount] = useState(0)
   const [showGate, setShowGate] = useState(false)
+  const [canUndo, setCanUndo] = useState(false)
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const queryClient = useQueryClient()
 
-  // Detect auth state on mount
+  const isAnonymous = !isAuthenticated
+  const userInitials = authUser?.name ? getInitials(authUser.name) : '?'
+
+  // Clear undo timer on unmount
   useEffect(() => {
-    getToken().then((token) => {
-      setIsAnonymous(!token)
-    })
-    getUser().then((user) => {
-      if (user?.name) setUserInitials(getInitials(user.name))
-    })
+    return () => {
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
+    }
   }, [])
 
   // Anonymous mode: fetch public ring list
@@ -113,7 +101,6 @@ export default function SwipeScreen() {
       if (isAnonymous) {
         // Store locally for anonymous users
         saveAnonymousSwipe({ ringId: currentRing.id, direction }).then((swipes) => {
-          setAnonymousSwipeCount(swipes.length)
           if (swipes.length >= ANONYMOUS_SWIPE_LIMIT) {
             setShowGate(true)
           }
@@ -132,9 +119,22 @@ export default function SwipeScreen() {
       translateX.value = 0
       translateY.value = 0
       isAnimating.value = false
+
+      // Show undo button for 3 seconds
+      setCanUndo(true)
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
+      undoTimerRef.current = setTimeout(() => setCanUndo(false), 3000)
     },
     [translateX, translateY, isAnimating, persistSwipe],
   )
+
+  const handleUndo = useCallback(() => {
+    if (currentIndex <= 0) return
+    setCurrentIndex((prev) => prev - 1)
+    setCanUndo(false)
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
+    hapticLight()
+  }, [currentIndex])
 
   const swipeOff = useCallback(
     (direction: 'left' | 'right') => {
@@ -194,16 +194,25 @@ export default function SwipeScreen() {
     opacity: interpolate(translateX.value, [0, -swipeThreshold], [0, 1]),
   }))
 
-  const handleNope = useCallback(() => swipeOff('left'), [swipeOff])
+  const handleNope = useCallback(() => {
+    hapticLight()
+    swipeOff('left')
+  }, [swipeOff])
+
   const handleSuper = useCallback(() => {
     if (isAnimating.value) return
+    hapticHeavy()
     isAnimating.value = true
     translateX.value = withTiming(0, { duration: 100 })
     translateY.value = withTiming(-screenWidth * 1.5, { duration: 300 }, () => {
       runOnJS(advanceCard)('SUPER')
     })
   }, [translateX, translateY, isAnimating, screenWidth, advanceCard])
-  const handleLike = useCallback(() => swipeOff('right'), [swipeOff])
+
+  const handleLike = useCallback(() => {
+    hapticMedium()
+    swipeOff('right')
+  }, [swipeOff])
 
   const isFinished = !activeQuery.isLoading && currentIndex >= rings.length
   const isLoading = activeQuery.isLoading
@@ -214,13 +223,38 @@ export default function SwipeScreen() {
       <View style={[styles.container, { paddingTop: insets.top }]}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerLogo}>Ring</Text>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerLogo} accessibilityRole="header">
+              {t('common.appName')}
+            </Text>
+            {!isLoading && !isError && rings.length > 0 && !isFinished && (
+              <Text
+                style={styles.cardCounter}
+                accessibilityLabel={t('swipe.header.cardCounterA11y', {
+                  n: currentIndex + 1,
+                  total: rings.length,
+                })}
+              >
+                {currentIndex + 1}/{rings.length}
+              </Text>
+            )}
+          </View>
           {isAnonymous ? (
-            <Pressable style={styles.loginBtn} onPress={() => expoRouter.push('/login')}>
-              <Text style={styles.loginBtnText}>S'inscrire</Text>
+            <Pressable
+              style={styles.loginBtn}
+              onPress={() => expoRouter.push('/login')}
+              accessibilityLabel={t('common.signUp')}
+              accessibilityRole="button"
+            >
+              <Text style={styles.loginBtnText}>{t('common.signUp')}</Text>
             </Pressable>
           ) : (
-            <Pressable style={styles.avatar} onPress={() => expoRouter.push('/profile')}>
+            <Pressable
+              style={styles.avatar}
+              onPress={() => expoRouter.push('/profile')}
+              accessibilityLabel={t('swipe.header.viewProfileA11y')}
+              accessibilityRole="button"
+            >
               <Text style={styles.avatarText}>{userInitials}</Text>
             </Pressable>
           )}
@@ -229,16 +263,18 @@ export default function SwipeScreen() {
         {/* Card area */}
         <View style={styles.cardArea}>
           {isLoading ? (
-            <View style={styles.emptyState}>
-              <ActivityIndicator size="large" color={theme.colors.ring.pink500} />
-              <Text style={styles.emptySubtitle}>Chargement des bagues...</Text>
-            </View>
+            <SwipeCardSkeleton />
           ) : isError ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>Oups !</Text>
-              <Text style={styles.emptySubtitle}>Impossible de charger les bagues.</Text>
-              <Pressable style={styles.retryBtn} onPress={() => activeQuery.refetch()}>
-                <Text style={styles.retryText}>Reessayer</Text>
+              <Text style={styles.emptyTitle}>{t('common.error.title')}</Text>
+              <Text style={styles.emptySubtitle}>{t('swipe.error.loadRings')}</Text>
+              <Pressable
+                style={styles.retryBtn}
+                onPress={() => activeQuery.refetch()}
+                accessibilityLabel={t('common.error.retryA11y')}
+                accessibilityRole="button"
+              >
+                <Text style={styles.retryText}>{t('common.error.retry')}</Text>
               </Pressable>
             </View>
           ) : isFinished ? (
@@ -246,60 +282,90 @@ export default function SwipeScreen() {
               <View style={styles.emptyIcon}>
                 <Sparkles size={48} color={theme.colors.foreground.muted} />
               </View>
-              <Text style={styles.emptyTitle}>Plus de bagues !</Text>
-              <Text style={styles.emptySubtitle}>Tu as vu toutes les bagues disponibles.</Text>
-              <Pressable style={styles.retryBtn} onPress={() => expoRouter.push('/matches')}>
-                <Text style={styles.retryText}>Voir tes matchs</Text>
+              <Text style={styles.emptyTitle}>{t('swipe.empty.title')}</Text>
+              <Text style={styles.emptySubtitle}>{t('swipe.empty.subtitle')}</Text>
+              <Pressable
+                style={styles.retryBtn}
+                onPress={() => expoRouter.push('/matches')}
+                accessibilityLabel={t('swipe.empty.viewMatches')}
+                accessibilityRole="button"
+              >
+                <Text style={styles.retryText}>{t('swipe.empty.viewMatches')}</Text>
               </Pressable>
             </View>
           ) : currentRing ? (
             <GestureDetector gesture={panGesture}>
-              <Animated.View style={[styles.card, cardAnimatedStyle]}>
+              <Animated.View
+                style={[styles.card, cardAnimatedStyle]}
+                accessibilityLabel={t('swipe.card.ringA11y', { name: currentRing.name })}
+                accessibilityHint={t('swipe.card.hint')}
+              >
                 {/* LIKE overlay */}
                 <Animated.View style={[styles.overlayLabel, styles.likeLabel, likeOverlayStyle]}>
-                  <Text style={styles.likeLabelText}>LIKE</Text>
+                  <Text style={styles.likeLabelText}>{t('swipe.card.likeOverlay')}</Text>
                 </Animated.View>
 
                 {/* NOPE overlay */}
                 <Animated.View style={[styles.overlayLabel, styles.nopeLabel, nopeOverlayStyle]}>
-                  <Text style={styles.nopeLabelText}>NOPE</Text>
+                  <Text style={styles.nopeLabelText}>{t('swipe.card.nopeOverlay')}</Text>
                 </Animated.View>
 
                 {/* Image zone */}
                 <View style={styles.imageZone}>
-                  <Image source={{ uri: currentRing.images[0]?.url }} style={styles.productImage} />
+                  <Image
+                    source={{ uri: currentRing.images[0]?.url }}
+                    style={styles.productImage}
+                    contentFit="contain"
+                    transition={200}
+                    accessibilityLabel={t('common.ringPhotoA11y', { name: currentRing.name })}
+                  />
                 </View>
 
                 {/* Ring info */}
                 <View style={styles.productInfo}>
                   <Text style={styles.productName}>{currentRing.name}</Text>
 
-                  {/* Key-value specs */}
-                  <View style={styles.specsTable}>
-                    <View style={styles.specRow}>
-                      <Text style={styles.specLabel}>Style</Text>
-                      <Text style={styles.specValue}>{formatEnum(currentRing.style)}</Text>
-                    </View>
-                    <View style={styles.specRow}>
-                      <Text style={styles.specLabel}>Metal</Text>
-                      <Text style={styles.specValue}>{formatEnum(currentRing.metalType)}</Text>
-                    </View>
-                    <View style={styles.specRow}>
-                      <Text style={styles.specLabel}>Pierre</Text>
-                      <Text style={styles.specValue}>{formatEnum(currentRing.stoneType)}</Text>
-                    </View>
-                    <View style={styles.specRow}>
-                      <Text style={styles.specLabel}>Carat</Text>
-                      <Text style={styles.specValue}>{currentRing.caratWeight} ct</Text>
-                    </View>
+                  {/* Inline specs with dot separators (matching mockup) */}
+                  <View
+                    style={styles.specsInline}
+                    accessibilityLabel={`${currentRing.caratWeight} carats, ${formatEnum(currentRing.metalType)}, ${formatEnum(currentRing.style)}`}
+                  >
+                    <Text
+                      style={styles.specText}
+                    >{`${currentRing.caratWeight} ${t('common.caratUnit')}`}</Text>
+                    <View style={styles.specDot} />
+                    <Text style={styles.specText}>{formatEnum(currentRing.metalType)}</Text>
+                    <View style={styles.specDot} />
+                    <Text style={styles.specText}>{formatEnum(currentRing.style)}</Text>
                   </View>
 
-                  {/* Description */}
-                  {currentRing.description && (
-                    <Text style={styles.productDescription} numberOfLines={2}>
-                      {currentRing.description}
+                  {/* Star rating */}
+                  <View
+                    style={styles.starsRow}
+                    accessibilityLabel={t('common.ratingA11y', {
+                      rating: Math.round(currentRing.rating),
+                      count: currentRing.reviewCount,
+                    })}
+                  >
+                    <View style={styles.stars}>
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <Text
+                          key={`star-${n}`}
+                          style={[
+                            styles.starIcon,
+                            n <= Math.round(currentRing.rating)
+                              ? styles.starFilled
+                              : styles.starEmpty,
+                          ]}
+                        >
+                          {'\u2605'}
+                        </Text>
+                      ))}
+                    </View>
+                    <Text style={styles.reviewCount}>
+                      ({currentRing.reviewCount.toLocaleString('fr-FR')} {t('common.reviews')})
                     </Text>
-                  )}
+                  </View>
                 </View>
               </Animated.View>
             </GestureDetector>
@@ -309,9 +375,22 @@ export default function SwipeScreen() {
         {/* Action buttons */}
         {!isFinished && !isLoading && !isError && (
           <View style={styles.actions}>
+            {canUndo && currentIndex > 0 && (
+              <Pressable
+                style={[styles.actionBtn, styles.actionBtnSmall, styles.undoBtn]}
+                onPress={handleUndo}
+                accessibilityLabel={t('swipe.actions.undoA11y')}
+                accessibilityRole="button"
+              >
+                <RotateCcw size={18} color={theme.colors.foreground.muted} strokeWidth={2.5} />
+              </Pressable>
+            )}
+
             <Pressable
               style={[styles.actionBtn, styles.actionBtnLarge, styles.nopeBtn]}
               onPress={handleNope}
+              accessibilityLabel={t('swipe.actions.nopeA11y')}
+              accessibilityRole="button"
             >
               <X size={28} color={theme.colors.action.nope.icon} strokeWidth={2.5} />
             </Pressable>
@@ -319,6 +398,8 @@ export default function SwipeScreen() {
             <Pressable
               style={[styles.actionBtn, styles.actionBtnSmall, styles.superBtn]}
               onPress={handleSuper}
+              accessibilityLabel={t('swipe.actions.superA11y')}
+              accessibilityRole="button"
             >
               <Star size={20} color={theme.colors.action.super.icon} strokeWidth={2.5} />
             </Pressable>
@@ -326,6 +407,8 @@ export default function SwipeScreen() {
             <Pressable
               style={[styles.actionBtn, styles.actionBtnLarge, styles.likeBtn]}
               onPress={handleLike}
+              accessibilityLabel={t('swipe.actions.likeA11y')}
+              accessibilityRole="button"
             >
               <Heart size={28} color={theme.colors.action.like.icon} strokeWidth={2.5} />
             </Pressable>
@@ -336,7 +419,7 @@ export default function SwipeScreen() {
         <View style={{ height: insets.bottom + 8 }} />
 
         {/* Anonymous swipe gate */}
-        {showGate && <SwipeGate />}
+        {showGate && <SwipeGate onDismiss={() => setShowGate(false)} />}
       </View>
 
       {/* Match celebration modal */}
@@ -375,10 +458,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.page,
     paddingVertical: 8,
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   headerLogo: {
     fontSize: 20,
     fontWeight: 'bold',
     color: theme.colors.ring.pink500,
+  },
+  cardCounter: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: theme.colors.foreground.muted,
   },
   avatar: {
     width: 32,
@@ -415,11 +508,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: theme.borderRadius.xl,
     backgroundColor: theme.colors.background.card,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 30,
-    elevation: 8,
+    ...theme.shadows.lg,
     overflow: 'hidden',
   },
 
@@ -467,7 +556,11 @@ const styles = StyleSheet.create({
   productImage: {
     width: '65%',
     height: '80%',
-    resizeMode: 'contain',
+    // Drop shadow matching mockup: drop-shadow(0 8px 24px rgba(0,0,0,0.12))
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
   },
 
   // Ring info
@@ -484,31 +577,46 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 
-  // Specs table (key-value rows)
-  specsTable: {
+  // Inline specs with dot separators
+  specsInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
     marginBottom: 12,
   },
-  specRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  specText: {
+    fontSize: 14,
+    color: theme.colors.foreground.secondary,
   },
-  specLabel: {
-    fontSize: 13,
-    color: theme.colors.foreground.muted,
-  },
-  specValue: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: theme.colors.foreground.DEFAULT,
+  specDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: theme.colors.ui.dot,
   },
 
-  // Description
-  productDescription: {
+  // Star rating
+  starsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  stars: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+  starIcon: {
+    fontSize: 16,
+  },
+  starFilled: {
+    color: theme.colors.accent.stars,
+  },
+  starEmpty: {
+    color: theme.colors.ui.border,
+  },
+  reviewCount: {
     fontSize: 13,
-    color: theme.colors.foreground.secondary,
-    lineHeight: 18,
+    color: theme.colors.foreground.muted,
   },
 
   // Actions
@@ -525,11 +633,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 2,
     backgroundColor: theme.colors.background.card,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    ...theme.shadows.md,
   },
   actionBtnLarge: {
     width: 56,
@@ -540,6 +644,9 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
+  },
+  undoBtn: {
+    borderColor: theme.colors.ui.border,
   },
   nopeBtn: {
     borderColor: theme.colors.action.nope.border,

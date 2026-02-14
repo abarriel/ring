@@ -1,0 +1,7 @@
+appId: com.ring.app
+---
+- launchApp
+- assertVisible: "Ring"
+- assertVisible: "S'inscrire"
+# Anonymous users can see the browse screen and rings load
+- assertVisible: "Browse"

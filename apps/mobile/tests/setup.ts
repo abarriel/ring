@@ -32,6 +32,36 @@ vi.mock('expo-router', () => ({
   router: { replace: vi.fn(), push: vi.fn() },
 }))
 
+vi.mock('expo-image', () => ({
+  Image: 'ExpoImage',
+}))
+
+vi.mock('expo-haptics', () => ({
+  impactAsync: vi.fn(),
+  notificationAsync: vi.fn(),
+  ImpactFeedbackStyle: { Light: 'Light', Medium: 'Medium', Heavy: 'Heavy' },
+  NotificationFeedbackType: { Success: 'Success' },
+}))
+
+vi.mock('expo-splash-screen', () => ({
+  preventAutoHideAsync: vi.fn(),
+  hideAsync: vi.fn(),
+}))
+
+vi.mock('expo-notifications', () => ({
+  setNotificationHandler: vi.fn(),
+  getPermissionsAsync: vi.fn().mockResolvedValue({ status: 'granted' }),
+  requestPermissionsAsync: vi.fn().mockResolvedValue({ status: 'granted' }),
+  getExpoPushTokenAsync: vi.fn().mockResolvedValue({ data: 'ExponentPushToken[mock]' }),
+  setNotificationChannelAsync: vi.fn(),
+  addNotificationResponseReceivedListener: vi.fn().mockReturnValue({ remove: vi.fn() }),
+  AndroidImportance: { MAX: 5 },
+}))
+
+vi.mock('expo-device', () => ({
+  isDevice: true,
+}))
+
 vi.mock('@react-native-async-storage/async-storage', () => ({
   default: {
     setItem: vi.fn(),
@@ -44,6 +74,23 @@ vi.mock('@react-native-async-storage/async-storage', () => ({
 vi.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
   SafeAreaProvider: 'SafeAreaProvider',
+}))
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, params?: Record<string, unknown>) => {
+      if (!params) return key
+      return Object.entries(params).reduce<string>(
+        (acc, [k, v]) => acc.replace(`{{${k}}}`, String(v)),
+        key,
+      )
+    },
+    i18n: { language: 'fr', changeLanguage: vi.fn() },
+  }),
+}))
+
+vi.mock('expo-localization', () => ({
+  getLocales: () => [{ languageCode: 'fr', languageTag: 'fr-FR' }],
 }))
 
 vi.mock('@ring/ui', () => ({
@@ -71,17 +118,25 @@ vi.mock('@ring/ui', () => ({
   },
   ToastProvider: ({ children }: { children: unknown }) => children,
   useToast: () => ({ show: vi.fn(), dismiss: vi.fn() }),
+  ArrowRight: 'ArrowRight',
+  Check: 'Check',
+  ChevronLeft: 'ChevronLeft',
   Copy: 'Copy',
+  ExternalLink: 'ExternalLink',
   Gem: 'Gem',
   Heart: 'Heart',
+  Home: 'Home',
   Info: 'Info',
   LogOut: 'LogOut',
+  RotateCcw: 'RotateCcw',
+  Settings: 'Settings',
   Share2: 'Share2',
+  Sparkles: 'Sparkles',
   Star: 'Star',
+  User: 'User',
   UserCircle: 'UserCircle',
   Users: 'Users',
   X: 'X',
-  ChevronLeft: 'ChevronLeft',
   AlertTriangle: 'AlertTriangle',
   CheckCircle: 'CheckCircle',
   XCircle: 'XCircle',

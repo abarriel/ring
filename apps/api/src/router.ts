@@ -4,11 +4,13 @@ import {
   CreateUserSchema,
   JoinCoupleSchema,
   LoginSchema,
+  RegisterPushTokenSchema,
   type UpdateUser,
   UpdateUserSchema,
 } from '@ring/shared'
 import { z } from 'zod'
 import { db } from './db.js'
+import { notifyNewMatch, notifyPartnerJoined } from './push.js'
 
 // ── Auth helpers ────────────────────────────────────────────────────────────
 
@@ -130,6 +132,16 @@ const deleteUser = base.input(z.object({ id: z.string().uuid() })).handler(async
   await db.user.delete({ where: { id: input.id } })
   return { success: true }
 })
+
+const registerPushToken = authed
+  .input(RegisterPushTokenSchema)
+  .handler(async ({ input, context }) => {
+    const user = await db.user.update({
+      where: { id: context.user.id },
+      data: { pushToken: input.token },
+    })
+    return { success: true, pushToken: user.pushToken }
+  })
 
 // ── Ring procedures ─────────────────────────────────────────────────────────
 
@@ -269,6 +281,18 @@ const createSwipe = authed.input(CreateSwipeSchema).handler(async ({ input, cont
             create: { coupleId: couple.id, ringId: input.ringId },
             update: {},
           })
+
+          // Send push notifications to both partners about the new match (best-effort)
+          const [currentUser, partner] = await Promise.all([
+            db.user.findUnique({ where: { id: userId }, select: { pushToken: true } }),
+            db.user.findUnique({ where: { id: partnerId }, select: { pushToken: true } }),
+          ])
+          notifyNewMatch(
+            [currentUser?.pushToken ?? null, partner?.pushToken ?? null],
+            ring.name,
+          ).catch(() => {
+            // Push notification failure should not affect the swipe response
+          })
         }
       }
     }
@@ -371,7 +395,7 @@ const createCouple = authed.handler(async ({ context }) => {
 const joinCouple = authed.input(JoinCoupleSchema).handler(async ({ input, context }) => {
   const userId = context.user.id
 
-  return db.$transaction(async (tx) => {
+  const result = await db.$transaction(async (tx) => {
     // Find the couple by code first
     const couple = await tx.couple.findUnique({ where: { code: input.code } })
     if (!couple) {
@@ -419,8 +443,31 @@ const joinCouple = authed.input(JoinCoupleSchema).handler(async ({ input, contex
       include: coupleInclude,
     })
 
-    return updated
+    // Read data needed for notification before returning from transaction
+    const inviterData = await tx.user.findUnique({
+      where: { id: couple.inviterId },
+      select: { pushToken: true },
+    })
+    const joinerData = await tx.user.findUnique({
+      where: { id: userId },
+      select: { name: true },
+    })
+
+    return {
+      updated,
+      inviterPushToken: inviterData?.pushToken ?? null,
+      joinerName: joinerData?.name ?? null,
+    }
   })
+
+  // Send notification outside the transaction (after commit)
+  if (result.inviterPushToken && result.joinerName) {
+    notifyPartnerJoined(result.inviterPushToken, result.joinerName).catch(() => {
+      // Push notification failure should not affect the join response
+    })
+  }
+
+  return result.updated
 })
 
 const getCouple = authed.handler(async ({ context }) => {
@@ -471,6 +518,7 @@ export const router = {
     create: createUser,
     update: updateUser,
     delete: deleteUser,
+    registerPushToken,
   },
   ring: {
     list: listRings,

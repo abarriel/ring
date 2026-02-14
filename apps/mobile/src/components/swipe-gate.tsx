@@ -1,18 +1,46 @@
-import { theme } from '@ring/ui'
+import { theme, X } from '@ring/ui'
 import { router as expoRouter } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 
-export function SwipeGate() {
+export function SwipeGate({ onDismiss }: { onDismiss?: () => void }) {
+  const { t } = useTranslation()
+
   return (
-    <View style={styles.overlay}>
+    <View style={styles.overlay} accessibilityLabel={t('swipeGate.a11y')}>
       <View style={styles.card}>
-        <Text style={styles.title}>Tu aimes ce que tu vois ?</Text>
-        <Text style={styles.subtitle}>
-          Inscris-toi pour sauvegarder tes favoris et te coupler !
+        {onDismiss && (
+          <Pressable
+            style={styles.closeBtn}
+            onPress={onDismiss}
+            accessibilityLabel={t('common.close')}
+            accessibilityRole="button"
+          >
+            <X size={20} color={theme.colors.foreground.muted} />
+          </Pressable>
+        )}
+        <Text style={styles.title} accessibilityRole="header">
+          {t('swipeGate.title')}
         </Text>
-        <Pressable style={styles.ctaBtn} onPress={() => expoRouter.push('/login')}>
-          <Text style={styles.ctaText}>S'inscrire</Text>
+        <Text style={styles.subtitle}>{t('swipeGate.subtitle')}</Text>
+        <Pressable
+          style={styles.ctaBtn}
+          onPress={() => expoRouter.push('/login')}
+          accessibilityLabel={t('common.signUp')}
+          accessibilityRole="button"
+        >
+          <Text style={styles.ctaText}>{t('common.signUp')}</Text>
         </Pressable>
+        {onDismiss && (
+          <Pressable
+            style={styles.laterBtn}
+            onPress={onDismiss}
+            accessibilityLabel={t('swipeGate.later')}
+            accessibilityRole="button"
+          >
+            <Text style={styles.laterText}>{t('swipeGate.later')}</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   )
@@ -60,5 +88,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#ffffff',
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    padding: 8,
+  },
+  laterBtn: {
+    marginTop: 12,
+    paddingVertical: 8,
+  },
+  laterText: {
+    fontSize: 14,
+    color: theme.colors.foreground.muted,
   },
 })

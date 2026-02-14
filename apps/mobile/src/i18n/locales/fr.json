@@ -1,0 +1,253 @@
+{
+  "common": {
+    "appName": "Ring",
+    "back": "Retour",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "signUp": "S'inscrire",
+    "loading": "Chargement",
+    "caratUnit": "ct",
+    "reviews": "avis",
+    "ringPhotoA11y": "Photo de {{name}}",
+    "ringFallbackName": "la bague",
+    "ratingA11y": "Note: {{rating}} sur 5, {{count}} avis",
+    "error": {
+      "title": "Oups !",
+      "retry": "Réessayer",
+      "retryA11y": "Réessayer le chargement"
+    },
+    "toast": {
+      "errorTitle": "Erreur"
+    }
+  },
+  "login": {
+    "onboarding": {
+      "step1": {
+        "title": "Parcours les bagues",
+        "subtitle": "Swipe parmi une sélection de bagues"
+      },
+      "step2": {
+        "title": "Like tes favoris",
+        "subtitle": "Sauvegarde les bagues qui te plaisent"
+      },
+      "step3": {
+        "title": "Trouve des matchs",
+        "subtitle": "Découvre quand vous aimez la même bague"
+      }
+    },
+    "welcome": {
+      "subtitle": "Swipe parmi de superbes bagues et trouve le match parfait avec ton partenaire",
+      "cta": "C'est parti"
+    },
+    "details": {
+      "title": "Faisons connaissance",
+      "subtitle": "Parle-nous un peu de toi",
+      "nameLabel": "Ton pseudo",
+      "namePlaceholder": "Entre ton pseudo",
+      "partnerCodeLabel": "Code partenaire (optionnel)",
+      "partnerCodePlaceholder": "Entre le code de ton partenaire",
+      "partnerCodeA11y": "Code partenaire",
+      "partnerCodeHint": "Partage ton code avec ton partenaire pour matcher sur les mêmes bagues",
+      "errorFallback": "Erreur de connexion. Réessaye.",
+      "submitting": "Connexion...",
+      "submit": "Continuer"
+    }
+  },
+  "tabs": {
+    "browse": "Browse",
+    "browseA11y": "Parcourir les bagues",
+    "favorites": "Favoris",
+    "favoritesA11y": "Voir les favoris",
+    "matches": "Matchs",
+    "matchesA11y": "Voir les matchs",
+    "profile": "Profil",
+    "profileA11y": "Voir le profil"
+  },
+  "swipe": {
+    "header": {
+      "cardCounterA11y": "Bague {{n}} sur {{total}}",
+      "viewProfileA11y": "Voir le profil"
+    },
+    "error": {
+      "loadRings": "Impossible de charger les bagues."
+    },
+    "empty": {
+      "title": "Plus de bagues !",
+      "subtitle": "Tu as vu toutes les bagues disponibles.",
+      "viewMatches": "Voir tes matchs"
+    },
+    "card": {
+      "ringA11y": "Bague {{name}}",
+      "hint": "Swipe à gauche pour passer, à droite pour liker",
+      "likeOverlay": "LIKE",
+      "nopeOverlay": "NOPE"
+    },
+    "actions": {
+      "undoA11y": "Annuler le dernier swipe",
+      "nopeA11y": "Passer cette bague",
+      "superA11y": "Super like",
+      "likeA11y": "Liker cette bague"
+    }
+  },
+  "favorites": {
+    "header": {
+      "title": "Favoris"
+    },
+    "card": {
+      "ringA11y": "Bague {{name}}, {{metalType}}",
+      "hint": "Appuie pour voir les détails"
+    },
+    "error": {
+      "loadFavorites": "Impossible de charger les favoris."
+    },
+    "empty": {
+      "title": "Pas encore de favoris",
+      "subtitle": "Swipe pour en ajouter !"
+    }
+  },
+  "matches": {
+    "header": {
+      "title": "Tes matchs",
+      "subtitle_one": "{{count}} bague que vous aimez tous les deux",
+      "subtitle_other": "{{count}} bagues que vous aimez tous les deux"
+    },
+    "card": {
+      "badge": "Match",
+      "ringA11y": "Match: {{name}}",
+      "viewDetails": "Voir les détails",
+      "viewDetailsA11y": "Voir les détails de {{name}}"
+    },
+    "error": {
+      "loadMatches": "Impossible de charger les matchs."
+    },
+    "empty": {
+      "noCoupleTitle": "Pas encore de matchs",
+      "noCoupleSubtitle": "Commence à parcourir les bagues et matcher avec ton partenaire",
+      "noMatchTitle": "Pas encore de match",
+      "noMatchSubtitle": "Swipez tous les deux pour trouver vos coups de cœur !"
+    }
+  },
+  "profile": {
+    "header": {
+      "coupledWith": "En couple avec {{partnerName}}",
+      "defaultSubtitle": "Ring Explorer"
+    },
+    "stats": {
+      "a11y": "Statistiques",
+      "likedRings": "Bagues likées",
+      "matches": "Matchs"
+    },
+    "partner": {
+      "label": "PARTENAIRE",
+      "a11y": "Partenaire: {{name}}"
+    },
+    "couple": {
+      "sectionLabel": "COUPLE",
+      "loadingA11y": "Chargement du couple",
+      "dissolve": "Dissoudre le couple",
+      "dissolving": "Dissolution...",
+      "invitationCodeLabel": "TON CODE D'INVITATION",
+      "invitationCodeA11y": "Code d'invitation: {{code}}",
+      "shareCodeA11y": "Partager le code",
+      "copyCodeA11y": "Copier le code",
+      "codeHint": "Partage ce code avec ton partenaire",
+      "cancelInvitationA11y": "Annuler l'invitation",
+      "cancelling": "Annulation...",
+      "cancelInvitation": "Annuler l'invitation",
+      "invite": "Invite ton partenaire",
+      "creating": "Création...",
+      "orEnterCode": "Ou entre un code",
+      "joinInputA11y": "Code d'invitation du partenaire",
+      "joinA11y": "Rejoindre le couple",
+      "join": "Rejoindre"
+    },
+    "toast": {
+      "codeCopied": "Code copié !",
+      "alreadyCoupledTitle": "Déjà en couple",
+      "alreadyCoupledMessage": "Tu es déjà dans un couple",
+      "createCoupleError": "Erreur lors de la création du couple",
+      "coupleFormed": "Couple formé !",
+      "codeNotFoundTitle": "Code introuvable",
+      "codeNotFoundMessage": "Ce code n'existe pas",
+      "codeInvalidTitle": "Code invalide",
+      "codeInvalidOwnCouple": "Tu ne peux pas rejoindre ton propre couple",
+      "alreadyPairedTitle": "Déjà en couple",
+      "alreadyPairedMessage": "Tu es déjà dans un couple",
+      "coupleFullTitle": "Couple complet",
+      "coupleFullMessage": "Ce couple a déjà un partenaire",
+      "joinError": "Erreur lors de la jonction",
+      "codeLengthTitle": "Code invalide",
+      "codeLengthMessage": "Le code doit faire 6 caractères",
+      "coupleDissolvedTitle": "Couple dissous",
+      "dissolveError": "Erreur lors de la dissolution",
+      "copied": "Copié !",
+      "comingSoon": "Bientôt disponible !"
+    },
+    "alert": {
+      "dissolveTitle": "Dissoudre le couple",
+      "dissolveMessage": "Es-tu sûr de vouloir dissoudre le couple ?",
+      "dissolveConfirm": "Dissoudre",
+      "logoutTitle": "Déconnexion",
+      "logoutMessage": "Es-tu sûr de vouloir te déconnecter ?",
+      "logoutConfirm": "Déconnecter"
+    },
+    "share": {
+      "inviteMessage": "Rejoins-moi sur Ring ! Mon code : {{code}}"
+    },
+    "menu": {
+      "preferencesA11y": "Préférences de bagues",
+      "preferencesTitle": "Préférences",
+      "preferencesSubtitle": "Personnalise tes préférences de bagues",
+      "logoutA11y": "Se déconnecter",
+      "logoutTitle": "Déconnexion",
+      "logoutSubtitle": "Efface toutes les données et recommence"
+    },
+    "avatarA11y": "Avatar de {{name}}"
+  },
+  "ringDetail": {
+    "error": {
+      "notFound": "Bague introuvable"
+    },
+    "carousel": {
+      "paginationA11y": "Image {{n}} sur {{total}}"
+    },
+    "specsA11y": "Spécifications",
+    "spec": {
+      "metal": "Métal",
+      "stone": "Pierre",
+      "carats": "Carats",
+      "style": "Style"
+    },
+    "descriptionTitle": "Description",
+    "actions": {
+      "nope": "Nope",
+      "super": "Super",
+      "like": "Like"
+    }
+  },
+  "swipeGate": {
+    "a11y": "Limite de swipes atteinte",
+    "title": "Tu aimes ce que tu vois ?",
+    "subtitle": "Inscris-toi pour sauvegarder tes favoris et te coupler !",
+    "later": "Plus tard"
+  },
+  "errorBoundary": {
+    "title": "Une erreur est survenue",
+    "fallbackMessage": "Une erreur inattendue est survenue"
+  },
+  "celebration": {
+    "a11y": "Match célébré",
+    "title": "C'est un match !",
+    "subtitle": "Vous aimez tous les deux cette bague",
+    "viewMatch": "Voir le match",
+    "continueA11y": "Continuer à swiper",
+    "continue": "Continuer"
+  },
+  "skeleton": {
+    "swipeCard": "Chargement de la bague",
+    "favorites": "Chargement des favoris",
+    "matches": "Chargement des matchs",
+    "profile": "Chargement du profil",
+    "ringDetail": "Chargement des détails"
+  }
+}

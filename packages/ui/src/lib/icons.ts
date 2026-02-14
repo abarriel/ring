@@ -11,6 +11,7 @@ export {
   Home,
   Info,
   LogOut,
+  RotateCcw,
   Settings,
   Share2,
   Sparkles,

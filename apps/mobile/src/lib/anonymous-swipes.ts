@@ -12,7 +12,13 @@ export type AnonymousSwipe = {
 export async function getAnonymousSwipes(): Promise<AnonymousSwipe[]> {
   const raw = await AsyncStorage.getItem(STORAGE_KEY)
   if (!raw) return []
-  return JSON.parse(raw)
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed as AnonymousSwipe[]
+  } catch {
+    return []
+  }
 }
 
 export async function saveAnonymousSwipe(swipe: AnonymousSwipe): Promise<AnonymousSwipe[]> {
