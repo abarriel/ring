@@ -5,6 +5,7 @@ import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router as expoRouter } from 'expo-router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, {
@@ -31,6 +32,7 @@ export default function SwipeScreen() {
   const insets = useSafeAreaInsets()
   const { width: screenWidth } = useWindowDimensions()
   const { isAuthenticated, user: authUser } = useAuth()
+  const { t } = useTranslation()
   const swipeThreshold = screenWidth * 0.35
   const [currentIndex, setCurrentIndex] = useState(0)
   const [celebrationMatch, setCelebrationMatch] = useState<Match | null>(null)
@@ -223,12 +225,15 @@ export default function SwipeScreen() {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={styles.headerLogo} accessibilityRole="header">
-              Ring
+              {t('common.appName')}
             </Text>
             {!isLoading && !isError && rings.length > 0 && !isFinished && (
               <Text
                 style={styles.cardCounter}
-                accessibilityLabel={`Bague ${currentIndex + 1} sur ${rings.length}`}
+                accessibilityLabel={t('swipe.header.cardCounterA11y', {
+                  n: currentIndex + 1,
+                  total: rings.length,
+                })}
               >
                 {currentIndex + 1}/{rings.length}
               </Text>
@@ -238,16 +243,16 @@ export default function SwipeScreen() {
             <Pressable
               style={styles.loginBtn}
               onPress={() => expoRouter.push('/login')}
-              accessibilityLabel="S'inscrire"
+              accessibilityLabel={t('common.signUp')}
               accessibilityRole="button"
             >
-              <Text style={styles.loginBtnText}>S'inscrire</Text>
+              <Text style={styles.loginBtnText}>{t('common.signUp')}</Text>
             </Pressable>
           ) : (
             <Pressable
               style={styles.avatar}
               onPress={() => expoRouter.push('/profile')}
-              accessibilityLabel="Voir le profil"
+              accessibilityLabel={t('swipe.header.viewProfileA11y')}
               accessibilityRole="button"
             >
               <Text style={styles.avatarText}>{userInitials}</Text>
@@ -261,15 +266,15 @@ export default function SwipeScreen() {
             <SwipeCardSkeleton />
           ) : isError ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>Oups !</Text>
-              <Text style={styles.emptySubtitle}>Impossible de charger les bagues.</Text>
+              <Text style={styles.emptyTitle}>{t('common.error.title')}</Text>
+              <Text style={styles.emptySubtitle}>{t('swipe.error.loadRings')}</Text>
               <Pressable
                 style={styles.retryBtn}
                 onPress={() => activeQuery.refetch()}
-                accessibilityLabel="Reessayer le chargement"
+                accessibilityLabel={t('common.error.retryA11y')}
                 accessibilityRole="button"
               >
-                <Text style={styles.retryText}>Reessayer</Text>
+                <Text style={styles.retryText}>{t('common.error.retry')}</Text>
               </Pressable>
             </View>
           ) : isFinished ? (
@@ -277,32 +282,32 @@ export default function SwipeScreen() {
               <View style={styles.emptyIcon}>
                 <Sparkles size={48} color={theme.colors.foreground.muted} />
               </View>
-              <Text style={styles.emptyTitle}>Plus de bagues !</Text>
-              <Text style={styles.emptySubtitle}>Tu as vu toutes les bagues disponibles.</Text>
+              <Text style={styles.emptyTitle}>{t('swipe.empty.title')}</Text>
+              <Text style={styles.emptySubtitle}>{t('swipe.empty.subtitle')}</Text>
               <Pressable
                 style={styles.retryBtn}
                 onPress={() => expoRouter.push('/matches')}
-                accessibilityLabel="Voir tes matchs"
+                accessibilityLabel={t('swipe.empty.viewMatches')}
                 accessibilityRole="button"
               >
-                <Text style={styles.retryText}>Voir tes matchs</Text>
+                <Text style={styles.retryText}>{t('swipe.empty.viewMatches')}</Text>
               </Pressable>
             </View>
           ) : currentRing ? (
             <GestureDetector gesture={panGesture}>
               <Animated.View
                 style={[styles.card, cardAnimatedStyle]}
-                accessibilityLabel={`Bague ${currentRing.name}`}
-                accessibilityHint="Swipe a gauche pour passer, a droite pour liker"
+                accessibilityLabel={t('swipe.card.ringA11y', { name: currentRing.name })}
+                accessibilityHint={t('swipe.card.hint')}
               >
                 {/* LIKE overlay */}
                 <Animated.View style={[styles.overlayLabel, styles.likeLabel, likeOverlayStyle]}>
-                  <Text style={styles.likeLabelText}>LIKE</Text>
+                  <Text style={styles.likeLabelText}>{t('swipe.card.likeOverlay')}</Text>
                 </Animated.View>
 
                 {/* NOPE overlay */}
                 <Animated.View style={[styles.overlayLabel, styles.nopeLabel, nopeOverlayStyle]}>
-                  <Text style={styles.nopeLabelText}>NOPE</Text>
+                  <Text style={styles.nopeLabelText}>{t('swipe.card.nopeOverlay')}</Text>
                 </Animated.View>
 
                 {/* Image zone */}
@@ -312,7 +317,7 @@ export default function SwipeScreen() {
                     style={styles.productImage}
                     contentFit="contain"
                     transition={200}
-                    accessibilityLabel={`Photo de ${currentRing.name}`}
+                    accessibilityLabel={t('common.ringPhotoA11y', { name: currentRing.name })}
                   />
                 </View>
 
@@ -325,7 +330,9 @@ export default function SwipeScreen() {
                     style={styles.specsInline}
                     accessibilityLabel={`${currentRing.caratWeight} carats, ${formatEnum(currentRing.metalType)}, ${formatEnum(currentRing.style)}`}
                   >
-                    <Text style={styles.specText}>{currentRing.caratWeight} ct</Text>
+                    <Text
+                      style={styles.specText}
+                    >{`${currentRing.caratWeight} ${t('common.caratUnit')}`}</Text>
                     <View style={styles.specDot} />
                     <Text style={styles.specText}>{formatEnum(currentRing.metalType)}</Text>
                     <View style={styles.specDot} />
@@ -335,7 +342,10 @@ export default function SwipeScreen() {
                   {/* Star rating */}
                   <View
                     style={styles.starsRow}
-                    accessibilityLabel={`Note: ${Math.round(currentRing.rating)} sur 5, ${currentRing.reviewCount} avis`}
+                    accessibilityLabel={t('common.ratingA11y', {
+                      rating: Math.round(currentRing.rating),
+                      count: currentRing.reviewCount,
+                    })}
                   >
                     <View style={styles.stars}>
                       {[1, 2, 3, 4, 5].map((n) => (
@@ -353,7 +363,7 @@ export default function SwipeScreen() {
                       ))}
                     </View>
                     <Text style={styles.reviewCount}>
-                      ({currentRing.reviewCount.toLocaleString('fr-FR')} avis)
+                      ({currentRing.reviewCount.toLocaleString('fr-FR')} {t('common.reviews')})
                     </Text>
                   </View>
                 </View>
@@ -369,7 +379,7 @@ export default function SwipeScreen() {
               <Pressable
                 style={[styles.actionBtn, styles.actionBtnSmall, styles.undoBtn]}
                 onPress={handleUndo}
-                accessibilityLabel="Annuler le dernier swipe"
+                accessibilityLabel={t('swipe.actions.undoA11y')}
                 accessibilityRole="button"
               >
                 <RotateCcw size={18} color={theme.colors.foreground.muted} strokeWidth={2.5} />
@@ -379,7 +389,7 @@ export default function SwipeScreen() {
             <Pressable
               style={[styles.actionBtn, styles.actionBtnLarge, styles.nopeBtn]}
               onPress={handleNope}
-              accessibilityLabel="Passer cette bague"
+              accessibilityLabel={t('swipe.actions.nopeA11y')}
               accessibilityRole="button"
             >
               <X size={28} color={theme.colors.action.nope.icon} strokeWidth={2.5} />
@@ -388,7 +398,7 @@ export default function SwipeScreen() {
             <Pressable
               style={[styles.actionBtn, styles.actionBtnSmall, styles.superBtn]}
               onPress={handleSuper}
-              accessibilityLabel="Super like"
+              accessibilityLabel={t('swipe.actions.superA11y')}
               accessibilityRole="button"
             >
               <Star size={20} color={theme.colors.action.super.icon} strokeWidth={2.5} />
@@ -397,7 +407,7 @@ export default function SwipeScreen() {
             <Pressable
               style={[styles.actionBtn, styles.actionBtnLarge, styles.likeBtn]}
               onPress={handleLike}
-              accessibilityLabel="Liker cette bague"
+              accessibilityLabel={t('swipe.actions.likeA11y')}
               accessibilityRole="button"
             >
               <Heart size={28} color={theme.colors.action.like.icon} strokeWidth={2.5} />

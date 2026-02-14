@@ -5,6 +5,7 @@ import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router as expoRouter } from 'expo-router'
 import { useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { MatchesListSkeleton } from '@/components/skeleton'
@@ -28,6 +29,7 @@ type MatchWithRing = {
 const MATCH_CARD_HEIGHT = 192 + 200 // image + info area approx
 
 function MatchCard({ match }: { match: MatchWithRing }) {
+  const { t } = useTranslation()
   const { ring } = match
   const imageUrl = ring.images[0]?.url
 
@@ -39,7 +41,7 @@ function MatchCard({ match }: { match: MatchWithRing }) {
   return (
     <View
       style={styles.card}
-      accessibilityLabel={`Match: ${ring.name}`}
+      accessibilityLabel={t('matches.card.ringA11y', { name: ring.name })}
       accessibilityRole="summary"
     >
       {/* Image */}
@@ -50,7 +52,7 @@ function MatchCard({ match }: { match: MatchWithRing }) {
             style={styles.cardImage}
             contentFit="cover"
             transition={200}
-            accessibilityLabel={`Photo de ${ring.name}`}
+            accessibilityLabel={t('common.ringPhotoA11y', { name: ring.name })}
           />
         ) : (
           <View style={styles.cardImagePlaceholder}>
@@ -62,7 +64,7 @@ function MatchCard({ match }: { match: MatchWithRing }) {
           style={styles.matchBadge}
         >
           <Sparkles size={12} color="#ffffff" />
-          <Text style={styles.matchBadgeText}>Match</Text>
+          <Text style={styles.matchBadgeText}>{t('matches.card.badge')}</Text>
         </LinearGradient>
       </View>
 
@@ -72,7 +74,7 @@ function MatchCard({ match }: { match: MatchWithRing }) {
 
         {/* Inline specs with dot separators */}
         <View style={styles.specsInline}>
-          <Text style={styles.specText}>{ring.caratWeight} ct</Text>
+          <Text style={styles.specText}>{`${ring.caratWeight} ${t('common.caratUnit')}`}</Text>
           <View style={styles.specDot} />
           <Text style={styles.specText}>{formatEnum(ring.metalType)}</Text>
           <View style={styles.specDot} />
@@ -94,7 +96,9 @@ function MatchCard({ match }: { match: MatchWithRing }) {
               </Text>
             ))}
           </View>
-          <Text style={styles.reviewCount}>({ring.reviewCount.toLocaleString('fr-FR')} avis)</Text>
+          <Text style={styles.reviewCount}>
+            ({ring.reviewCount.toLocaleString('fr-FR')} {t('common.reviews')})
+          </Text>
         </View>
 
         {ring.description && (
@@ -106,14 +110,14 @@ function MatchCard({ match }: { match: MatchWithRing }) {
         <Pressable
           style={styles.detailsBtn}
           onPress={handleDetails}
-          accessibilityLabel={`Voir les details de ${ring.name}`}
+          accessibilityLabel={t('matches.card.viewDetailsA11y', { name: ring.name })}
           accessibilityRole="button"
         >
           <LinearGradient
             colors={[theme.colors.ring.rose400, theme.colors.ring.pink500]}
             style={styles.detailsBtnGradient}
           >
-            <Text style={styles.detailsBtnText}>Voir les details</Text>
+            <Text style={styles.detailsBtnText}>{t('matches.card.viewDetails')}</Text>
             <ExternalLink size={16} color="#ffffff" />
           </LinearGradient>
         </Pressable>
@@ -125,6 +129,7 @@ function MatchCard({ match }: { match: MatchWithRing }) {
 // ── Screen ───────────────────────────────────────────────────────────────────
 
 export default function MatchesScreen() {
+  const { t } = useTranslation()
   const { isAuthenticated: isAuthed } = useAuth()
   const insets = useSafeAreaInsets()
 
@@ -166,11 +171,11 @@ export default function MatchesScreen() {
           </LinearGradient>
           <View>
             <Text style={styles.headerTitle} accessibilityRole="header">
-              Tes matchs
+              {t('matches.header.title')}
             </Text>
             {isCoupled && matches.length > 0 && (
               <Text style={styles.headerSubtitle}>
-                {matches.length} bague{matches.length !== 1 ? 's' : ''} que vous aimez tous les deux
+                {t('matches.header.subtitle', { count: matches.length })}
               </Text>
             )}
           </View>
@@ -181,18 +186,18 @@ export default function MatchesScreen() {
         <MatchesListSkeleton />
       ) : isError ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>Oups !</Text>
-          <Text style={styles.emptySubtitle}>Impossible de charger les matchs.</Text>
+          <Text style={styles.emptyTitle}>{t('common.error.title')}</Text>
+          <Text style={styles.emptySubtitle}>{t('matches.error.loadMatches')}</Text>
           <Pressable
             style={styles.retryBtn}
             onPress={() => {
               coupleQuery.refetch()
               matchesQuery.refetch()
             }}
-            accessibilityLabel="Reessayer le chargement"
+            accessibilityLabel={t('common.error.retryA11y')}
             accessibilityRole="button"
           >
-            <Text style={styles.retryText}>Reessayer</Text>
+            <Text style={styles.retryText}>{t('common.error.retry')}</Text>
           </Pressable>
         </View>
       ) : !isCoupled ? (
@@ -200,20 +205,16 @@ export default function MatchesScreen() {
           <View style={styles.emptyIcon}>
             <Heart size={48} color={theme.colors.ring.pink500} />
           </View>
-          <Text style={styles.emptyTitle}>Pas encore de matchs</Text>
-          <Text style={styles.emptySubtitle}>
-            Commence a parcourir les bagues et matcher avec ton partenaire
-          </Text>
+          <Text style={styles.emptyTitle}>{t('matches.empty.noCoupleTitle')}</Text>
+          <Text style={styles.emptySubtitle}>{t('matches.empty.noCoupleSubtitle')}</Text>
         </View>
       ) : matches.length === 0 ? (
         <View style={styles.emptyState}>
           <View style={styles.emptyIcon}>
             <Gem size={48} color={theme.colors.foreground.muted} />
           </View>
-          <Text style={styles.emptyTitle}>Pas encore de match</Text>
-          <Text style={styles.emptySubtitle}>
-            Swipez tous les deux pour trouver vos coups de coeur !
-          </Text>
+          <Text style={styles.emptyTitle}>{t('matches.empty.noMatchTitle')}</Text>
+          <Text style={styles.emptySubtitle}>{t('matches.empty.noMatchSubtitle')}</Text>
         </View>
       ) : (
         <FlatList

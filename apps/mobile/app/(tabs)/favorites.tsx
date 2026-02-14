@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Image } from 'expo-image'
 import { router } from 'expo-router'
 import { useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { FavoritesGridSkeleton } from '@/components/skeleton'
@@ -15,6 +16,7 @@ import { formatEnum } from '@/lib/utils'
 const _CARD_HEIGHT = 220 // aspect-ratio image (~160) + info (~60)
 
 function RingCard({ ring }: { ring: RingWithImages }) {
+  const { t } = useTranslation()
   const imageUrl = ring.images[0]?.url
 
   const handlePress = useCallback(() => {
@@ -26,9 +28,12 @@ function RingCard({ ring }: { ring: RingWithImages }) {
     <Pressable
       style={styles.card}
       onPress={handlePress}
-      accessibilityLabel={`Bague ${ring.name}, ${ring.metalType.replace(/_/g, ' ').toLowerCase()}`}
+      accessibilityLabel={t('favorites.card.ringA11y', {
+        name: ring.name,
+        metalType: ring.metalType.replace(/_/g, ' ').toLowerCase(),
+      })}
       accessibilityRole="button"
-      accessibilityHint="Appuie pour voir les details"
+      accessibilityHint={t('favorites.card.hint')}
     >
       <View style={styles.cardImage}>
         {imageUrl ? (
@@ -37,7 +42,7 @@ function RingCard({ ring }: { ring: RingWithImages }) {
             style={styles.thumbnail}
             contentFit="cover"
             transition={200}
-            accessibilityLabel={`Photo de ${ring.name}`}
+            accessibilityLabel={t('common.ringPhotoA11y', { name: ring.name })}
           />
         ) : (
           <View style={styles.thumbnailPlaceholder}>
@@ -71,6 +76,7 @@ function RingCard({ ring }: { ring: RingWithImages }) {
 }
 
 export default function FavoritesScreen() {
+  const { t } = useTranslation()
   const { isAuthenticated: isAuthed } = useAuth()
   const insets = useSafeAreaInsets()
 
@@ -91,7 +97,7 @@ export default function FavoritesScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle} accessibilityRole="header">
-          Favoris
+          {t('favorites.header.title')}
         </Text>
       </View>
 
@@ -99,22 +105,22 @@ export default function FavoritesScreen() {
         <FavoritesGridSkeleton />
       ) : isError ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>Oups !</Text>
-          <Text style={styles.emptySubtitle}>Impossible de charger les favoris.</Text>
+          <Text style={styles.emptyTitle}>{t('common.error.title')}</Text>
+          <Text style={styles.emptySubtitle}>{t('favorites.error.loadFavorites')}</Text>
           <Pressable
             style={styles.retryBtn}
             onPress={() => favoritesQuery.refetch()}
-            accessibilityLabel="Reessayer le chargement"
+            accessibilityLabel={t('common.error.retryA11y')}
             accessibilityRole="button"
           >
-            <Text style={styles.retryText}>Reessayer</Text>
+            <Text style={styles.retryText}>{t('common.error.retry')}</Text>
           </Pressable>
         </View>
       ) : rings.length === 0 ? (
         <View style={styles.emptyState}>
           <Heart size={48} color={theme.colors.foreground.muted} />
-          <Text style={styles.emptyTitle}>Pas encore de favoris</Text>
-          <Text style={styles.emptySubtitle}>Swipe pour en ajouter !</Text>
+          <Text style={styles.emptyTitle}>{t('favorites.empty.title')}</Text>
+          <Text style={styles.emptySubtitle}>{t('favorites.empty.subtitle')}</Text>
         </View>
       ) : (
         <FlatList

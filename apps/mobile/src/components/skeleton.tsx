@@ -1,5 +1,6 @@
 import { theme } from '@ring/ui'
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { StyleSheet, View, type ViewStyle } from 'react-native'
 import Animated, {
   interpolate,
@@ -24,6 +25,7 @@ export function SkeletonBlock({
   borderRadius = 8,
   style,
 }: SkeletonBlockProps) {
+  const { t } = useTranslation()
   const shimmer = useSharedValue(0)
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export function SkeletonBlock({
   return (
     <Animated.View
       accessibilityRole="none"
-      accessibilityLabel="Chargement"
+      accessibilityLabel={t('common.loading')}
       style={[
         {
           width,
@@ -55,8 +57,10 @@ export function SkeletonBlock({
 // ── Skeleton: Swipe Card ─────────────────────────────────────────────────────
 
 export function SwipeCardSkeleton() {
+  const { t } = useTranslation()
+
   return (
-    <View style={skeletonStyles.swipeCard} accessibilityLabel="Chargement de la bague">
+    <View style={skeletonStyles.swipeCard} accessibilityLabel={t('skeleton.swipeCard')}>
       <View style={skeletonStyles.swipeImage}>
         <SkeletonBlock width={180} height={180} borderRadius={16} />
       </View>
@@ -77,8 +81,10 @@ export function SwipeCardSkeleton() {
 // ── Skeleton: Favorites Grid ─────────────────────────────────────────────────
 
 export function FavoritesGridSkeleton() {
+  const { t } = useTranslation()
+
   return (
-    <View style={skeletonStyles.favGrid} accessibilityLabel="Chargement des favoris">
+    <View style={skeletonStyles.favGrid} accessibilityLabel={t('skeleton.favorites')}>
       {[0, 1, 2, 3].map((i) => (
         <View key={i} style={skeletonStyles.favCard}>
           <SkeletonBlock width="100%" height={140} borderRadius={0} />
@@ -95,8 +101,10 @@ export function FavoritesGridSkeleton() {
 // ── Skeleton: Matches List ───────────────────────────────────────────────────
 
 export function MatchesListSkeleton() {
+  const { t } = useTranslation()
+
   return (
-    <View style={skeletonStyles.matchesList} accessibilityLabel="Chargement des matchs">
+    <View style={skeletonStyles.matchesList} accessibilityLabel={t('skeleton.matches')}>
       {[0, 1].map((i) => (
         <View key={i} style={skeletonStyles.matchCard}>
           <SkeletonBlock width="100%" height={192} borderRadius={0} />
@@ -118,8 +126,10 @@ export function MatchesListSkeleton() {
 // ── Skeleton: Profile ────────────────────────────────────────────────────────
 
 export function ProfileSkeleton() {
+  const { t } = useTranslation()
+
   return (
-    <View style={skeletonStyles.profile} accessibilityLabel="Chargement du profil">
+    <View style={skeletonStyles.profile} accessibilityLabel={t('skeleton.profile')}>
       <View style={skeletonStyles.profileHeader}>
         <SkeletonBlock width={80} height={80} borderRadius={40} />
         <View style={skeletonStyles.profileNameArea}>
@@ -143,8 +153,10 @@ export function ProfileSkeleton() {
 // ── Skeleton: Ring Detail ────────────────────────────────────────────────────
 
 export function RingDetailSkeleton() {
+  const { t } = useTranslation()
+
   return (
-    <View style={skeletonStyles.ringDetail} accessibilityLabel="Chargement des details">
+    <View style={skeletonStyles.ringDetail} accessibilityLabel={t('skeleton.ringDetail')}>
       <SkeletonBlock width="100%" height={280} borderRadius={0} />
       <View style={skeletonStyles.ringDetailInfo}>
         <SkeletonBlock width="60%" height={24} />

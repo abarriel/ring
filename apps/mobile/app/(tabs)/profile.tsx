@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import * as Clipboard from 'expo-clipboard'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Alert,
   Platform,
@@ -23,6 +24,7 @@ import { getInitials } from '@/lib/utils'
 
 export default function ProfileScreen() {
   const { isAuthenticated: isAuthed, user, logout } = useAuth()
+  const { t } = useTranslation()
   const insets = useSafeAreaInsets()
   const toast = useToast()
   const queryClient = useQueryClient()
@@ -60,7 +62,7 @@ export default function ProfileScreen() {
       // Auto-copy the invitation code to clipboard
       if (data?.code) {
         await Clipboard.setStringAsync(data.code)
-        toast.show({ type: 'success', title: 'Code copie !', message: data.code })
+        toast.show({ type: 'success', title: t('profile.toast.codeCopied'), message: data.code })
       }
     },
     onError: (error: Error) => {
@@ -68,14 +70,14 @@ export default function ProfileScreen() {
         queryClient.invalidateQueries({ queryKey: coupleQueryKey })
         toast.show({
           type: 'warning',
-          title: 'Deja en couple',
-          message: 'Tu es deja dans un couple',
+          title: t('profile.toast.alreadyCoupledTitle'),
+          message: t('profile.toast.alreadyCoupledMessage'),
         })
       } else {
         toast.show({
           type: 'error',
-          title: 'Erreur',
-          message: 'Erreur lors de la creation du couple',
+          title: t('common.toast.errorTitle'),
+          message: t('profile.toast.createCoupleError'),
         })
       }
     },
@@ -88,32 +90,40 @@ export default function ProfileScreen() {
       hapticSuccess()
       queryClient.invalidateQueries({ queryKey: coupleQueryKey })
       setJoinCode('')
-      toast.show({ type: 'success', title: 'Couple forme !' })
+      toast.show({ type: 'success', title: t('profile.toast.coupleFormed') })
     },
     onError: (error: Error) => {
       if (error.message.includes('Code not found')) {
-        toast.show({ type: 'error', title: 'Code introuvable', message: "Ce code n'existe pas" })
+        toast.show({
+          type: 'error',
+          title: t('profile.toast.codeNotFoundTitle'),
+          message: t('profile.toast.codeNotFoundMessage'),
+        })
       } else if (error.message.includes('Cannot join your own couple')) {
         toast.show({
           type: 'warning',
-          title: 'Code invalide',
-          message: 'Tu ne peux pas rejoindre ton propre couple',
+          title: t('profile.toast.codeInvalidTitle'),
+          message: t('profile.toast.codeInvalidOwnCouple'),
         })
       } else if (error.message.includes('Already paired')) {
         queryClient.invalidateQueries({ queryKey: coupleQueryKey })
         toast.show({
           type: 'warning',
-          title: 'Deja en couple',
-          message: 'Tu es deja dans un couple',
+          title: t('profile.toast.alreadyPairedTitle'),
+          message: t('profile.toast.alreadyPairedMessage'),
         })
       } else if (error.message.includes('Couple already full')) {
         toast.show({
           type: 'error',
-          title: 'Couple complet',
-          message: 'Ce couple a deja un partenaire',
+          title: t('profile.toast.coupleFullTitle'),
+          message: t('profile.toast.coupleFullMessage'),
         })
       } else {
-        toast.show({ type: 'error', title: 'Erreur', message: 'Erreur lors de la jonction' })
+        toast.show({
+          type: 'error',
+          title: t('common.toast.errorTitle'),
+          message: t('profile.toast.joinError'),
+        })
       }
     },
   })
@@ -123,10 +133,14 @@ export default function ProfileScreen() {
     mutationFn: () => client.couple.dissolve(undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: coupleQueryKey })
-      toast.show({ type: 'info', title: 'Couple dissous' })
+      toast.show({ type: 'info', title: t('profile.toast.coupleDissolvedTitle') })
     },
     onError: () => {
-      toast.show({ type: 'error', title: 'Erreur', message: 'Erreur lors de la dissolution' })
+      toast.show({
+        type: 'error',
+        title: t('common.toast.errorTitle'),
+        message: t('profile.toast.dissolveError'),
+      })
     },
   })
 
@@ -141,8 +155,8 @@ export default function ProfileScreen() {
     if (trimmed.length !== 6) {
       toast.show({
         type: 'warning',
-        title: 'Code invalide',
-        message: 'Le code doit faire 6 caracteres',
+        title: t('profile.toast.codeLengthTitle'),
+        message: t('profile.toast.codeLengthMessage'),
       })
       return
     }
@@ -151,15 +165,15 @@ export default function ProfileScreen() {
 
   const handleDissolve = () => {
     if (Platform.OS === 'web') {
-      if (window.confirm('Es-tu sur de vouloir dissoudre le couple ?')) {
+      if (window.confirm(t('profile.alert.dissolveMessage'))) {
         dissolveCoupleMutation.mutate()
       }
       return
     }
-    Alert.alert('Dissoudre le couple', 'Es-tu sur de vouloir dissoudre le couple ?', [
-      { text: 'Annuler', style: 'cancel' },
+    Alert.alert(t('profile.alert.dissolveTitle'), t('profile.alert.dissolveMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Dissoudre',
+        text: t('profile.alert.dissolveConfirm'),
         style: 'destructive',
         onPress: () => dissolveCoupleMutation.mutate(),
       },
@@ -169,7 +183,7 @@ export default function ProfileScreen() {
   const handleShareCode = async (code: string) => {
     try {
       await Share.share({
-        message: `Rejoins-moi sur Ring ! Mon code : ${code}`,
+        message: t('profile.share.inviteMessage', { code }),
       })
     } catch {
       // User cancelled share
@@ -178,20 +192,20 @@ export default function ProfileScreen() {
 
   const handleCopyCode = async (code: string) => {
     await Clipboard.setStringAsync(code)
-    toast.show({ type: 'success', title: 'Copie !' })
+    toast.show({ type: 'success', title: t('profile.toast.copied') })
   }
 
   const handleLogout = async () => {
     if (Platform.OS === 'web') {
-      if (window.confirm('Es-tu sur de vouloir te deconnecter ?')) {
+      if (window.confirm(t('profile.alert.logoutMessage'))) {
         await logout()
       }
       return
     }
-    Alert.alert('Deconnexion', 'Es-tu sur de vouloir te deconnecter ?', [
-      { text: 'Annuler', style: 'cancel' },
+    Alert.alert(t('profile.alert.logoutTitle'), t('profile.alert.logoutMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Deconnecter',
+        text: t('profile.alert.logoutConfirm'),
         style: 'destructive',
         onPress: () => logout(),
       },
@@ -228,7 +242,10 @@ export default function ProfileScreen() {
             colors={[theme.colors.ring.rose400, theme.colors.ring.pink500]}
             style={styles.avatar}
           >
-            <Text style={styles.avatarText} accessibilityLabel={`Avatar de ${user.name}`}>
+            <Text
+              style={styles.avatarText}
+              accessibilityLabel={t('profile.avatarA11y', { name: user.name })}
+            >
               {initials}
             </Text>
           </LinearGradient>
@@ -237,30 +254,32 @@ export default function ProfileScreen() {
               {user.name}
             </Text>
             <Text style={styles.userSubtitle}>
-              {isPaired && partnerName ? `En couple avec ${partnerName}` : 'Ring Explorer'}
+              {isPaired && partnerName
+                ? t('profile.header.coupledWith', { partnerName })
+                : t('profile.header.defaultSubtitle')}
             </Text>
           </View>
         </View>
 
         {/* Stats grid */}
-        <View style={styles.statsGrid} accessibilityLabel="Statistiques">
-          <View style={styles.statCard} accessibilityLabel="Bagues likees">
+        <View style={styles.statsGrid} accessibilityLabel={t('profile.stats.a11y')}>
+          <View style={styles.statCard} accessibilityLabel={t('profile.stats.likedRings')}>
             <View style={styles.statRow}>
               <Heart size={16} color={theme.colors.ring.pink500} fill={theme.colors.ring.pink500} />
               <Text style={styles.statValue}>
                 {likedQuery.isLoading ? '-' : (likedQuery.data ?? 0)}
               </Text>
             </View>
-            <Text style={styles.statLabel}>Bagues likees</Text>
+            <Text style={styles.statLabel}>{t('profile.stats.likedRings')}</Text>
           </View>
-          <View style={styles.statCard} accessibilityLabel="Matchs">
+          <View style={styles.statCard} accessibilityLabel={t('profile.stats.matches')}>
             <View style={styles.statRow}>
               <Sparkles size={16} color={theme.colors.ring.pink500} />
               <Text style={styles.statValue}>
                 {matchesQuery.isLoading ? '-' : (matchesQuery.data ?? 0)}
               </Text>
             </View>
-            <Text style={styles.statLabel}>Matchs</Text>
+            <Text style={styles.statLabel}>{t('profile.stats.matches')}</Text>
           </View>
         </View>
       </LinearGradient>
@@ -269,17 +288,20 @@ export default function ProfileScreen() {
       <View style={styles.body}>
         {/* Partner code display (when paired) */}
         {isPaired && couple && (
-          <View style={styles.partnerCodeCard} accessibilityLabel={`Partenaire: ${partnerName}`}>
-            <Text style={styles.partnerCodeLabel}>PARTENAIRE</Text>
+          <View
+            style={styles.partnerCodeCard}
+            accessibilityLabel={t('profile.partner.a11y', { name: partnerName })}
+          >
+            <Text style={styles.partnerCodeLabel}>{t('profile.partner.label')}</Text>
             <Text style={styles.partnerCodeValue}>{partnerName}</Text>
           </View>
         )}
 
         {/* Couple section */}
         {coupleQuery.isLoading ? (
-          <View style={styles.loader} accessibilityLabel="Chargement du couple">
+          <View style={styles.loader} accessibilityLabel={t('profile.couple.loadingA11y')}>
             <View style={{ opacity: 0.5 }}>
-              <Text style={styles.cardUpperLabel}>COUPLE</Text>
+              <Text style={styles.cardUpperLabel}>{t('profile.couple.sectionLabel')}</Text>
             </View>
           </View>
         ) : isPaired ? (
@@ -287,27 +309,29 @@ export default function ProfileScreen() {
             style={styles.dissolveBtn}
             onPress={handleDissolve}
             disabled={dissolveCoupleMutation.isPending}
-            accessibilityLabel="Dissoudre le couple"
+            accessibilityLabel={t('profile.couple.dissolve')}
             accessibilityRole="button"
           >
             <Text style={styles.dissolveBtnText}>
-              {dissolveCoupleMutation.isPending ? 'Dissolution...' : 'Dissoudre le couple'}
+              {dissolveCoupleMutation.isPending
+                ? t('profile.couple.dissolving')
+                : t('profile.couple.dissolve')}
             </Text>
           </Pressable>
         ) : isPending && couple ? (
           <View style={styles.card}>
-            <Text style={styles.cardUpperLabel}>TON CODE D'INVITATION</Text>
+            <Text style={styles.cardUpperLabel}>{t('profile.couple.invitationCodeLabel')}</Text>
             <View style={styles.codeRow}>
               <Text
                 style={styles.codeText}
-                accessibilityLabel={`Code d'invitation: ${couple.code}`}
+                accessibilityLabel={t('profile.couple.invitationCodeA11y', { code: couple.code })}
               >
                 {couple.code}
               </Text>
               <Pressable
                 style={styles.iconBtn}
                 onPress={() => handleShareCode(couple.code)}
-                accessibilityLabel="Partager le code"
+                accessibilityLabel={t('profile.couple.shareCodeA11y')}
                 accessibilityRole="button"
               >
                 <Share2 size={20} color={theme.colors.ring.pink500} />
@@ -315,13 +339,13 @@ export default function ProfileScreen() {
               <Pressable
                 style={styles.iconBtn}
                 onPress={() => handleCopyCode(couple.code)}
-                accessibilityLabel="Copier le code"
+                accessibilityLabel={t('profile.couple.copyCodeA11y')}
                 accessibilityRole="button"
               >
                 <Copy size={20} color={theme.colors.foreground.secondary} />
               </Pressable>
             </View>
-            <Text style={styles.cardHint}>Partage ce code avec ton partenaire</Text>
+            <Text style={styles.cardHint}>{t('profile.couple.codeHint')}</Text>
 
             <View style={styles.separator} />
 
@@ -329,11 +353,13 @@ export default function ProfileScreen() {
               style={styles.dissolveBtn}
               onPress={handleDissolve}
               disabled={dissolveCoupleMutation.isPending}
-              accessibilityLabel="Annuler l'invitation"
+              accessibilityLabel={t('profile.couple.cancelInvitationA11y')}
               accessibilityRole="button"
             >
               <Text style={styles.dissolveBtnText}>
-                {dissolveCoupleMutation.isPending ? 'Annulation...' : "Annuler l'invitation"}
+                {dissolveCoupleMutation.isPending
+                  ? t('profile.couple.cancelling')
+                  : t('profile.couple.cancelInvitation')}
               </Text>
             </Pressable>
           </View>
@@ -343,17 +369,19 @@ export default function ProfileScreen() {
               style={styles.inviteBtn}
               onPress={handleCreateCouple}
               disabled={createCoupleMutation.isPending}
-              accessibilityLabel="Invite ton partenaire"
+              accessibilityLabel={t('profile.couple.invite')}
               accessibilityRole="button"
             >
               <Text style={styles.inviteBtnText}>
-                {createCoupleMutation.isPending ? 'Creation...' : 'Invite ton partenaire'}
+                {createCoupleMutation.isPending
+                  ? t('profile.couple.creating')
+                  : t('profile.couple.invite')}
               </Text>
             </Pressable>
 
             <View style={styles.separator} />
 
-            <Text style={styles.cardLabel}>Ou entre un code</Text>
+            <Text style={styles.cardLabel}>{t('profile.couple.orEnterCode')}</Text>
             <View style={styles.joinRow}>
               <TextInput
                 style={styles.joinInput}
@@ -363,7 +391,7 @@ export default function ProfileScreen() {
                 onChangeText={(text) => setJoinCode(text.toUpperCase())}
                 autoCapitalize="characters"
                 maxLength={6}
-                accessibilityLabel="Code d'invitation du partenaire"
+                accessibilityLabel={t('profile.couple.joinInputA11y')}
               />
               <Pressable
                 style={[
@@ -373,11 +401,11 @@ export default function ProfileScreen() {
                 ]}
                 onPress={handleJoinCouple}
                 disabled={joinCode.trim().length !== 6 || joinCoupleMutation.isPending}
-                accessibilityLabel="Rejoindre le couple"
+                accessibilityLabel={t('profile.couple.joinA11y')}
                 accessibilityRole="button"
               >
                 <Text style={styles.joinBtnText}>
-                  {joinCoupleMutation.isPending ? '...' : 'Rejoindre'}
+                  {joinCoupleMutation.isPending ? '...' : t('profile.couple.join')}
                 </Text>
               </Pressable>
             </View>
@@ -387,14 +415,14 @@ export default function ProfileScreen() {
         {/* Preferences button */}
         <Pressable
           style={styles.menuBtn}
-          onPress={() => toast.show({ type: 'info', title: 'Bientot disponible !' })}
-          accessibilityLabel="Preferences de bagues"
+          onPress={() => toast.show({ type: 'info', title: t('profile.toast.comingSoon') })}
+          accessibilityLabel={t('profile.menu.preferencesA11y')}
           accessibilityRole="button"
         >
           <Settings size={20} color={theme.colors.foreground.secondary} />
           <View style={styles.menuBtnContent}>
-            <Text style={styles.menuBtnTitle}>Preferences</Text>
-            <Text style={styles.menuBtnSubtitle}>Personnalise tes preferences de bagues</Text>
+            <Text style={styles.menuBtnTitle}>{t('profile.menu.preferencesTitle')}</Text>
+            <Text style={styles.menuBtnSubtitle}>{t('profile.menu.preferencesSubtitle')}</Text>
           </View>
         </Pressable>
 
@@ -402,15 +430,13 @@ export default function ProfileScreen() {
         <Pressable
           style={styles.menuBtnDanger}
           onPress={handleLogout}
-          accessibilityLabel="Se deconnecter"
+          accessibilityLabel={t('profile.menu.logoutA11y')}
           accessibilityRole="button"
         >
           <LogOut size={20} color={theme.colors.feedback.error.text} />
           <View style={styles.menuBtnContent}>
-            <Text style={styles.menuBtnTitleDanger}>Deconnexion</Text>
-            <Text style={styles.menuBtnSubtitleDanger}>
-              Efface toutes les donnees et recommence
-            </Text>
+            <Text style={styles.menuBtnTitleDanger}>{t('profile.menu.logoutTitle')}</Text>
+            <Text style={styles.menuBtnSubtitleDanger}>{t('profile.menu.logoutSubtitle')}</Text>
           </View>
         </Pressable>
       </View>

@@ -2,6 +2,7 @@ import type { RingWithImages } from '@ring/shared'
 import { Gem, theme } from '@ring/ui'
 import { Image } from 'expo-image'
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native'
 import { hapticSuccess } from '@/lib/haptics'
 
@@ -13,6 +14,7 @@ type CelebrationModalProps = {
 }
 
 export function CelebrationModal({ visible, ring, onClose, onViewMatch }: CelebrationModalProps) {
+  const { t } = useTranslation()
   const imageUrl = ring?.images[0]?.url
 
   useEffect(() => {
@@ -21,7 +23,7 @@ export function CelebrationModal({ visible, ring, onClose, onViewMatch }: Celebr
 
   return (
     <Modal visible={visible} animationType="fade" transparent statusBarTranslucent>
-      <View style={styles.overlay} accessibilityLabel="Match celebre">
+      <View style={styles.overlay} accessibilityLabel={t('celebration.a11y')}>
         <View style={styles.content}>
           {/* Ring image */}
           <View style={styles.imageContainer}>
@@ -30,7 +32,9 @@ export function CelebrationModal({ visible, ring, onClose, onViewMatch }: Celebr
                 source={{ uri: imageUrl }}
                 style={styles.ringImage}
                 contentFit="contain"
-                accessibilityLabel={`Photo de ${ring?.name ?? 'la bague'}`}
+                accessibilityLabel={t('common.ringPhotoA11y', {
+                  name: ring?.name ?? t('common.ringFallbackName'),
+                })}
               />
             ) : (
               <View style={styles.imagePlaceholder}>
@@ -41,9 +45,9 @@ export function CelebrationModal({ visible, ring, onClose, onViewMatch }: Celebr
 
           {/* Title */}
           <Text style={styles.title} accessibilityRole="header">
-            C'est un match !
+            {t('celebration.title')}
           </Text>
-          <Text style={styles.subtitle}>Vous aimez tous les deux cette bague</Text>
+          <Text style={styles.subtitle}>{t('celebration.subtitle')}</Text>
 
           {/* Ring name */}
           {ring && <Text style={styles.ringName}>{ring.name}</Text>}
@@ -52,19 +56,19 @@ export function CelebrationModal({ visible, ring, onClose, onViewMatch }: Celebr
           <Pressable
             style={styles.viewBtn}
             onPress={onViewMatch}
-            accessibilityLabel="Voir le match"
+            accessibilityLabel={t('celebration.viewMatch')}
             accessibilityRole="button"
           >
-            <Text style={styles.viewBtnText}>Voir le match</Text>
+            <Text style={styles.viewBtnText}>{t('celebration.viewMatch')}</Text>
           </Pressable>
 
           <Pressable
             style={styles.closeBtn}
             onPress={onClose}
-            accessibilityLabel="Continuer a swiper"
+            accessibilityLabel={t('celebration.continueA11y')}
             accessibilityRole="button"
           >
-            <Text style={styles.closeBtnText}>Continuer</Text>
+            <Text style={styles.closeBtnText}>{t('celebration.continue')}</Text>
           </Pressable>
         </View>
       </View>

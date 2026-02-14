@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar'
 import { useEffect } from 'react'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { ErrorBoundary } from '@/components/error-boundary'
+import '@/i18n'
 import { AuthProvider, useAuth } from '@/lib/auth-context'
 import {
   addNotificationResponseListener,

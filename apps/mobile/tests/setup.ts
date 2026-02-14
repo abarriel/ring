@@ -76,6 +76,23 @@ vi.mock('react-native-safe-area-context', () => ({
   SafeAreaProvider: 'SafeAreaProvider',
 }))
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, params?: Record<string, unknown>) => {
+      if (!params) return key
+      return Object.entries(params).reduce<string>(
+        (acc, [k, v]) => acc.replace(`{{${k}}}`, String(v)),
+        key,
+      )
+    },
+    i18n: { language: 'fr', changeLanguage: vi.fn() },
+  }),
+}))
+
+vi.mock('expo-localization', () => ({
+  getLocales: () => [{ languageCode: 'fr', languageTag: 'fr-FR' }],
+}))
+
 vi.mock('@ring/ui', () => ({
   theme: {
     colors: {

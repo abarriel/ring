@@ -1,0 +1,253 @@
+{
+  "common": {
+    "appName": "Ring",
+    "back": "Back",
+    "cancel": "Cancel",
+    "close": "Close",
+    "signUp": "Sign up",
+    "loading": "Loading",
+    "caratUnit": "ct",
+    "reviews": "reviews",
+    "ringPhotoA11y": "Photo of {{name}}",
+    "ringFallbackName": "the ring",
+    "ratingA11y": "Rating: {{rating}} out of 5, {{count}} reviews",
+    "error": {
+      "title": "Oops!",
+      "retry": "Retry",
+      "retryA11y": "Retry loading"
+    },
+    "toast": {
+      "errorTitle": "Error"
+    }
+  },
+  "login": {
+    "onboarding": {
+      "step1": {
+        "title": "Browse rings",
+        "subtitle": "Swipe through a selection of rings"
+      },
+      "step2": {
+        "title": "Like your favorites",
+        "subtitle": "Save the rings you love"
+      },
+      "step3": {
+        "title": "Find matches",
+        "subtitle": "Discover when you both like the same ring"
+      }
+    },
+    "welcome": {
+      "subtitle": "Swipe through gorgeous rings and find the perfect match with your partner",
+      "cta": "Let's go"
+    },
+    "details": {
+      "title": "Let's get to know you",
+      "subtitle": "Tell us a bit about yourself",
+      "nameLabel": "Your nickname",
+      "namePlaceholder": "Enter your nickname",
+      "partnerCodeLabel": "Partner code (optional)",
+      "partnerCodePlaceholder": "Enter your partner's code",
+      "partnerCodeA11y": "Partner code",
+      "partnerCodeHint": "Share your code with your partner to match on the same rings",
+      "errorFallback": "Connection error. Try again.",
+      "submitting": "Connecting...",
+      "submit": "Continue"
+    }
+  },
+  "tabs": {
+    "browse": "Browse",
+    "browseA11y": "Browse rings",
+    "favorites": "Favorites",
+    "favoritesA11y": "View favorites",
+    "matches": "Matches",
+    "matchesA11y": "View matches",
+    "profile": "Profile",
+    "profileA11y": "View profile"
+  },
+  "swipe": {
+    "header": {
+      "cardCounterA11y": "Ring {{n}} of {{total}}",
+      "viewProfileA11y": "View profile"
+    },
+    "error": {
+      "loadRings": "Unable to load rings."
+    },
+    "empty": {
+      "title": "No more rings!",
+      "subtitle": "You've seen all available rings.",
+      "viewMatches": "View your matches"
+    },
+    "card": {
+      "ringA11y": "Ring {{name}}",
+      "hint": "Swipe left to pass, right to like",
+      "likeOverlay": "LIKE",
+      "nopeOverlay": "NOPE"
+    },
+    "actions": {
+      "undoA11y": "Undo last swipe",
+      "nopeA11y": "Pass this ring",
+      "superA11y": "Super like",
+      "likeA11y": "Like this ring"
+    }
+  },
+  "favorites": {
+    "header": {
+      "title": "Favorites"
+    },
+    "card": {
+      "ringA11y": "Ring {{name}}, {{metalType}}",
+      "hint": "Tap to view details"
+    },
+    "error": {
+      "loadFavorites": "Unable to load favorites."
+    },
+    "empty": {
+      "title": "No favorites yet",
+      "subtitle": "Swipe to add some!"
+    }
+  },
+  "matches": {
+    "header": {
+      "title": "Your matches",
+      "subtitle_one": "{{count}} ring you both love",
+      "subtitle_other": "{{count}} rings you both love"
+    },
+    "card": {
+      "badge": "Match",
+      "ringA11y": "Match: {{name}}",
+      "viewDetails": "View details",
+      "viewDetailsA11y": "View details of {{name}}"
+    },
+    "error": {
+      "loadMatches": "Unable to load matches."
+    },
+    "empty": {
+      "noCoupleTitle": "No matches yet",
+      "noCoupleSubtitle": "Start browsing rings and match with your partner",
+      "noMatchTitle": "No match yet",
+      "noMatchSubtitle": "Both of you swipe to find your favorites!"
+    }
+  },
+  "profile": {
+    "header": {
+      "coupledWith": "Coupled with {{partnerName}}",
+      "defaultSubtitle": "Ring Explorer"
+    },
+    "stats": {
+      "a11y": "Statistics",
+      "likedRings": "Liked rings",
+      "matches": "Matches"
+    },
+    "partner": {
+      "label": "PARTNER",
+      "a11y": "Partner: {{name}}"
+    },
+    "couple": {
+      "sectionLabel": "COUPLE",
+      "loadingA11y": "Loading couple",
+      "dissolve": "Dissolve couple",
+      "dissolving": "Dissolving...",
+      "invitationCodeLabel": "YOUR INVITATION CODE",
+      "invitationCodeA11y": "Invitation code: {{code}}",
+      "shareCodeA11y": "Share code",
+      "copyCodeA11y": "Copy code",
+      "codeHint": "Share this code with your partner",
+      "cancelInvitationA11y": "Cancel invitation",
+      "cancelling": "Cancelling...",
+      "cancelInvitation": "Cancel invitation",
+      "invite": "Invite your partner",
+      "creating": "Creating...",
+      "orEnterCode": "Or enter a code",
+      "joinInputA11y": "Partner invitation code",
+      "joinA11y": "Join couple",
+      "join": "Join"
+    },
+    "toast": {
+      "codeCopied": "Code copied!",
+      "alreadyCoupledTitle": "Already coupled",
+      "alreadyCoupledMessage": "You are already in a couple",
+      "createCoupleError": "Error creating couple",
+      "coupleFormed": "Couple formed!",
+      "codeNotFoundTitle": "Code not found",
+      "codeNotFoundMessage": "This code does not exist",
+      "codeInvalidTitle": "Invalid code",
+      "codeInvalidOwnCouple": "You cannot join your own couple",
+      "alreadyPairedTitle": "Already coupled",
+      "alreadyPairedMessage": "You are already in a couple",
+      "coupleFullTitle": "Couple full",
+      "coupleFullMessage": "This couple already has a partner",
+      "joinError": "Error joining couple",
+      "codeLengthTitle": "Invalid code",
+      "codeLengthMessage": "Code must be 6 characters",
+      "coupleDissolvedTitle": "Couple dissolved",
+      "dissolveError": "Error dissolving couple",
+      "copied": "Copied!",
+      "comingSoon": "Coming soon!"
+    },
+    "alert": {
+      "dissolveTitle": "Dissolve couple",
+      "dissolveMessage": "Are you sure you want to dissolve the couple?",
+      "dissolveConfirm": "Dissolve",
+      "logoutTitle": "Log out",
+      "logoutMessage": "Are you sure you want to log out?",
+      "logoutConfirm": "Log out"
+    },
+    "share": {
+      "inviteMessage": "Join me on Ring! My code: {{code}}"
+    },
+    "menu": {
+      "preferencesA11y": "Ring preferences",
+      "preferencesTitle": "Preferences",
+      "preferencesSubtitle": "Customize your ring preferences",
+      "logoutA11y": "Log out",
+      "logoutTitle": "Log out",
+      "logoutSubtitle": "Clear all data and start over"
+    },
+    "avatarA11y": "Avatar of {{name}}"
+  },
+  "ringDetail": {
+    "error": {
+      "notFound": "Ring not found"
+    },
+    "carousel": {
+      "paginationA11y": "Image {{n}} of {{total}}"
+    },
+    "specsA11y": "Specifications",
+    "spec": {
+      "metal": "Metal",
+      "stone": "Stone",
+      "carats": "Carats",
+      "style": "Style"
+    },
+    "descriptionTitle": "Description",
+    "actions": {
+      "nope": "Nope",
+      "super": "Super",
+      "like": "Like"
+    }
+  },
+  "swipeGate": {
+    "a11y": "Swipe limit reached",
+    "title": "Like what you see?",
+    "subtitle": "Sign up to save your favorites and couple up!",
+    "later": "Later"
+  },
+  "errorBoundary": {
+    "title": "An error occurred",
+    "fallbackMessage": "An unexpected error occurred"
+  },
+  "celebration": {
+    "a11y": "Match celebrated",
+    "title": "It's a match!",
+    "subtitle": "You both love this ring",
+    "viewMatch": "View match",
+    "continueA11y": "Continue swiping",
+    "continue": "Continue"
+  },
+  "skeleton": {
+    "swipeCard": "Loading ring",
+    "favorites": "Loading favorites",
+    "matches": "Loading matches",
+    "profile": "Loading profile",
+    "ringDetail": "Loading details"
+  }
+}

@@ -1,43 +1,44 @@
 import { theme, X } from '@ring/ui'
 import { router as expoRouter } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 
 export function SwipeGate({ onDismiss }: { onDismiss?: () => void }) {
+  const { t } = useTranslation()
+
   return (
-    <View style={styles.overlay} accessibilityLabel="Limite de swipes atteinte">
+    <View style={styles.overlay} accessibilityLabel={t('swipeGate.a11y')}>
       <View style={styles.card}>
         {onDismiss && (
           <Pressable
             style={styles.closeBtn}
             onPress={onDismiss}
-            accessibilityLabel="Fermer"
+            accessibilityLabel={t('common.close')}
             accessibilityRole="button"
           >
             <X size={20} color={theme.colors.foreground.muted} />
           </Pressable>
         )}
         <Text style={styles.title} accessibilityRole="header">
-          Tu aimes ce que tu vois ?
+          {t('swipeGate.title')}
         </Text>
-        <Text style={styles.subtitle}>
-          Inscris-toi pour sauvegarder tes favoris et te coupler !
-        </Text>
+        <Text style={styles.subtitle}>{t('swipeGate.subtitle')}</Text>
         <Pressable
           style={styles.ctaBtn}
           onPress={() => expoRouter.push('/login')}
-          accessibilityLabel="S'inscrire"
+          accessibilityLabel={t('common.signUp')}
           accessibilityRole="button"
         >
-          <Text style={styles.ctaText}>S'inscrire</Text>
+          <Text style={styles.ctaText}>{t('common.signUp')}</Text>
         </Pressable>
         {onDismiss && (
           <Pressable
             style={styles.laterBtn}
             onPress={onDismiss}
-            accessibilityLabel="Plus tard"
+            accessibilityLabel={t('swipeGate.later')}
             accessibilityRole="button"
           >
-            <Text style={styles.laterText}>Plus tard</Text>
+            <Text style={styles.laterText}>{t('swipeGate.later')}</Text>
           </Pressable>
         )}
       </View>
