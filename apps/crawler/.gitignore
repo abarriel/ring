@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# Output
+output/data/*.json
+output/images/
+
+# Env
+.env

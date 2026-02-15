@@ -12,7 +12,6 @@
     "typecheck": "turbo typecheck",
     "db:generate": "turbo db:generate",
     "db:push": "turbo db:push",
-
     "db:studio": "pnpm --filter @ring/api db:studio",
     "db:seed": "pnpm --filter @ring/api db:seed",
     "test": "turbo test",
