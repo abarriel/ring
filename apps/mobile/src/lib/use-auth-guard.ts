@@ -23,7 +23,7 @@ export function useAuthGuard(): boolean {
         setIsAuthed(true)
       } else if (!isRedirecting) {
         isRedirecting = true
-        router.replace('/login')
+        router.replace('/(auth)/welcome')
         // Reset after navigation settles
         setTimeout(() => {
           isRedirecting = false

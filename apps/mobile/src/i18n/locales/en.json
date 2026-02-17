@@ -20,44 +20,110 @@
       "errorTitle": "Error"
     }
   },
+  "welcome": {
+    "heroA11y": "Engagement ring",
+    "heading": "Find the ring you both love",
+    "subtitle": "Swipe together. Match your taste.\nChoose with confidence.",
+    "cta": "Start Swiping",
+    "login": "Log In",
+    "features": {
+      "curated": "Curated Selection",
+      "certified": "Certified Diamonds",
+      "conflictFree": "Conflict Free"
+    },
+    "copyright": "© 2024 Ring Match. All rights reserved."
+  },
+  "signup": {
+    "heading": "Create your account",
+    "google": "Continue with Google",
+    "apple": "Continue with Apple",
+    "or": "or",
+    "namePlaceholder": "Full Name",
+    "emailPlaceholder": "Email Address",
+    "termsA11y": "Accept terms and conditions",
+    "termsPrefix": "I agree to the",
+    "termsLink": "Terms & Privacy Policy",
+    "submit": "Sign Up",
+    "submitting": "Signing up...",
+    "errorFallback": "Sign up error. Try again.",
+    "hasAccount": "Already have an account?",
+    "loginLink": "Log In"
+  },
   "login": {
-    "onboarding": {
-      "step1": {
-        "title": "Browse rings",
-        "subtitle": "Swipe through a selection of rings"
-      },
-      "step2": {
-        "title": "Like your favorites",
-        "subtitle": "Save the rings you love"
-      },
-      "step3": {
-        "title": "Find matches",
-        "subtitle": "Discover when you both like the same ring"
-      }
+    "heading": "Welcome back",
+    "subtitle": "Log in to find your rings",
+    "nameLabel": "Your nickname",
+    "namePlaceholder": "Enter your nickname",
+    "submit": "Log In",
+    "submitting": "Logging in...",
+    "errorFallback": "Connection error. Try again.",
+    "noAccount": "Don't have an account?",
+    "signupLink": "Sign Up"
+  },
+  "preferences": {
+    "heading": "Your preferences",
+    "subtitle": "Tell us what you like to personalize your feed",
+    "metalsTitle": "Metals",
+    "stonesTitle": "Stones",
+    "stylesTitle": "Styles",
+    "metals": {
+      "yellowGold": "Yellow Gold",
+      "whiteGold": "White Gold",
+      "roseGold": "Rose Gold",
+      "platinum": "Platinum",
+      "silver": "Silver"
     },
-    "welcome": {
-      "subtitle": "Swipe through gorgeous rings and find the perfect match with your partner",
-      "cta": "Let's go"
+    "stones": {
+      "diamond": "Diamond",
+      "sapphire": "Sapphire",
+      "emerald": "Emerald",
+      "ruby": "Ruby",
+      "moissanite": "Moissanite",
+      "morganite": "Morganite"
     },
-    "details": {
-      "title": "Let's get to know you",
-      "subtitle": "Tell us a bit about yourself",
-      "nameLabel": "Your nickname",
-      "namePlaceholder": "Enter your nickname",
-      "partnerCodeLabel": "Partner code (optional)",
-      "partnerCodePlaceholder": "Enter your partner's code",
-      "partnerCodeA11y": "Partner code",
-      "partnerCodeHint": "Share your code with your partner to match on the same rings",
-      "errorFallback": "Connection error. Try again.",
-      "submitting": "Connecting...",
-      "submit": "Continue"
+    "styles": {
+      "solitaire": "Solitaire",
+      "halo": "Halo",
+      "vintage": "Vintage",
+      "pave": "Pavé",
+      "threeStone": "Three Stone"
+    },
+    "continue": "Continue",
+    "skip": "Skip"
+  },
+  "pair": {
+    "heading": "Pair with your partner",
+    "subtitle": "Share your code so you can swipe together",
+    "codeLabel": "Your pairing code",
+    "codeA11y": "Invitation code: {{code}}",
+    "copy": "Copy Code",
+    "copyA11y": "Copy code",
+    "share": "Share Invite Link",
+    "shareA11y": "Share invite link",
+    "shareMessage": "Join me on Ring! My code: {{code}}",
+    "generate": "Generate a code",
+    "generating": "Generating...",
+    "orJoin": "or join your partner's session",
+    "enterCode": "Enter your partner's code",
+    "codeDigitA11y": "Character",
+    "join": "Join Session",
+    "joining": "Joining...",
+    "skip": "Skip for now",
+    "toast": {
+      "copied": "Code copied!",
+      "joinErrorTitle": "Error",
+      "codeLengthTitle": "Invalid code",
+      "codeLengthMessage": "Code must be 6 characters"
     }
   },
+  "paired": {
+    "heading": "You're paired!",
+    "subtitle": "You can now swipe together and find your matches",
+    "cta": "Start Swiping"
+  },
   "tabs": {
-    "browse": "Browse",
-    "browseA11y": "Browse rings",
-    "favorites": "Favorites",
-    "favoritesA11y": "View favorites",
+    "rings": "Rings",
+    "ringsA11y": "Browse rings",
     "matches": "Matches",
     "matchesA11y": "View matches",
     "profile": "Profile",

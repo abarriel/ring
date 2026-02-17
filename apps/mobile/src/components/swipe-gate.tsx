@@ -25,7 +25,7 @@ export function SwipeGate({ onDismiss }: { onDismiss?: () => void }) {
         <Text style={styles.subtitle}>{t('swipeGate.subtitle')}</Text>
         <Pressable
           style={styles.ctaBtn}
-          onPress={() => expoRouter.push('/login')}
+          onPress={() => expoRouter.push('/(auth)/signup')}
           accessibilityLabel={t('common.signUp')}
           accessibilityRole="button"
         >
