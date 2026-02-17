@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
   headerLogo: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: theme.colors.ring.pink500,
+    color: theme.colors.primary,
   },
   cardCounter: {
     fontSize: 13,
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.ring.pink500,
+    backgroundColor: theme.colors.primary,
   },
   loginBtnText: {
     fontSize: 13,
@@ -649,13 +649,13 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.ui.border,
   },
   nopeBtn: {
-    borderColor: theme.colors.action.nope.border,
+    borderColor: theme.colors.action.nope.bg,
   },
   superBtn: {
-    borderColor: theme.colors.action.super.border,
+    borderColor: theme.colors.action.super.bg,
   },
   likeBtn: {
-    borderColor: theme.colors.action.like.border,
+    borderColor: theme.colors.action.like.bg,
   },
 
   // Empty / loading / error states
@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.ring.pink500,
+    backgroundColor: theme.colors.primary,
   },
   retryText: {
     fontSize: 14,

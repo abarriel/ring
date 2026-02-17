@@ -60,7 +60,7 @@ function MatchCard({ match }: { match: MatchWithRing }) {
           </View>
         )}
         <LinearGradient
-          colors={[theme.colors.ring.rose400, theme.colors.ring.pink500]}
+          colors={[theme.colors.primary, theme.colors.primary]}
           style={styles.matchBadge}
         >
           <Sparkles size={12} color="#ffffff" />
@@ -114,7 +114,7 @@ function MatchCard({ match }: { match: MatchWithRing }) {
           accessibilityRole="button"
         >
           <LinearGradient
-            colors={[theme.colors.ring.rose400, theme.colors.ring.pink500]}
+            colors={[theme.colors.primary, theme.colors.primary]}
             style={styles.detailsBtnGradient}
           >
             <Text style={styles.detailsBtnText}>{t('matches.card.viewDetails')}</Text>
@@ -164,7 +164,7 @@ export default function MatchesScreen() {
       <LinearGradient colors={['#fce7f3', '#ffffff']} style={styles.header}>
         <View style={styles.headerRow}>
           <LinearGradient
-            colors={[theme.colors.ring.rose400, theme.colors.ring.pink500]}
+            colors={[theme.colors.primary, theme.colors.primary]}
             style={styles.headerIcon}
           >
             <Sparkles size={20} color="#ffffff" />
@@ -203,7 +203,7 @@ export default function MatchesScreen() {
       ) : !isCoupled ? (
         <View style={styles.emptyState}>
           <View style={styles.emptyIcon}>
-            <Heart size={48} color={theme.colors.ring.pink500} />
+            <Heart size={48} color={theme.colors.primary} />
           </View>
           <Text style={styles.emptyTitle}>{t('matches.empty.noCoupleTitle')}</Text>
           <Text style={styles.emptySubtitle}>{t('matches.empty.noCoupleSubtitle')}</Text>
@@ -232,7 +232,7 @@ export default function MatchesScreen() {
             <RefreshControl
               refreshing={matchesQuery.isRefetching}
               onRefresh={() => matchesQuery.refetch()}
-              tintColor={theme.colors.ring.pink500}
+              tintColor={theme.colors.primary}
             />
           }
         />
@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: 24,
-    backgroundColor: theme.colors.ring.pink500,
+    backgroundColor: theme.colors.primary,
   },
   retryText: {
     fontSize: 14,

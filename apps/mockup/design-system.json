@@ -138,8 +138,8 @@
     "priceBadge": {
       "padding": "6px 14px",
       "borderRadius": "full",
-      "background": "accent.price.bg",
-      "color": "accent.price.text",
+      "background": "background.tag",
+      "color": "foreground.DEFAULT",
       "fontSize": "sm",
       "fontWeight": "semibold",
       "shadow": "shadows.sm"
@@ -180,7 +180,7 @@
     "starRating": {
       "icon": "filled star ★",
       "size": "16px",
-      "color": "accent.stars.filled",
+      "color": "accent.stars",
       "gap": "2px"
     }
   },
@@ -196,9 +196,5 @@
     "Avatar",
     "Badge"
   ],
-  "lucideIcons": [
-    "X",
-    "Star",
-    "Heart"
-  ]
+  "lucideIcons": ["X", "Star", "Heart"]
 }

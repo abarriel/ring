@@ -38,7 +38,7 @@ export function CelebrationModal({ visible, ring, onClose, onViewMatch }: Celebr
               />
             ) : (
               <View style={styles.imagePlaceholder}>
-                <Gem size={48} color={theme.colors.ring.pink500} />
+                <Gem size={48} color={theme.colors.primary} />
               </View>
             )}
           </View>
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: theme.colors.ring.pink500,
+    color: theme.colors.primary,
     marginBottom: 8,
     textAlign: 'center',
   },
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingVertical: 14,
     borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.ring.pink500,
+    backgroundColor: theme.colors.primary,
     alignItems: 'center',
     marginBottom: 10,
   },

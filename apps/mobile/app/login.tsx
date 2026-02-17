@@ -103,10 +103,7 @@ export default function LoginScreen() {
       <LinearGradient colors={['#fff1f2', '#fce7f3']} style={styles.gradient}>
         <View style={[styles.center, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
           {/* Animated logo */}
-          <LinearGradient
-            colors={[theme.colors.ring.rose400, theme.colors.ring.pink500]}
-            style={styles.logo}
-          >
+          <LinearGradient colors={[theme.colors.primary, theme.colors.primary]} style={styles.logo}>
             <Heart size={48} color="#ffffff" fill="#ffffff" />
           </LinearGradient>
 
@@ -130,7 +127,7 @@ export default function LoginScreen() {
 
           {/* CTA */}
           <LinearGradient
-            colors={[theme.colors.ring.rose400, theme.colors.ring.pink500]}
+            colors={[theme.colors.primary, theme.colors.primary]}
             style={styles.ctaGradient}
           >
             <Pressable
@@ -220,7 +217,7 @@ export default function LoginScreen() {
 
           {/* Submit */}
           <LinearGradient
-            colors={[theme.colors.ring.rose400, theme.colors.ring.pink500]}
+            colors={[theme.colors.primary, theme.colors.primary]}
             style={styles.ctaGradient}
           >
             <Pressable
@@ -303,7 +300,7 @@ const styles = StyleSheet.create({
   stepNumber: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.colors.ring.pink500,
+    color: theme.colors.primary,
   },
   stepContent: {
     flex: 1,
