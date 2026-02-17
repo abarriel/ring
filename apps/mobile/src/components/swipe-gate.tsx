@@ -25,7 +25,7 @@ export function SwipeGate({ onDismiss }: { onDismiss?: () => void }) {
         <Text style={styles.subtitle}>{t('swipeGate.subtitle')}</Text>
         <Pressable
           style={styles.ctaBtn}
-          onPress={() => expoRouter.push('/login')}
+          onPress={() => expoRouter.push('/(auth)/signup')}
           accessibilityLabel={t('common.signUp')}
           accessibilityRole="button"
         >
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingVertical: 14,
     borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.ring.pink500,
+    backgroundColor: theme.colors.primary,
     alignItems: 'center',
   },
   ctaText: {

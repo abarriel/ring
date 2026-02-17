@@ -11,15 +11,15 @@ describe('useAuthGuard logic', () => {
     vi.clearAllMocks()
   })
 
-  it('redirects to /login when no token exists', async () => {
+  it('redirects to /(auth)/welcome when no token exists', async () => {
     vi.mocked(getToken).mockResolvedValue(null)
 
     const token = await getToken()
     if (!token) {
-      router.replace('/login')
+      router.replace('/(auth)/welcome')
     }
 
-    expect(router.replace).toHaveBeenCalledWith('/login')
+    expect(router.replace).toHaveBeenCalledWith('/(auth)/welcome')
   })
 
   it('does not redirect when token exists', async () => {
@@ -27,7 +27,7 @@ describe('useAuthGuard logic', () => {
 
     const token = await getToken()
     if (!token) {
-      router.replace('/login')
+      router.replace('/(auth)/welcome')
     }
 
     expect(router.replace).not.toHaveBeenCalled()

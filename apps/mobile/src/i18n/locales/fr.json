@@ -20,44 +20,110 @@
       "errorTitle": "Erreur"
     }
   },
+  "welcome": {
+    "heroA11y": "Bague de fiançailles",
+    "heading": "Trouve la bague que vous aimez tous les deux",
+    "subtitle": "Swipez ensemble. Trouvez votre style.\nChoisissez en confiance.",
+    "cta": "Commencer",
+    "login": "Se connecter",
+    "features": {
+      "curated": "Sélection curatée",
+      "certified": "Diamants certifiés",
+      "conflictFree": "Sans conflit"
+    },
+    "copyright": "© 2024 Ring Match. Tous droits réservés."
+  },
+  "signup": {
+    "heading": "Crée ton compte",
+    "google": "Continuer avec Google",
+    "apple": "Continuer avec Apple",
+    "or": "ou",
+    "namePlaceholder": "Nom complet",
+    "emailPlaceholder": "Adresse email",
+    "termsA11y": "Accepter les conditions",
+    "termsPrefix": "J'accepte les",
+    "termsLink": "Conditions & Politique de confidentialité",
+    "submit": "S'inscrire",
+    "submitting": "Inscription...",
+    "errorFallback": "Erreur lors de l'inscription. Réessaye.",
+    "hasAccount": "Tu as déjà un compte ?",
+    "loginLink": "Se connecter"
+  },
   "login": {
-    "onboarding": {
-      "step1": {
-        "title": "Parcours les bagues",
-        "subtitle": "Swipe parmi une sélection de bagues"
-      },
-      "step2": {
-        "title": "Like tes favoris",
-        "subtitle": "Sauvegarde les bagues qui te plaisent"
-      },
-      "step3": {
-        "title": "Trouve des matchs",
-        "subtitle": "Découvre quand vous aimez la même bague"
-      }
+    "heading": "Bon retour",
+    "subtitle": "Connecte-toi pour retrouver tes bagues",
+    "nameLabel": "Ton pseudo",
+    "namePlaceholder": "Entre ton pseudo",
+    "submit": "Se connecter",
+    "submitting": "Connexion...",
+    "errorFallback": "Erreur de connexion. Réessaye.",
+    "noAccount": "Pas encore de compte ?",
+    "signupLink": "S'inscrire"
+  },
+  "preferences": {
+    "heading": "Tes préférences",
+    "subtitle": "Dis-nous ce que tu aimes pour personnaliser ton feed",
+    "metalsTitle": "Métaux",
+    "stonesTitle": "Pierres",
+    "stylesTitle": "Styles",
+    "metals": {
+      "yellowGold": "Or jaune",
+      "whiteGold": "Or blanc",
+      "roseGold": "Or rose",
+      "platinum": "Platine",
+      "silver": "Argent"
     },
-    "welcome": {
-      "subtitle": "Swipe parmi de superbes bagues et trouve le match parfait avec ton partenaire",
-      "cta": "C'est parti"
+    "stones": {
+      "diamond": "Diamant",
+      "sapphire": "Saphir",
+      "emerald": "Émeraude",
+      "ruby": "Rubis",
+      "moissanite": "Moissanite",
+      "morganite": "Morganite"
     },
-    "details": {
-      "title": "Faisons connaissance",
-      "subtitle": "Parle-nous un peu de toi",
-      "nameLabel": "Ton pseudo",
-      "namePlaceholder": "Entre ton pseudo",
-      "partnerCodeLabel": "Code partenaire (optionnel)",
-      "partnerCodePlaceholder": "Entre le code de ton partenaire",
-      "partnerCodeA11y": "Code partenaire",
-      "partnerCodeHint": "Partage ton code avec ton partenaire pour matcher sur les mêmes bagues",
-      "errorFallback": "Erreur de connexion. Réessaye.",
-      "submitting": "Connexion...",
-      "submit": "Continuer"
+    "styles": {
+      "solitaire": "Solitaire",
+      "halo": "Halo",
+      "vintage": "Vintage",
+      "pave": "Pavé",
+      "threeStone": "Trilogie"
+    },
+    "continue": "Continuer",
+    "skip": "Passer"
+  },
+  "pair": {
+    "heading": "Couple-toi avec ton partenaire",
+    "subtitle": "Partage ton code pour swiper ensemble",
+    "codeLabel": "Ton code de couplage",
+    "codeA11y": "Code d'invitation : {{code}}",
+    "copy": "Copier le code",
+    "copyA11y": "Copier le code",
+    "share": "Partager le lien",
+    "shareA11y": "Partager le lien d'invitation",
+    "shareMessage": "Rejoins-moi sur Ring ! Mon code : {{code}}",
+    "generate": "Générer un code",
+    "generating": "Génération...",
+    "orJoin": "ou rejoins la session de ton partenaire",
+    "enterCode": "Entre le code de ton partenaire",
+    "codeDigitA11y": "Caractère",
+    "join": "Rejoindre",
+    "joining": "Connexion...",
+    "skip": "Passer pour l'instant",
+    "toast": {
+      "copied": "Code copié !",
+      "joinErrorTitle": "Erreur",
+      "codeLengthTitle": "Code invalide",
+      "codeLengthMessage": "Le code doit faire 6 caractères"
     }
   },
+  "paired": {
+    "heading": "Couple formé !",
+    "subtitle": "Vous pouvez maintenant swiper ensemble et trouver vos matchs",
+    "cta": "Commencer à swiper"
+  },
   "tabs": {
-    "browse": "Browse",
-    "browseA11y": "Parcourir les bagues",
-    "favorites": "Favoris",
-    "favoritesA11y": "Voir les favoris",
+    "rings": "Bagues",
+    "ringsA11y": "Parcourir les bagues",
     "matches": "Matchs",
     "matchesA11y": "Voir les matchs",
     "profile": "Profil",

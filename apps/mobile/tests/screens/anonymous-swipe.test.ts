@@ -149,11 +149,11 @@ describe('anonymous swipe flow', () => {
       expect(showGate).toBe(false)
     })
 
-    it('gate navigates to /login on signup press', () => {
+    it('gate navigates to /(auth)/signup on signup press', () => {
       // Simulates the SwipeGate component's onPress behavior
-      router.push('/login')
+      router.push('/(auth)/signup')
 
-      expect(router.push).toHaveBeenCalledWith('/login')
+      expect(router.push).toHaveBeenCalledWith('/(auth)/signup')
     })
   })
 

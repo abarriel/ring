@@ -239,7 +239,7 @@ export default function ProfileScreen() {
       <LinearGradient colors={['#fce7f3', '#ffffff']} style={styles.profileHeader}>
         <View style={styles.profileRow}>
           <LinearGradient
-            colors={[theme.colors.ring.rose400, theme.colors.ring.pink500]}
+            colors={[theme.colors.primary, theme.colors.primary]}
             style={styles.avatar}
           >
             <Text
@@ -265,7 +265,7 @@ export default function ProfileScreen() {
         <View style={styles.statsGrid} accessibilityLabel={t('profile.stats.a11y')}>
           <View style={styles.statCard} accessibilityLabel={t('profile.stats.likedRings')}>
             <View style={styles.statRow}>
-              <Heart size={16} color={theme.colors.ring.pink500} fill={theme.colors.ring.pink500} />
+              <Heart size={16} color={theme.colors.primary} fill={theme.colors.primary} />
               <Text style={styles.statValue}>
                 {likedQuery.isLoading ? '-' : (likedQuery.data ?? 0)}
               </Text>
@@ -274,7 +274,7 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.statCard} accessibilityLabel={t('profile.stats.matches')}>
             <View style={styles.statRow}>
-              <Sparkles size={16} color={theme.colors.ring.pink500} />
+              <Sparkles size={16} color={theme.colors.primary} />
               <Text style={styles.statValue}>
                 {matchesQuery.isLoading ? '-' : (matchesQuery.data ?? 0)}
               </Text>
@@ -334,7 +334,7 @@ export default function ProfileScreen() {
                 accessibilityLabel={t('profile.couple.shareCodeA11y')}
                 accessibilityRole="button"
               >
-                <Share2 size={20} color={theme.colors.ring.pink500} />
+                <Share2 size={20} color={theme.colors.primary} />
               </Pressable>
               <Pressable
                 style={styles.iconBtn}
@@ -562,7 +562,7 @@ const styles = StyleSheet.create({
   partnerCodeLabel: {
     fontSize: 11,
     fontWeight: '500',
-    color: theme.colors.ring.pink500,
+    color: theme.colors.primary,
     letterSpacing: 0.5,
     marginBottom: 4,
   },
@@ -603,7 +603,7 @@ const styles = StyleSheet.create({
 
   // Invite button (unpaired)
   inviteBtn: {
-    backgroundColor: theme.colors.ring.pink500,
+    backgroundColor: theme.colors.primary,
     borderRadius: theme.borderRadius.md,
     paddingVertical: 14,
     alignItems: 'center',
@@ -636,7 +636,7 @@ const styles = StyleSheet.create({
   },
   joinBtn: {
     flexShrink: 0,
-    backgroundColor: theme.colors.ring.pink500,
+    backgroundColor: theme.colors.primary,
     borderRadius: theme.borderRadius.md,
     height: 44,
     paddingHorizontal: 18,

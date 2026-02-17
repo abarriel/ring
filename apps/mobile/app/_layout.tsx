@@ -44,10 +44,11 @@ function AppContent() {
 
   return (
     <>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="ring/[id]" options={{ headerShown: false, presentation: 'card' }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(onboarding)" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="ring/[id]" options={{ presentation: 'card' }} />
       </Stack>
       <StatusBar style="auto" />
     </>

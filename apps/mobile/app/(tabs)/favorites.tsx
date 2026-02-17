@@ -138,7 +138,7 @@ export default function FavoritesScreen() {
             <RefreshControl
               refreshing={favoritesQuery.isRefetching}
               onRefresh={() => favoritesQuery.refetch()}
-              tintColor={theme.colors.ring.pink500}
+              tintColor={theme.colors.primary}
             />
           }
         />
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.ring.pink500,
+    backgroundColor: theme.colors.primary,
   },
   retryText: {
     fontSize: 14,

@@ -1,4 +1,4 @@
-import { Heart, Home, Sparkles, theme, User } from '@ring/ui'
+import { Gem, Heart, theme, User } from '@ring/ui'
 import { Tabs } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 
@@ -9,34 +9,26 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: theme.colors.ring.pink500,
-        tabBarInactiveTintColor: theme.colors.foreground.muted,
+        tabBarActiveTintColor: theme.colors.ui.navActive,
+        tabBarInactiveTintColor: theme.colors.ui.navInactive,
         tabBarStyle: {
-          borderTopColor: theme.colors.ui.border,
+          borderTopColor: theme.colors.ui.tabBarBorder,
         },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: t('tabs.browse'),
-          tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
-          tabBarAccessibilityLabel: t('tabs.browseA11y'),
-        }}
-      />
-      <Tabs.Screen
-        name="favorites"
-        options={{
-          title: t('tabs.favorites'),
+          title: t('tabs.rings'),
           tabBarIcon: ({ color, size }) => <Heart size={size} color={color} />,
-          tabBarAccessibilityLabel: t('tabs.favoritesA11y'),
+          tabBarAccessibilityLabel: t('tabs.ringsA11y'),
         }}
       />
       <Tabs.Screen
         name="matches"
         options={{
           title: t('tabs.matches'),
-          tabBarIcon: ({ color, size }) => <Sparkles size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Gem size={size} color={color} />,
           tabBarAccessibilityLabel: t('tabs.matchesA11y'),
         }}
       />
@@ -46,6 +38,13 @@ export default function TabLayout() {
           title: t('tabs.profile'),
           tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
           tabBarAccessibilityLabel: t('tabs.profileA11y'),
+        }}
+      />
+      {/* Hide favorites from tab bar - route file still exists for backward compat */}
+      <Tabs.Screen
+        name="favorites"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

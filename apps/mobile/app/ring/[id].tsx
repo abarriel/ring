@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.ring.pink500,
+    backgroundColor: theme.colors.primary,
   },
   backBtnText: {
     fontSize: 14,
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.ui.border,
   },
   dotActive: {
-    backgroundColor: theme.colors.ring.pink500,
+    backgroundColor: theme.colors.primary,
   },
 
   // Info
@@ -467,8 +467,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   nopeBtn: {
-    borderColor: theme.colors.action.nope.border,
-    backgroundColor: theme.colors.action.nope.bg,
+    borderColor: theme.colors.action.nope.bg,
+    backgroundColor: theme.colors.background.surface,
   },
   nopeBtnText: {
     fontSize: 16,
@@ -476,8 +476,8 @@ const styles = StyleSheet.create({
     color: theme.colors.action.nope.icon,
   },
   superBtn: {
-    borderColor: theme.colors.action.super.border,
-    backgroundColor: theme.colors.action.super.bg,
+    borderColor: theme.colors.action.super.bg,
+    backgroundColor: theme.colors.background.surface,
   },
   superBtnText: {
     fontSize: 16,
@@ -485,8 +485,8 @@ const styles = StyleSheet.create({
     color: theme.colors.action.super.icon,
   },
   likeBtn: {
-    borderColor: theme.colors.action.like.border,
-    backgroundColor: theme.colors.action.like.bg,
+    borderColor: theme.colors.action.like.bg,
+    backgroundColor: theme.colors.background.surface,
   },
   likeBtnText: {
     fontSize: 16,

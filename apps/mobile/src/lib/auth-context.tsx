@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     queryClient.clear()
     setUser(null)
     setIsAuthenticated(false)
-    router.replace('/login')
+    router.replace('/(auth)/welcome')
   }, [])
 
   const refreshUser = useCallback(async () => {
