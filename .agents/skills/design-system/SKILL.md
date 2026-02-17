@@ -1,4 +1,11 @@
-# Ring Design System Skill
+---
+name: design-system
+description: Ring mobile app design system — luxury minimal, warm romantic. Cream backgrounds, dusty rose accents, Playfair Display headings, DM Sans body. Apply when creating or modifying UI in apps/mobile/.
+compatibility: opencode
+metadata:
+  stack: expo-react-native
+  scope: apps/mobile
+---
 
 ## When to Apply
 
