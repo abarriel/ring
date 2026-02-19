@@ -207,8 +207,8 @@ importers:
   packages/ui:
     dependencies:
       lucide-react-native:
-        specifier: ^0.563.0
-        version: 0.563.0(react-native-svg@15.15.3(react-native@0.83.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))(react@19.2.4))(react-native@0.83.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)
+        specifier: ^0.574.0
+        version: 0.574.0(react-native-svg@15.15.3(react-native@0.83.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))(react@19.2.4))(react-native@0.83.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)
       react:
         specifier: 19.2.4
         version: 19.2.4
@@ -4026,8 +4026,8 @@ packages:
     resolution: {integrity: sha512-DqC6n3QQ77zdFpCMASA1a3Jlb64Hv2N2DciFGkO/4L9+q/IpIAuRlKOvCXabtRW6cQf8usbmM6BE/TOPysCdIA==}
     engines: {bun: '>=1.0.0', deno: '>=1.30.0', node: '>=8.0.0'}
 
-  lucide-react-native@0.563.0:
-    resolution: {integrity: sha512-q4tYoAMorTqv+UXRYc0MyiEAOF+4Bu73zxD63EDrnGCFL+xuj+imBm3E2rIKRmME0heVHlK+98fsi8wbL92LNQ==}
+  lucide-react-native@0.574.0:
+    resolution: {integrity: sha512-11AbASRwYGSOO+cOW0x2UDyrfdQqqgkOizdwohUBaq90lz6y0BVL7YnMfv9Tf+BwhfIge4XkIhZuLx498lvoAA==}
     peerDependencies:
       react: 19.2.4
       react-native: 0.83.1
@@ -10304,7 +10304,7 @@ snapshots:
 
   lru.min@1.1.4: {}
 
-  lucide-react-native@0.563.0(react-native-svg@15.15.3(react-native@0.83.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))(react@19.2.4))(react-native@0.83.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))(react@19.2.4):
+  lucide-react-native@0.574.0(react-native-svg@15.15.3(react-native@0.83.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))(react@19.2.4))(react-native@0.83.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))(react@19.2.4):
     dependencies:
       react: 19.2.4
       react-native: 0.83.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4)
