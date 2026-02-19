@@ -23,7 +23,7 @@
     "format": "biome format --write ."
   },
   "dependencies": {
-    "lucide-react-native": "^0.563.0",
+    "lucide-react-native": "^0.574.0",
     "react-native-svg": "15.15.3"
   },
   "devDependencies": {
