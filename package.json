@@ -32,7 +32,7 @@
     }
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.15",
+    "@biomejs/biome": "^2.4.2",
     "@typescript/native-preview": "7.0.0-dev.20260212.1",
     "@vitest/coverage-v8": "^4.0.18",
     "lefthook": "^2.1.1",
