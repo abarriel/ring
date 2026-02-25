@@ -3,18 +3,18 @@ import { Platform } from 'react-native'
 
 const isNative = Platform.OS === 'ios' || Platform.OS === 'android'
 
-export function hapticLight() {
-  if (isNative) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+export async function hapticLight() {
+  if (isNative) await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
 }
 
-export function hapticMedium() {
-  if (isNative) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+export async function hapticMedium() {
+  if (isNative) await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
 }
 
-export function hapticHeavy() {
-  if (isNative) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
+export async function hapticHeavy() {
+  if (isNative) await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
 }
 
-export function hapticSuccess() {
-  if (isNative) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+export async function hapticSuccess() {
+  if (isNative) await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
 }

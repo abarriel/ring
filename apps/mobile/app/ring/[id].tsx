@@ -68,17 +68,17 @@ export default function RingDetailScreen() {
   )
 
   const handleNope = useCallback(() => {
-    hapticLight()
+    hapticLight().catch(() => {})
     handleSwipe('NOPE')
   }, [handleSwipe])
 
   const handleSuper = useCallback(() => {
-    hapticHeavy()
+    hapticHeavy().catch(() => {})
     handleSwipe('SUPER')
   }, [handleSwipe])
 
   const handleLike = useCallback(() => {
-    hapticMedium()
+    hapticMedium().catch(() => {})
     handleSwipe('LIKE')
   }, [handleSwipe])
 

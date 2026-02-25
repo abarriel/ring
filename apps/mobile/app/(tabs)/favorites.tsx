@@ -20,7 +20,7 @@ function RingCard({ ring }: { ring: RingWithImages }) {
   const imageUrl = ring.images[0]?.url
 
   const handlePress = useCallback(() => {
-    hapticLight()
+    hapticLight().catch(() => {})
     router.push(`/ring/${ring.id}`)
   }, [ring.id])
 
