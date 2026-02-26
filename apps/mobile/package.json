@@ -38,7 +38,7 @@
     "expo-localization": "^17.0.8",
     "expo-notifications": "^0.32.16",
     "expo-router": "~6.0.23",
-    "expo-splash-screen": "^31.0.13",
+    "expo-splash-screen": "^55.0.9",
     "expo-status-bar": "~3.0.9",
     "i18next": "^25.8.7",
     "react": "19.2.4",
