@@ -39,7 +39,7 @@
     "expo-notifications": "^0.32.16",
     "expo-router": "~6.0.23",
     "expo-splash-screen": "^31.0.13",
-    "expo-status-bar": "~3.0.9",
+    "expo-status-bar": "~55.0.4",
     "i18next": "^25.8.7",
     "react": "19.2.4",
     "react-dom": "19.2.4",
