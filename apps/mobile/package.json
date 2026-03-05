@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.28.6",
-    "@expo/metro-runtime": "^6.1.2",
+    "@expo/metro-runtime": "^55.0.6",
     "@orpc/client": "^1.13.5",
     "@orpc/tanstack-query": "^1.13.5",
     "@react-native-async-storage/async-storage": "^2.2.0",
