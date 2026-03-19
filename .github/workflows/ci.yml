@@ -23,7 +23,7 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
-      - uses: oven-sh/setup-bun@3d267786b128fe76c2f16a390aa2448b815359f3 # v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
       - run: pnpm lint
@@ -44,7 +44,7 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
-      - uses: oven-sh/setup-bun@3d267786b128fe76c2f16a390aa2448b815359f3 # v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
       - run: pnpm --filter @ring/api test
