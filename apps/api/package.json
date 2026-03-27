@@ -28,7 +28,7 @@
     "@prisma/adapter-pg": "^7.4.0",
     "@prisma/client": "^7.4.0",
     "@ring/shared": "workspace:*",
-    "expo-server-sdk": "^5.0.0",
+    "expo-server-sdk": "^6.0.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
